@@ -34,6 +34,12 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Cloo">
+      <HintPath>.\Cloo.dll</HintPath>
+    </Reference>
+    <Reference Include="CUDA.NET">
+      <HintPath>.\CUDA.NET.dll</HintPath>
+    </Reference>
     <Reference Include="Cudafy">
       <HintPath>.\Cudafy.dll</HintPath>
     </Reference>

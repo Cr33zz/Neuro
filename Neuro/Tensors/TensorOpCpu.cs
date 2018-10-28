@@ -34,7 +34,7 @@ namespace Neuro.Tensors
 
             for (int n = 0; n < t1.Batches; ++n)
             for (int i = 0, idx = n * t1.BatchLength; i < t1.BatchLength; ++i, ++idx)
-                result.Values[idx] = t1.Values[idx] + t2.Values[i];
+                result.Values[idx] = t1.Values[idx] - t2.Values[i];
         }
 
         public virtual void Mul(Tensor t1, Tensor t2, Tensor result)
