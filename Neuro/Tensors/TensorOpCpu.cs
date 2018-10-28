@@ -177,10 +177,10 @@ namespace Neuro.Tensors
 
         public virtual void PoolGradient(Tensor output, Tensor input, Tensor gradient, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            for (int outN = 0; outN < result.Batches; ++outN)
-            for (int outD = 0; outD < result.Depth; ++outD)
-            for (int outH = 0, h = -paddingY; outH < result.Height; ++outH, h += stride)
-            for (int outW = 0, w = -paddingX; outW < result.Width; ++outW, w += stride)
+            for (int outN = 0; outN < output.Batches; ++outN)
+            for (int outD = 0; outD < output.Depth; ++outD)
+            for (int outH = 0, h = -paddingY; outH < output.Height; ++outH, h += stride)
+            for (int outW = 0, w = -paddingX; outW < output.Width; ++outW, w += stride)
             {
                 if (type == Tensor.PoolType.Max)
                 {
@@ -189,19 +189,19 @@ namespace Neuro.Tensors
                     for (int poolW = 0; poolW < filterSize; ++poolW)
                     {
                         double value = input.TryGet(Double.MinValue, w + poolW, h + poolH, outD, outN);
-                        result.TrySet(value == output[outW, outH, outD, outN] ? gradient.Get(outW, outH, outD, outN) : 0, w + poolW, h + poolH, outD, outN);
+                        result.TrySet(value == output[outW, outH, outD, outN] ? gradient[outW, outH, outD, outN] : 0, w + poolW, h + poolH, outD, outN);
                     }
                 }
                 else if (type == Tensor.PoolType.Avg)
                 {
                     // fortunately we can recover sum from the output
-                    double sum = output[outW, outH, outD, outN] * (output.Height * output.Width);
+                    double sum = output[outW, outH, outD, outN] * (filterSize * filterSize);
 
                     // use avg for all elements in each pooled matrix
                     for (int poolH = 0; poolH < filterSize; ++poolH)
                     for (int poolW = 0; poolW < filterSize; ++poolW)
                     {
-                        result.TrySet(output[outW, outH, outD, outN] * input.TryGet(0, w + poolW, h + poolH, outD, outN) / sum, w + poolW, h + poolH, outD, outN);
+                        result.TrySet(gradient[outW, outH, outD, outN] * input.TryGet(0, w + poolW, h + poolH, outD, outN) / sum, w + poolW, h + poolH, outD, outN);
                     }
                 }
             }

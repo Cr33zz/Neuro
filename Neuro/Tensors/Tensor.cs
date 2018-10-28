@@ -92,6 +92,11 @@ namespace Neuro.Tensors
 
         public int Length => Values.Length;
 
+        public double[] GetValues()
+        {
+            return (double[])Values.Clone();
+        }
+
         public Bitmap ToBitmap()
         {
             Debug.Assert(Batches == 1);
@@ -108,13 +113,17 @@ namespace Neuro.Tensors
             return output;
         }
 
-        public Tensor Randomize(int seed = 0)
+        public void FillWithRand(int seed = 0)
         {
             Random rng = seed > 0 ? new Random(seed) : new Random();
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = rng.NextDouble();
+        }
 
-            return this;
+        public void FillWithRange(int start = 0)
+        {
+            for (int i = 0; i < Values.Length; ++i)
+                Values[i] = start + i;
         }
 
         public void Zero()
@@ -474,6 +483,17 @@ namespace Neuro.Tensors
             Op.Pool(this, filterSize, stride, type, paddingX, paddingY, result);
         }
 
+        public Tensor Pool(int filterSize, int stride, PoolType type, PaddingType padding)
+        {
+            int outWidth = 0, outHeight = 0, paddingX = 0, paddingY = 0;
+            GetPaddingParams(padding, Width, Height, filterSize, filterSize, stride, out outHeight, out outWidth, out paddingX, out paddingY);
+
+            Tensor result = new Tensor(new Shape(outWidth, outHeight, Depth, Batches));
+            Pool(filterSize, stride, type, padding, result);
+
+            return result;
+        }
+
         // Assuming result matrix is of the dimensions of input to pooling layer
         public static void PoolGradient(Tensor output, Tensor input, Tensor gradient, int filterSize, int stride, PoolType type, PaddingType padding, Tensor result)
         {
@@ -617,11 +637,10 @@ namespace Neuro.Tensors
 
         public bool Equals(Tensor other, double epsilon = 0.0000001)
         {
-            Debug.Assert(Values.Length == other.Values.Length);
-
             if (other == null)
                 return false;
 
+            //Debug.Assert(Values.Length == other.Values.Length, "Comparing tensors with different number of elements!");
             if (Values.Length != other.Values.Length)
                 return false;
 

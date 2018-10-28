@@ -71,6 +71,8 @@
   <ItemGroup>
     <Compile Include="TensorOpGpuTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TensorOpCpuTests.cs" />
+    <Compile Include="TensorOpMultiCpuTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

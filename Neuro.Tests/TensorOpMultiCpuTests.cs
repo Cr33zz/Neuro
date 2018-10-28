@@ -4,7 +4,7 @@ using Neuro.Tensors;
 namespace Neuro.Tests
 {
     [TestClass]
-    public class TensorOpGpuTests
+    public class TensorOpMultiCpuTests
     {
         [TestMethod]
         public void Mult_CompareWithCpuResult()
@@ -15,7 +15,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Mul(t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t1.Mul(t2);
 
             Assert.IsTrue(r.Equals(r2));
@@ -30,7 +30,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Add(t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t1.Add(t2);
 
             Assert.IsTrue(r.Equals(r2));
@@ -45,7 +45,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Add(t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t1.Add(t2);
 
             Assert.IsTrue(r.Equals(r2));
@@ -60,7 +60,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Sub(t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t1.Sub(t2);
 
             Assert.IsTrue(r.Equals(r2));
@@ -75,7 +75,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Sub(t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t1.Sub(t2);
 
             Assert.IsTrue(r.Equals(r2));
@@ -90,7 +90,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t.Conv2D(kernals, 1, Tensor.PaddingType.Valid);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor r2 = t.Conv2D(kernals, 1, Tensor.PaddingType.Valid);
 
             Assert.IsTrue(r.Equals(r2));
@@ -108,7 +108,7 @@ namespace Neuro.Tests
             Tensor inputGradient = new Tensor(input);
             Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor inputGradient2 = new Tensor(input);
             Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient2);
 
@@ -127,7 +127,7 @@ namespace Neuro.Tests
             Tensor kernelsGradient = new Tensor(kernels);
             Tensor.Conv2DKernelsGradient(output, input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor kernelsGradient2 = new Tensor(kernels);
             Tensor.Conv2DKernelsGradient(output, input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient2);
 
