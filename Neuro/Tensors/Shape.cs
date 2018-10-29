@@ -4,8 +4,7 @@ namespace Neuro.Tensors
 {
     public class Shape : IEquatable<Shape>
     {
-        //public static int None = -1; // Automatically guesses
-        //public static int Keep = -2; // Keep same dimension
+        public static int Auto = -1; // Automatically guesses
 
         public Shape(int width, int height = 1, int depth = 1, int batches = 1)
         {

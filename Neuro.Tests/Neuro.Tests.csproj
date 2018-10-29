@@ -75,6 +75,7 @@
     <Compile Include="TensorOpCpuTests.cs" />
     <Compile Include="TensorOpMultiCpuTests.cs" />
     <Compile Include="DenseLayerTests.cs" />
+    <Compile Include="ActivationTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

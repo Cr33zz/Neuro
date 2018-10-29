@@ -125,10 +125,10 @@ namespace Neuro.Tensors
                 Values[i] = rng.NextDouble();
         }
 
-        public void FillWithRange(int start = 0)
+        public void FillWithRange(double start = 0, double increment = 1)
         {
             for (int i = 0; i < Values.Length; ++i)
-                Values[i] = start + i;
+                Values[i] = start + i * increment;
         }
 
         public void Zero()
@@ -196,9 +196,8 @@ namespace Neuro.Tensors
 
         public virtual void Div(double v, Tensor result)
         {
-            double invV = 1 / v;
             for (int i = 0; i < Values.Length; ++i)
-                result.Values[i] = Values[i] * invV;
+                result.Values[i] = Values[i] / v;
         }
 
         public Tensor Div(double v)
@@ -378,24 +377,22 @@ namespace Neuro.Tensors
         // One of dimensions can be -1, in that case it will be calculated based on remaining dimensions.
         public Tensor Reshaped(Shape shape)
         {
-            Debug.Assert(shape.Length == Shape.Length);
-            return new Tensor(Values, shape);
+            return new Tensor(Values, Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.Batches }));
         }
 
         public void Reshape(Shape shape)
         {
-            Debug.Assert(shape.Length == Shape.Length);
-            Shape = shape;
+            Shape = Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.Batches });
         }
 
         public Tensor FlattenHoriz()
         {
-            return Reshaped(Shape.Reshaped(new[] { -1, 1, 1, Shape.Batches }));
+            return Reshaped(Shape.Reshaped(new[] { Shape.Auto, 1, 1, Shape.Batches }));
         }
 
         public Tensor FlattenVert()
         {
-            return Reshaped(Shape.Reshaped(new[] { 1, -1, 1, Shape.Batches }));
+            return Reshaped(Shape.Reshaped(new[] { 1, Shape.Auto, 1, Shape.Batches }));
         }
 
         public void Rotated180(Tensor result)

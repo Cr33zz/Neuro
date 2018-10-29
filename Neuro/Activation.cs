@@ -5,7 +5,7 @@ namespace Neuro
 {
     public static class Activation
     {
-        //public static Tensor None(Tensor input, bool deriv = false)
+        //public static Tensor Linear(Tensor input, bool deriv = false)
         //{
         //    if (deriv)
         //        return Tensor.One(input.Depth, input.Height, input.Width);
