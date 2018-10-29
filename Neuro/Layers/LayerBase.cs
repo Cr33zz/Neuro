@@ -10,7 +10,7 @@ namespace Neuro.Layers
     public abstract class LayerBase
     {
         public Tensor Input { get; set; }
-        public Tensor InputDelta { get; set; }
+        public Tensor InputGradient { get; set; }
         public Tensor Output { get; protected set; }
         public Shape InputShape { get; }
         public Shape OutputShape { get; }
@@ -65,8 +65,8 @@ namespace Neuro.Layers
         public Tensor BackProp(Tensor delta)
         {
             var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, delta.Batches);
-            if (InputDelta == null || !InputDelta.Shape.Equals(deltaShape))
-                InputDelta = new Tensor(deltaShape);
+            if (InputGradient == null || !InputGradient.Shape.Equals(deltaShape))
+                InputGradient = new Tensor(deltaShape);
 
             // apply derivative of our activation function to the errors computed by previous layer
             if (Activation != null)
@@ -81,7 +81,7 @@ namespace Neuro.Layers
 
             BackPropInternal(delta);
 
-            return InputDelta;
+            return InputGradient;
         }
 
         public void UpdateParameters(int trainingSamples)
@@ -94,6 +94,10 @@ namespace Neuro.Layers
         protected virtual void OnUpdateParameters(int trainingSamples) {}
 
         protected virtual void OnResetDeltas() {}
+
+        public virtual Tensor GetParameters() { return null; }
+
+        public virtual Tensor GetParametersGradient() { return null; }
 
         // Must be called after adding to layers in a network
         public virtual void Init() {}

@@ -46,13 +46,13 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor delta)
         {
-            var gradients = Optimizer.GetGradients(delta);
+            var gradients = Optimizer != null ? Optimizer.GetGradients(delta) : delta;
 
-            Tensor.Conv2DInputsGradient(gradients, Weights, Stride, InputDelta);
+            Tensor.Conv2DInputsGradient(gradients, Weights, Stride, InputGradient);
             Tensor.Conv2DKernelsGradient(Output, Input, gradients, Stride, Tensor.PaddingType.Full, WeightsDelta);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Weights.Length}) errors gradient:\n{InputDelta}\n");
+                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Weights.Length}) errors gradient:\n{InputGradient}\n");
 
             BiasDelta.Add(gradients.SumBatches());
         }
@@ -70,6 +70,10 @@ namespace Neuro.Layers
             WeightsDelta.Zero();
             BiasDelta.Zero();
         }
+
+        public override Tensor GetParameters() { return Weights; }
+
+        public override Tensor GetParametersGradient() { return WeightsDelta; }
 
         internal override void SerializeParameters(XmlElement elem)
         {

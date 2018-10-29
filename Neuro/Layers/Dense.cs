@@ -47,12 +47,12 @@ namespace Neuro.Layers
         {
             // for explanation watch https://www.youtube.com/watch?v=8H2ODPNxEgA&t=898s
             // each weight is responsible to the error in the next layer proportionally to its value
-            Weights.Transposed().Mul(delta, InputDelta);
+            Weights.Transposed().Mul(delta, InputGradient);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Dense() errors gradient:\n{InputDelta}\n");
+                Trace.WriteLine($"Dense() errors gradient:\n{InputGradient}\n");
 
-            var gradients = Optimizer.GetGradients(delta);
+            var gradients = Optimizer != null ? Optimizer.GetGradients(delta) : delta;
             WeightsDelta.Add(gradients.Mul(Input.Transposed()).SumBatches(), WeightsDelta);
             BiasDelta.Add(gradients.SumBatches(), BiasDelta);
         }
@@ -70,6 +70,10 @@ namespace Neuro.Layers
             WeightsDelta.Zero();
             BiasDelta.Zero();
         }
+
+        public override Tensor GetParameters() { return Weights; }
+
+        public override Tensor GetParametersGradient() { return WeightsDelta; }
 
         public Tensor Weights;
         public Tensor Bias;

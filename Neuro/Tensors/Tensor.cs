@@ -78,6 +78,11 @@ namespace Neuro.Tensors
             }
         }
 
+        public Tensor Clone()
+        {
+            return new Tensor(this);
+        }
+
         public static OpMode CurrentOpMode { get; private set; }
 
         public int Width => Shape.Width;
@@ -600,6 +605,11 @@ namespace Neuro.Tensors
                 return def;
 
             return Get(w, h, d, n);
+        }
+
+        public void SetFlat(double value, int i)
+        {
+            Values[i] = value;
         }
 
         public void Set(double value, int w, int h = 0, int d = 0, int n = 0)

@@ -33,10 +33,10 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor delta)
         {
-            Tensor.PoolGradient(Output, Input, delta, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputDelta);
+            Tensor.PoolGradient(Output, Input, delta, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputGradient);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) errors gradient:\n{InputDelta}\n");
+                Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) errors gradient:\n{InputGradient}\n");
         }
 
         private readonly Tensor.PoolType Type;

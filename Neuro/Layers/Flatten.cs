@@ -21,10 +21,10 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor delta)
         {
-            InputDelta = delta.Reshaped(Input.Shape);
+            InputGradient = delta.Reshaped(Input.Shape);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Flatten() errors gradient:\n{InputDelta}\n");
+                Trace.WriteLine($"Flatten() errors gradient:\n{InputGradient}\n");
         }
     }
 }
