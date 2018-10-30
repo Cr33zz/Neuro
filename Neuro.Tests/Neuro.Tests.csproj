@@ -79,6 +79,8 @@
     <Compile Include="ConvolutionLayerTests.cs" />
     <Compile Include="FlattenLayerTests.cs" />
     <Compile Include="PoolingLayerTests.cs" />
+    <Compile Include="ShapeTests.cs" />
+    <Compile Include="LossTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

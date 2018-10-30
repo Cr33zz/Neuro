@@ -23,8 +23,6 @@ namespace Neuro
     // Best explanation I found are Neural Network series from Coding Train on YT
     public class NeuralNetwork
     {
-        public delegate void LossFunc(Tensor targetOutput, Tensor output, bool deriv, Tensor result);
-
         public NeuralNetwork(string name, int seed = 0)
         {
             Name = name;
@@ -117,7 +115,7 @@ namespace Neuro
                 batchSize = trainingData.Count;
 
             string outFilename = $"{FilePrefix}_training_data_{Optimizer.GetType().Name.ToLower()}_b{batchSize}{(Seed > 0 ? ("_seed" + Seed) : "")}_{Tensor.CurrentOpMode}";
-            var chartGen = new ChartGenerator($"{outFilename}.png", $"{Name} [{Error.Method.Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
+            var chartGen = new ChartGenerator($"{outFilename}.png", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
 
             if (trackFlags.HasFlag(Track.TrainError))
                 chartGen.AddSeries((int)Track.TrainError, "Error on train data\n(left Y axis)", Color.DarkRed);
@@ -192,7 +190,7 @@ namespace Neuro
                     {
                         FeedForward(validationData[i].Input);
                         Tensor loss = new Tensor(lastLayer.Output.Shape);
-                        Error(validationData[i].Output, lastLayer.Output, false, loss);
+                        Error.Compute(validationData[i].Output, lastLayer.Output, loss);
                         testTotalError += loss.Sum() / outputsNum;
                         testHits += accuracyFunc(validationData[i].Output, lastLayer.Output);
 
@@ -229,10 +227,10 @@ namespace Neuro
 
             FeedForward(trainingData.Input);
             Tensor loss = new Tensor(lastLayer.Output.Shape);
-            Error(trainingData.Output, lastLayer.Output, false, loss);
+            Error.Compute(trainingData.Output, lastLayer.Output, loss);
             trainError += loss.Sum() / lastLayer.OutputShape.Length;
             trainHits += accuracyFunc(trainingData.Output, lastLayer.Output);
-            Error(trainingData.Output, lastLayer.Output, true, loss);
+            Error.Derivative(trainingData.Output, lastLayer.Output, loss);
             BackProp(loss);
             UpdateParameters(samplesInTrainingData);
         }

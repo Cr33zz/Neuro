@@ -7,7 +7,87 @@ namespace Neuro.Tests
     public class TensorOpCpuTests
     {
         [TestMethod]
-        public void Mult_1Batch()
+        public void Add()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
+            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(2, 2);
+            var result = new Tensor(left.Shape);
+
+            left.Add(right, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], left.GetFlat(i) * 3);
+        }
+
+        [TestMethod]
+        public void Add_Scalar()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
+            var result = new Tensor(left.Shape);
+
+            left.Add(2, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], left.GetFlat(i) + 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void Sub()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
+            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(2, 2);
+            var result = new Tensor(left.Shape);
+
+            left.Sub(right, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], -left.GetFlat(i), 1e-4);
+        }
+
+        [TestMethod]
+        public void Sub_Scalar()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
+            var result = new Tensor(left.Shape);
+
+            left.Sub(2, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], left.GetFlat(i) - 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void Div()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
+            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(1);
+            var result = new Tensor(left.Shape);
+
+            left.Div(right, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void Div_Scalar()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
+            var result = new Tensor(left.Shape);
+
+            left.Div(2, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], left.GetFlat(i) / 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void Mul_Scalar()
+        {
+            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
+            var result = new Tensor(left.Shape);
+
+            left.Mul(2, result);
+            for (int i = 0; i < left.Shape.Length; ++i)
+                Assert.AreEqual(result[i], left.GetFlat(i) * 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void Mul_1Batch()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
@@ -23,7 +103,7 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
-        public void Mult_2Batches_1Batch()
+        public void Mul_2Batches_1Batch()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
@@ -39,7 +119,7 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
-        public void Mult_2Batches_2Batches()
+        public void Mul_2Batches_2Batches()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 

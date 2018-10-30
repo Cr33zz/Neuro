@@ -9,49 +9,49 @@ namespace Neuro.Tests
         [TestMethod]
         public void Sigmoid_Derivative_1Batch()
         {
-            Tools.VerifyFuncDerivative(Activation.Sigmoid);
+            Tools.VerifyActivationFuncDerivative(Activation.Sigmoid);
         }
 
         [TestMethod]
         public void Sigmoid_Derivative_3Batches()
         {
-            Tools.VerifyFuncDerivative(Activation.Sigmoid, 3);
+            Tools.VerifyActivationFuncDerivative(Activation.Sigmoid, 3);
         }
 
         [TestMethod]
         public void ReLU_Derivative_1Batch()
         {
-            Tools.VerifyFuncDerivative(Activation.ReLU);
+            Tools.VerifyActivationFuncDerivative(Activation.ReLU);
         }
 
         [TestMethod]
         public void ReLU_Derivative_3Batches()
         {
-            Tools.VerifyFuncDerivative(Activation.ReLU, 3);
+            Tools.VerifyActivationFuncDerivative(Activation.ReLU, 3);
         }
 
         [TestMethod]
         public void Tanh_Derivative_1Batch()
         {
-            Tools.VerifyFuncDerivative(Activation.Tanh);
+            Tools.VerifyActivationFuncDerivative(Activation.Tanh);
         }
 
         [TestMethod]
         public void Tanh_Derivative_3Batches()
         {
-            Tools.VerifyFuncDerivative(Activation.Tanh, 3);
+            Tools.VerifyActivationFuncDerivative(Activation.Tanh, 3);
         }
 
         [TestMethod]
         public void ELU_Derivative_1Batch()
         {
-            Tools.VerifyFuncDerivative(Activation.ELU);
+            Tools.VerifyActivationFuncDerivative(Activation.ELU);
         }
 
         [TestMethod]
         public void ELU_Derivative_3Batches()
         {
-            Tools.VerifyFuncDerivative(Activation.ELU, 3);
+            Tools.VerifyActivationFuncDerivative(Activation.ELU, 3);
         }
 
         [TestMethod]
@@ -84,9 +84,6 @@ namespace Neuro.Tests
 
             var output = new Tensor(input.Shape);
             Activation.Softmax.Compute(input, output);
-
-            //var outputGradient = new Tensor(input.Shape);
-            //Loss.CategoricalCrossEntropy(new Tensor(new[] { 1.0, 0.0, 0.0 }, input.Shape), output, true, outputGradient);
 
             var outputGradient = new Tensor(input.Shape);
             outputGradient.FillWithValue(1.0);

@@ -1,13 +1,15 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Layers;
 using Neuro.Tensors;
+using System;
 using System.Linq;
 
 namespace Neuro.Tests
 {
     public static class Tools
     {
-        private static readonly double DERIVATIVE_EPSILON = 1e-3;
+        private static readonly double DERIVATIVE_EPSILON = 1e-4;
+        private static readonly double LOSS_DERIVATIVE_EPSILON = 1e-5;
 
         public static void VerifyInputGradient(LayerBase layer, int batches = 1)
         {
@@ -85,7 +87,7 @@ namespace Neuro.Tests
             }
         }
 
-        public static void VerifyFuncDerivative(ActivationFunc func, int batches = 1)
+        public static void VerifyActivationFuncDerivative(ActivationFunc func, int batches = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var input = new Tensor(new Shape(3, 3, 3, batches));
@@ -112,7 +114,47 @@ namespace Neuro.Tests
 
             var approxDerivative = result.Div(2 * DERIVATIVE_EPSILON);
 
-            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-3));
+            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
+        }
+
+        public static void VerifyLossFuncDerivative(LossFunc func, Tensor targetOutput, int batches = 1)
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            var output = new Tensor(new Shape(3, 3, 3, batches));
+            output.FillWithRand();
+
+            // for derivation purposes activation functions expect already processed input
+            var error = new Tensor(output.Shape);
+            func.Compute(targetOutput, output, error);
+
+            var derivative = new Tensor(output.Shape);
+            func.Derivative(targetOutput, output, derivative);
+
+            var error1 = new Tensor(output.Shape);
+            func.Compute(targetOutput, output.Sub(LOSS_DERIVATIVE_EPSILON), error1);
+
+            var error2 = new Tensor(output.Shape);
+            func.Compute(targetOutput, output.Add(LOSS_DERIVATIVE_EPSILON), error2);
+
+            var result = new Tensor(output.Shape);
+            error2.Sub(error1, result);
+
+            var approxDerivative = result.Div(2 * LOSS_DERIVATIVE_EPSILON);
+
+            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
+        }
+
+        public static void VerifyLossFunc(LossFunc func, Tensor targetOutput, Func<double, double, double> testFunc, int batches = 1)
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            var output = new Tensor(new Shape(3, 3, 3, batches));
+            output.FillWithRand();
+
+            var error = new Tensor(output.Shape);
+            func.Compute(targetOutput, output, error);
+
+            for (int i = 0; i < output.Shape.Length; ++i)
+                Assert.AreEqual(error.GetFlat(i), testFunc(targetOutput.GetFlat(i), output.GetFlat(i)), 1e-4);
         }
     }
 }

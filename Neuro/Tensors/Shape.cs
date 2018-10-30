@@ -51,7 +51,7 @@ namespace Neuro.Tensors
             return From(dimensions);
         }
 
-        public int GetIndex(int w, int h = 1, int d = 1, int n = 1)
+        public int GetIndex(int w, int h = 0, int d = 0, int n = 0)
         {
             return Dim0Dim1Dim2 * n + Dim0Dim1 * d + Dim0 * h + w;
         }
