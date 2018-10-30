@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Activation.cs" />
+    <Compile Include="Activations.cs" />
     <Compile Include="ChartGenerator.cs" />
     <Compile Include="Data.cs" />
     <Compile Include="Initializers\GlorotNormal.cs" />

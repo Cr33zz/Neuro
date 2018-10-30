@@ -9,13 +9,17 @@ namespace Neuro
         // https://gombru.github.io/2018/05/23/cross_entropy_loss/
         // The problem I have with that function is that when used along with softmax its derivative is not y_true - y_pred 
         // instead it will be zero for y_true being 0...
-        //public static Tensor CategoricalCrossEntropy(Tensor targetOutput, Tensor output, bool deriv = false)
-        //{
-        //    Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
-        //    if (deriv)
-        //        return -targetOutput / clippedOutput;
-        //    return -targetOutput.Multiply(clippedOutput.Map(x => Math.Log(x)));
-        //}
+        public static void CategoricalCrossEntropy(Tensor targetOutput, Tensor output, bool deriv, Tensor result)
+        {
+            Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
+            if (deriv)
+            {
+                targetOutput.Negated().Div(clippedOutput, result);
+                return;
+            }
+
+            targetOutput.Negated().MulElem(clippedOutput.Map(x => Math.Log(x)), result);
+        }
 
         // This function is also known as binary cross entropy and can be used for any sigmoided or softmaxed output (doesn't have to be probability distribution)
         public static void CrossEntropy(Tensor targetOutput, Tensor output, bool deriv, Tensor result)
@@ -31,19 +35,19 @@ namespace Neuro
             targetOutput.Negated().MulElem(clippedOutput.Map(x => Math.Log(x))).Sub(targetOutput.Map(x => 1 - x).MulElem(clippedOutput.Map(x => Math.Log(1 - x))), result);
         }
 
-        public static void SigmoidCrossEntropy(Tensor targetOutput, Tensor output, bool deriv, Tensor result)
-        {
-            var sigmoidOutput = new Tensor(output.Shape);
-            Activation.Sigmoid(output, false, sigmoidOutput);
+        //public static void SigmoidCrossEntropy(Tensor targetOutput, Tensor output, bool deriv, Tensor result)
+        //{
+        //    var sigmoidOutput = new Tensor(output.Shape);
+        //    Sigmoid(output, false, sigmoidOutput);
 
-            if (deriv)
-            {
-                sigmoidOutput.Sub(targetOutput, result);
-                return;
-            }
+        //    if (deriv)
+        //    {
+        //        sigmoidOutput.Sub(targetOutput, result);
+        //        return;
+        //    }
 
-            targetOutput.MulElem(sigmoidOutput.Map(x => -Math.Log(x))).Sub(targetOutput.Map(x => 1 - x).MulElem(sigmoidOutput.Map(x => Math.Log(1 - x))), result);
-        }
+        //    targetOutput.MulElem(sigmoidOutput.Map(x => -Math.Log(x))).Sub(targetOutput.Map(x => 1 - x).MulElem(sigmoidOutput.Map(x => Math.Log(1 - x))), result);
+        //}
 
         public static void MeanSquareError(Tensor targetOutput, Tensor output, bool deriv, Tensor result)
         {

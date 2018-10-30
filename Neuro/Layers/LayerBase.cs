@@ -1,7 +1,4 @@
-﻿
-using System;
-using System.Diagnostics;
-using System.Reflection;
+﻿using System.Diagnostics;
 using System.Xml;
 using Neuro.Tensors;
 
@@ -53,33 +50,31 @@ namespace Neuro.Layers
 
             if (Activation != null)
             {
-                Activation(Output, false, Output);
+                Activation.Compute(Output, Output);
 
                 if (NeuralNetwork.DebugMode)
-                    Trace.WriteLine($"Activation({Activation.Method.Name}) output:\n{Output}\n");
+                    Trace.WriteLine($"Activation({Activation.GetType().Name}) output:\n{Output}\n");
             }
 
             return Output;
         }
 
-        public Tensor BackProp(Tensor delta)
+        public Tensor BackProp(Tensor outputGradient)
         {
-            var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, delta.Batches);
+            var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, outputGradient.Batches);
             if (InputGradient == null || !InputGradient.Shape.Equals(deltaShape))
                 InputGradient = new Tensor(deltaShape);
 
             // apply derivative of our activation function to the errors computed by previous layer
             if (Activation != null)
             {
-                Tensor outputGrad = new Tensor(Output.Shape);
-                Activation(Output, true, outputGrad);
-                delta.MulElem(outputGrad, delta);
+                Activation.Derivative(Output, outputGradient, outputGradient);
 
                 if (NeuralNetwork.DebugMode)
-                    Trace.WriteLine($"Activation({Activation.Method.Name}) errors gradient:\n{delta}\n");
+                    Trace.WriteLine($"Activation({Activation.GetType().Name}) errors gradient:\n{outputGradient}\n");
             }
 
-            BackPropInternal(delta);
+            BackPropInternal(outputGradient);
 
             return InputGradient;
         }
@@ -102,7 +97,7 @@ namespace Neuro.Layers
         // Must be called after adding to layers in a network
         public virtual void Init() {}
 
-        public delegate void ActivationFunc(Tensor input, bool deriv, Tensor result);
+        //public delegate void ActivationFunc(Tensor input, bool deriv, Tensor result);
 
         protected abstract void FeedForwardInternal();
 
@@ -110,7 +105,7 @@ namespace Neuro.Layers
         // - if there is activation function apply derivative of our that function to the errors computed by previous layer Errors.MultElementWise(Output.Map(x => ActivationF(x, true)));
         // - update errors in next layer (how much each input contributes to our output errors in relation to our parameters) stored InputDelta
         // - update parameters using error and input
-        protected abstract void BackPropInternal(Tensor delta);
+        protected abstract void BackPropInternal(Tensor outputGradient);
 
         internal virtual void SerializeParameters(XmlElement elem) {}
         internal virtual void DeserializeParameters(XmlElement elem) {}

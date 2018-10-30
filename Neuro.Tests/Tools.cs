@@ -1,8 +1,6 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Layers;
 using Neuro.Tensors;
-using Neuro;
 using System.Linq;
 
 namespace Neuro.Tests
@@ -17,7 +15,7 @@ namespace Neuro.Tests
             input.FillWithRand(7);
             var output = layer.FeedForward(input);
             var outputGradient = new Tensor(output.Shape);
-            outputGradient.FillWithRand(8);
+            outputGradient.FillWithValue(1);
 
             layer.BackProp(outputGradient);
 
@@ -32,14 +30,14 @@ namespace Neuro.Tests
 
                 var oldValue = input[w, h, d, b];
 
-                input[w, h, d, b] = oldValue + DERIVATIVE_EPSILON;
-                var output1 = layer.FeedForward(input).Clone();
                 input[w, h, d, b] = oldValue - DERIVATIVE_EPSILON;
+                var output1 = layer.FeedForward(input).Clone();
+                input[w, h, d, b] = oldValue + DERIVATIVE_EPSILON;
                 var output2 = layer.FeedForward(input).Clone();
 
                 input[w, h, d, b] = oldValue;
 
-                output1.Sub(output2, result);
+                output2.Sub(output1, result);
 
                 var approxGrad = new double[output.Shape.Length];
                 for (var j = 0; j < output.Shape.Length; j++)
@@ -56,7 +54,7 @@ namespace Neuro.Tests
             input.FillWithRand(7);
             var output = layer.FeedForward(input);
             var outputGradient = new Tensor(output.Shape);
-            outputGradient.FillWithRand(8);
+            outputGradient.FillWithValue(1);
 
             layer.BackProp(outputGradient);
 
@@ -88,23 +86,26 @@ namespace Neuro.Tests
             }
         }
 
-        public static void VerifyFuncDerivative(LayerBase.ActivationFunc func, int batches = 1)
+        public static void VerifyFuncDerivative(ActivationFunc func, int batches = 1)
         {
             var input = new Tensor(new Shape(3, 3, 3, batches));
             input.FillWithRange(-1.0, 2.0 / input.Length);
 
+            var outputGradient = new Tensor(new Shape(3, 3, 3, batches));
+            outputGradient.FillWithValue(1.0);
+
             // for derivation purposes activation functions expect already processed input
             var output = new Tensor(input.Shape);
-            func(input, false, output);
+            func.Compute(input, output);
 
             var derivative = new Tensor(input.Shape);
-            func(output, true, derivative);
+            func.Derivative(output, outputGradient, derivative);
 
             var output1 = new Tensor(input.Shape);
-            func(input.Sub(DERIVATIVE_EPSILON), false, output1);
+            func.Compute(input.Sub(DERIVATIVE_EPSILON), output1);
 
             var output2 = new Tensor(input.Shape);
-            func(input.Add(DERIVATIVE_EPSILON), false, output2);
+            func.Compute(input.Add(DERIVATIVE_EPSILON), output2);
 
             var result = new Tensor(input.Shape);
             output2.Sub(output1, result);

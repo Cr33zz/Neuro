@@ -57,13 +57,45 @@ namespace Neuro.Tests
         [TestMethod]
         public void Softmax_Derivative_1Batch()
         {
-            Tools.VerifyFuncDerivative(Activation.Softmax);
+            var input = new Tensor(new Shape(1, 3));
+            input.FillWithRange(1);
+
+            var output = new Tensor(input.Shape);
+            Activation.Softmax.Compute(input, output);
+
+            //var outputGradient = new Tensor(input.Shape);
+            //Loss.CategoricalCrossEntropy(new Tensor(new[] { 1.0, 0.0, 0.0 }, input.Shape), output, true, outputGradient);
+
+            var outputGradient = new Tensor(input.Shape);
+            outputGradient.FillWithValue(1.0);
+
+            var result = new Tensor(input.Shape);
+            Activation.Softmax.Derivative(output, outputGradient, result);
+
+            for (int i = 0; i < input.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), 0, 1e-3);
         }
 
         [TestMethod]
         public void Softmax_Derivative_3Batches()
         {
-            Tools.VerifyFuncDerivative(Activation.Softmax, 3);
+            var input = new Tensor(new Shape(1, 3, 1, 3));
+            input.FillWithRange(1);
+
+            var output = new Tensor(input.Shape);
+            Activation.Softmax.Compute(input, output);
+
+            //var outputGradient = new Tensor(input.Shape);
+            //Loss.CategoricalCrossEntropy(new Tensor(new[] { 1.0, 0.0, 0.0 }, input.Shape), output, true, outputGradient);
+
+            var outputGradient = new Tensor(input.Shape);
+            outputGradient.FillWithValue(1.0);
+
+            var result = new Tensor(input.Shape);
+            Activation.Softmax.Derivative(output, outputGradient, result);
+
+            for (int i = 0; i < input.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), 0, 1e-3);
         }
 
         [TestMethod]
@@ -73,7 +105,7 @@ namespace Neuro.Tests
             input.FillWithRand();
 
             var result = new Tensor(input.Shape);
-            Activation.Softmax(input, false, result);
+            Activation.Softmax.Compute(input, result);
 
             Assert.AreEqual(result.Sum(0), 1, 1e-4);
         }
@@ -85,7 +117,7 @@ namespace Neuro.Tests
             input.FillWithRand();
 
             var result = new Tensor(input.Shape);
-            Activation.Softmax(input, false, result);
+            Activation.Softmax.Compute(input, result);
 
             for (int b = 0; b < 3; ++b)
                 Assert.AreEqual(result.Sum(b), 1, 1e-4);

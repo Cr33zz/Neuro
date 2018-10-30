@@ -19,9 +19,9 @@ namespace Neuro.Layers
                 Trace.WriteLine($"Flatten() output:\n{Output}\n");
         }
 
-        protected override void BackPropInternal(Tensor delta)
+        protected override void BackPropInternal(Tensor outputGradient)
         {
-            InputGradient = delta.Reshaped(Input.Shape);
+            InputGradient = outputGradient.Reshaped(Input.Shape);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Flatten() errors gradient:\n{InputGradient}\n");

@@ -21,15 +21,15 @@ namespace Neuro.Layers
             FiltersNum = filtersNum;
             Stride = stride;
 
-            Weights = new Tensor(new Shape(FilterSize, FilterSize, inputShape.Depth, filtersNum));
+            Kernels = new Tensor(new Shape(FilterSize, FilterSize, inputShape.Depth, filtersNum));
             Bias = new Tensor(new Shape(OutputShape.Width, OutputShape.Height, filtersNum));
-            WeightsDelta = new Tensor(Weights.Shape);
-            BiasDelta = new Tensor(Bias.Shape);
+            KernelsGradient = new Tensor(Kernels.Shape);
+            BiasGradient = new Tensor(Bias.Shape);
         }
 
         public override void Init()
         {
-            KernelInitializer.Init(Weights, InputShape.Length, OutputShape.Length);
+            KernelInitializer.Init(Kernels, InputShape.Length, OutputShape.Length);
             BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
         }
 
@@ -37,63 +37,63 @@ namespace Neuro.Layers
 
         protected override void FeedForwardInternal()
         {
-            Input.Conv2D(Weights, Stride, Tensor.PaddingType.Valid, Output);
+            Input.Conv2D(Kernels, Stride, Tensor.PaddingType.Valid, Output);
             Output.Add(Bias, Output);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Weights.Length}) output:\n{Output}\n");
+                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) output:\n{Output}\n");
         }
 
-        protected override void BackPropInternal(Tensor delta)
+        protected override void BackPropInternal(Tensor outputGradient)
         {
-            var gradients = Optimizer != null ? Optimizer.GetGradients(delta) : delta;
+            var gradient = Optimizer != null ? Optimizer.GetGradients(outputGradient) : outputGradient;
 
-            Tensor.Conv2DInputsGradient(gradients, Weights, Stride, InputGradient);
-            Tensor.Conv2DKernelsGradient(Output, Input, gradients, Stride, Tensor.PaddingType.Full, WeightsDelta);
+            Tensor.Conv2DInputsGradient(gradient, Kernels, Stride, InputGradient);
+            Tensor.Conv2DKernelsGradient(Output, Input, gradient, Stride, Tensor.PaddingType.Full, KernelsGradient);
 
             if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Weights.Length}) errors gradient:\n{InputGradient}\n");
+                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) input gradient:\n{InputGradient}\n");
 
-            BiasDelta.Add(gradients.SumBatches());
+            BiasGradient.Add(gradient.SumBatches());
         }
 
         protected override void OnUpdateParameters(int trainingSamples)
         {
-            WeightsDelta.Div(trainingSamples, WeightsDelta);
-            Weights.Sub(WeightsDelta, Weights);
-            BiasDelta.Div(trainingSamples, BiasDelta);
-            Bias.Sub(BiasDelta, Bias);
+            KernelsGradient.Div(trainingSamples, KernelsGradient);
+            Kernels.Sub(KernelsGradient, Kernels);
+            BiasGradient.Div(trainingSamples, BiasGradient);
+            Bias.Sub(BiasGradient, Bias);
         }
 
         protected override void OnResetDeltas()
         {
-            WeightsDelta.Zero();
-            BiasDelta.Zero();
+            KernelsGradient.Zero();
+            BiasGradient.Zero();
         }
 
-        public override Tensor GetParameters() { return Weights; }
+        public override Tensor GetParameters() { return Kernels; }
 
-        public override Tensor GetParametersGradient() { return WeightsDelta; }
+        public override Tensor GetParametersGradient() { return KernelsGradient; }
 
         internal override void SerializeParameters(XmlElement elem)
         {
             base.SerializeParameters(elem);
-            Weights.Serialize(elem, "Weights");
+            Kernels.Serialize(elem, "Kernels");
             Bias.Serialize(elem, "Bias");
         }
 
         internal override void DeserializeParameters(XmlElement elem)
         {
             base.DeserializeParameters(elem);
-            Weights.Deserialize(elem["Weights"]);
+            Kernels.Deserialize(elem["Kernels"]);
             Bias.Deserialize(elem["Bias"]);
         }
 
-        public Tensor Weights;
+        public Tensor Kernels;
         public Tensor Bias;
 
-        public Tensor WeightsDelta;
-        public Tensor BiasDelta;
+        public Tensor KernelsGradient;
+        public Tensor BiasGradient;
 
         public Initializers.InitializerBase KernelInitializer = new Initializers.GlorotUniform();
         public Initializers.InitializerBase BiasInitializer = new Initializers.Zeros();

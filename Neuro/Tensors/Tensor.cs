@@ -131,6 +131,12 @@ namespace Neuro.Tensors
                 Values[i] = start + i * increment;
         }
 
+        public void FillWithValue(double value)
+        {
+            for (int i = 0; i < Values.Length; ++i)
+                Values[i] = value;
+        }
+
         public void Zero()
         {
             Array.Clear(Values, 0, Values.Length);
@@ -272,6 +278,17 @@ namespace Neuro.Tensors
             return result;
         }
 
+        public Tensor DiagFlat()
+        {
+            Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, Batches));
+
+            for (int b = 0; b < Batches; ++b)
+            for (int i = 0; i < BatchLength; ++i)
+                result[i, i, 0, b] = Values[b * BatchLength + i];
+
+            return result;
+        }
+
         public virtual void Map(Func<double, double> func, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
@@ -279,6 +296,19 @@ namespace Neuro.Tensors
         }
 
         public Tensor Map(Func<double, double> func)
+        {
+            Tensor result = new Tensor(Shape);
+            Map(func, result);
+            return result;
+        }
+
+        public void Map(Func<double, double, double> func, Tensor other, Tensor result)
+        {
+            for (int i = 0; i < Values.Length; ++i)
+                result.Values[i] = func(Values[i], other.Values[i]);
+        }
+
+        public Tensor Map(Func<double, double, double> func, Tensor other)
         {
             Tensor result = new Tensor(Shape);
             Map(func, result);
@@ -663,7 +693,7 @@ namespace Neuro.Tensors
 
         public Shape Shape { get; private set; }
 
-        private static TensorOpCpu Op = new TensorOpGpu();
+        private static TensorOpCpu Op = new TensorOpCpu();
 
         internal double[] Values;
     }

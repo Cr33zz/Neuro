@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Xml;
 using Neuro.Initializers;
 using Neuro.Tensors;
@@ -22,8 +21,8 @@ namespace Neuro.Layers
             Weights = new Tensor(new Shape(inputs, outputs));
             Bias = new Tensor(OutputShape);
 
-            WeightsDelta = new Tensor(Weights.Shape);
-            BiasDelta = new Tensor(Bias.Shape);
+            WeightsGradient = new Tensor(Weights.Shape);
+            BiasGradient = new Tensor(Bias.Shape);
         }
 
         public override void Init()
@@ -43,37 +42,37 @@ namespace Neuro.Layers
                 Trace.WriteLine($"Dense() output:\n{Output}\n");
         }
 
-        protected override void BackPropInternal(Tensor delta)
+        protected override void BackPropInternal(Tensor outputGradient)
         {
             // for explanation watch https://www.youtube.com/watch?v=8H2ODPNxEgA&t=898s
             // each weight is responsible to the error in the next layer proportionally to its value
-            Weights.Transposed().Mul(delta, InputGradient);
+            Weights.Transposed().Mul(outputGradient, InputGradient);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Dense() errors gradient:\n{InputGradient}\n");
 
-            var gradients = Optimizer != null ? Optimizer.GetGradients(delta) : delta;
-            WeightsDelta.Add(gradients.Mul(Input.Transposed()).SumBatches(), WeightsDelta);
-            BiasDelta.Add(gradients.SumBatches(), BiasDelta);
+            var gradient = Optimizer != null ? Optimizer.GetGradients(outputGradient) : outputGradient;
+            WeightsGradient.Add(gradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
+            BiasGradient.Add(gradient.SumBatches(), BiasGradient);
         }
 
         protected override void OnUpdateParameters(int trainingSamples)
         {
-            WeightsDelta.Div(trainingSamples, WeightsDelta);
-            Weights.Sub(WeightsDelta, Weights);
-            BiasDelta.Div(trainingSamples, BiasDelta);
-            Bias.Sub(BiasDelta, Bias);
+            WeightsGradient.Div(trainingSamples, WeightsGradient);
+            Weights.Sub(WeightsGradient, Weights);
+            BiasGradient.Div(trainingSamples, BiasGradient);
+            Bias.Sub(BiasGradient, Bias);
         }
 
         protected override void OnResetDeltas()
         {
-            WeightsDelta.Zero();
-            BiasDelta.Zero();
+            WeightsGradient.Zero();
+            BiasGradient.Zero();
         }
 
         public override Tensor GetParameters() { return Weights; }
 
-        public override Tensor GetParametersGradient() { return WeightsDelta; }
+        public override Tensor GetParametersGradient() { return WeightsGradient; }
 
         public Tensor Weights;
         public Tensor Bias;
@@ -81,8 +80,8 @@ namespace Neuro.Layers
         public Initializers.InitializerBase KernelInitializer = new GlorotUniform();
         public Initializers.InitializerBase BiasInitializer = new Zeros();
 
-        private Tensor WeightsDelta;
-        private Tensor BiasDelta;
+        private Tensor WeightsGradient;
+        private Tensor BiasGradient;
 
         internal override void SerializeParameters(XmlElement elem)
         {

@@ -31,9 +31,9 @@ namespace Neuro.Layers
                 Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) output:\n{Output}\n");
         }
 
-        protected override void BackPropInternal(Tensor delta)
+        protected override void BackPropInternal(Tensor outputGradient)
         {
-            Tensor.PoolGradient(Output, Input, delta, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputGradient);
+            Tensor.PoolGradient(Output, Input, outputGradient, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputGradient);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) errors gradient:\n{InputGradient}\n");

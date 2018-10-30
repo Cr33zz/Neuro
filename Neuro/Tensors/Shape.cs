@@ -37,7 +37,7 @@ namespace Neuro.Tensors
                 if (dimensions[d] == -1)
                 {
                     dToUpdate = d;
-                    break;
+                    continue;
                 }
 
                 product *= dimensions[d];
