@@ -97,16 +97,16 @@ namespace Neuro.Tensors
             }
         }
 
-        public virtual void Conv2DKernelsGradient(Tensor output, Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
+        public virtual void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
         {
             for (int kernelD = 0; kernelD < kernelsGradient.Depth; ++kernelD)
             for (int kernelH = 0; kernelH < kernelsGradient.Height; ++kernelH)
             for (int kernelW = 0; kernelW < kernelsGradient.Width; ++kernelW)
             for (int kernelN = 0; kernelN < kernelsGradient.Batches; ++kernelN)
             {
-                for (int outN = 0; outN < output.Batches; ++outN)
-                for (int h = -paddingY, outH = 0; outH < output.Height; h += stride, ++outH)
-                for (int w = -paddingX, outW = 0; outW < output.Width; w += stride, ++outW)
+                for (int outN = 0; outN < gradient.Batches; ++outN)
+                for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
+                for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
                     double grad = gradient[outW, outH, kernelN, outN];
                     double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, outN) * grad;
@@ -120,28 +120,63 @@ namespace Neuro.Tensors
             }
         }
 
-        public virtual void Conv2DGradient_old(Tensor output, Tensor input, Tensor kernels, Tensor gradient, int stride, int paddingX, int paddingY, Tensor inputGradient, Tensor kernelsGradient)
+        public virtual void Conv2DGradient_old(Tensor input, Tensor kernels, Tensor outputGradient, int stride, int paddingX, int paddingY, Tensor inputGradient, Tensor kernelsGradient)
         {
-            for (int n = 0; n < output.Batches; ++n)
+            for (var n = 0; n < input.Batches; n++)
             {
-                for (int outD = 0; outD < kernels.Batches; ++outD)
-                for (int outH = 0, h = -paddingY; outH < output.Height; h += stride, ++outH)
-                for (int outW = 0, w = -paddingX; outW < output.Width; w += stride, ++outW)
+                for (var depth = 0; depth < outputGradient.Depth; depth++)
                 {
-                    double grad = gradient[outW, outH, outD, n];
-
-                    for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
-                    for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
-                    for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
+                    var y = -paddingY;
+                    for (var ay = 0; ay < outputGradient.Height; y += stride, ay++)
                     {
-                        double inputGradVal = kernels[kernelW, kernelH, kernelD, outD] * grad;
-                        inputGradient.TrySet(inputGradient.TryGet(0, w + kernelW, h + kernelH, kernelD, n) + inputGradVal, w + kernelW, h + kernelH, kernelD, n);
+                        var x = -paddingX;
+                        for (var ax = 0; ax < outputGradient.Width; x += stride, ax++)
+                        {
+                            // convolve centered at this particular location
+                            var chainGradient = outputGradient.Get(ax, ay, depth, n);
 
-                        double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
-                        kernelsGradient[kernelW, kernelH, kernelD, outD] += kernGradVal;
+                            // gradient from above, from chain rule
+                            for (var fy = 0; fy < kernels.Height; fy++)
+                            {
+                                var oy = y + fy; // coordinates in the original input array coordinates
+                                for (var fx = 0; fx < kernels.Width; fx++)
+                                {
+                                    var ox = x + fx;
+                                    if (oy >= 0 && oy < input.Height && ox >= 0 && ox < input.Width)
+                                    {
+                                        for (var fd = 0; fd < kernels.Depth; fd++)
+                                        {
+                                            kernelsGradient.Set(kernelsGradient.Get(fx, fy, fd, depth) + input.Get(ox, oy, fd, n) * chainGradient, fx, fy, fd, depth);
+                                            inputGradient.Set(inputGradient.Get(ox, oy, fd, n) + kernels.Get(fx, fy, fd, depth) * chainGradient, ox, oy, fd, n);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            //for (int n = 0; n < output.Batches; ++n)
+            //{
+            //    for (int outD = 0; outD < kernels.Batches; ++outD)
+            //    for (int outH = 0, h = -paddingY; outH < output.Height; h += stride, ++outH)
+            //    for (int outW = 0, w = -paddingX; outW < output.Width; w += stride, ++outW)
+            //    {
+            //        double grad = gradient[outW, outH, outD, n];
+
+            //        for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
+            //        for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
+            //        for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
+            //        {
+            //            double inputGradVal = kernels[kernelW, kernelH, kernelD, outD] * grad;
+            //            inputGradient.TrySet(inputGradient.TryGet(0, w + kernelW, h + kernelH, kernelD, n) + inputGradVal, w + kernelW, h + kernelH, kernelD, n);
+
+            //            double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
+            //            kernelsGradient[kernelW, kernelH, kernelD, outD] += kernGradVal;
+            //        }
+            //    }
+            //}
         }
 
         public virtual void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)

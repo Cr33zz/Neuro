@@ -119,14 +119,14 @@ namespace Neuro.Tensors
             });
         }
 
-        public override void Conv2DKernelsGradient(Tensor output, Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
+        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
         {
-            for (int n = 0; n < output.Batches; ++n)
+            for (int n = 0; n < gradient.Batches; ++n)
             {
                 Parallel.For(0, kernelsGradient.Batches, outD =>
                 {
-                    for (int h = -paddingY, outH = 0; outH < output.Height; h += stride, ++outH)
-                    for (int w = -paddingX, outW = 0; outW < output.Width; w += stride, ++outW)
+                    for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
+                    for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                     {
                         double grad = gradient[outW, outH, outD, n];
 

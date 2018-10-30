@@ -11,6 +11,7 @@ namespace Neuro.Tests
 
         public static void VerifyInputGradient(LayerBase layer, int batches = 1)
         {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
             var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batches));
             input.FillWithRand(7);
             var output = layer.FeedForward(input);
@@ -21,21 +22,18 @@ namespace Neuro.Tests
 
             var result = new Tensor(output.Shape);
 
-            for (var b = 0; b < batches; ++b)
-            for (var d = 0; d < layer.InputShape.Depth; ++d)
-            for (var h = 0; h < layer.InputShape.Height; ++h)
-            for (var w = 0; w < layer.InputShape.Width; ++w)
+            for (var i = 0; i < input.Shape.Length; ++i)
             {
                 result.Zero();
 
-                var oldValue = input[w, h, d, b];
+                var oldValue = input.GetFlat(i);
 
-                input[w, h, d, b] = oldValue - DERIVATIVE_EPSILON;
+                input.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
                 var output1 = layer.FeedForward(input).Clone();
-                input[w, h, d, b] = oldValue + DERIVATIVE_EPSILON;
+                input.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
                 var output2 = layer.FeedForward(input).Clone();
 
-                input[w, h, d, b] = oldValue;
+                input.SetFlat(oldValue, i);
 
                 output2.Sub(output1, result);
 
@@ -44,14 +42,15 @@ namespace Neuro.Tests
                     approxGrad[j] = result.GetFlat(j) / (2.0 * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, layer.InputGradient[w, h, d, b], 1e-3);
+                Assert.AreEqual(approxGradient, layer.InputGradient.GetFlat(i), 1e-3, $"At element {i}");
             }
         }
 
         public static void VerifyParametersGradient(LayerBase layer, int batches = 1)
         {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
             var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batches));
-            input.FillWithRand(7);
+            input.FillWithRand();
             var output = layer.FeedForward(input);
             var outputGradient = new Tensor(output.Shape);
             outputGradient.FillWithValue(1);
@@ -82,12 +81,13 @@ namespace Neuro.Tests
                     approxGrad[j] = result.Get(j) / (2.0 * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 1e-3);
+                Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 1e-3, $"At element {i}");
             }
         }
 
         public static void VerifyFuncDerivative(ActivationFunc func, int batches = 1)
         {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
             var input = new Tensor(new Shape(3, 3, 3, batches));
             input.FillWithRange(-1.0, 2.0 / input.Length);
 

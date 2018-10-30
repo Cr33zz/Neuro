@@ -6,7 +6,12 @@ namespace Neuro.Layers
     public class Flatten : LayerBase
     {
         public Flatten(LayerBase prevLayer)
-            : base(prevLayer.OutputShape, new Shape(1, prevLayer.OutputShape.Length))
+            : this(prevLayer.OutputShape)
+        {
+        }
+
+        public Flatten(Shape inputShape)
+            : base(inputShape, new Shape(1, inputShape.Length))
         {
         }
 

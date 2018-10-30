@@ -49,7 +49,7 @@ namespace Neuro.Layers
             var gradient = Optimizer != null ? Optimizer.GetGradients(outputGradient) : outputGradient;
 
             Tensor.Conv2DInputsGradient(gradient, Kernels, Stride, InputGradient);
-            Tensor.Conv2DKernelsGradient(Output, Input, gradient, Stride, Tensor.PaddingType.Full, KernelsGradient);
+            Tensor.Conv2DKernelsGradient(Input, gradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) input gradient:\n{InputGradient}\n");
@@ -65,7 +65,7 @@ namespace Neuro.Layers
             Bias.Sub(BiasGradient, Bias);
         }
 
-        protected override void OnResetDeltas()
+        protected override void ResetParametersGradients()
         {
             KernelsGradient.Zero();
             BiasGradient.Zero();

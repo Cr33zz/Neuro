@@ -1,10 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Layers;
+using Neuro.Tensors;
 
 namespace Neuro.Tests
 {
     [TestClass]
-    public class DenseLayerTests
+    public class ConvolutionLayerTests
     {
         [TestMethod]
         public void InputGradient_1Batch()
@@ -32,8 +33,8 @@ namespace Neuro.Tests
 
         private LayerBase CreateLayer()
         {
-            var layer = new Dense(10, 5, null);
-            layer.Weights.FillWithRand();
+            var layer = new Convolution(new Shape(5,5,3), 3, 10, 1, null);
+            layer.Kernels.FillWithRand();
             return layer;
         }
     }

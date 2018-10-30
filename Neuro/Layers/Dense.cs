@@ -64,7 +64,7 @@ namespace Neuro.Layers
             Bias.Sub(BiasGradient, Bias);
         }
 
-        protected override void OnResetDeltas()
+        protected override void ResetParametersGradients()
         {
             WeightsGradient.Zero();
             BiasGradient.Zero();

@@ -289,7 +289,7 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Map(Func<double, double> func, Tensor result)
+        public void Map(Func<double, double> func, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = func(Values[i]);
@@ -480,21 +480,21 @@ namespace Neuro.Tensors
             Op.Conv2DInputGradient(gradient, rotKernels, stride, paddingX, paddingY, inputsGradient);
         }
 
-        public static void Conv2DKernelsGradient(Tensor output, Tensor input, Tensor gradient, int stride, PaddingType padding, Tensor kernelsGradient)
+        public static void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, PaddingType padding, Tensor kernelsGradient)
         {
             kernelsGradient.Zero();
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, input.Width, input.Height, kernelsGradient.Width, kernelsGradient.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
-            Op.Conv2DKernelsGradient(output, input, gradient, stride, paddingX, paddingY, kernelsGradient);
+            Op.Conv2DKernelsGradient(input, gradient, stride, paddingX, paddingY, kernelsGradient);
         }
 
-        public void Conv2DGradient_old(Tensor input, Tensor kernels, Tensor gradient, int stride, PaddingType padding, Tensor inputGradient, Tensor kernelsGradient)
+        public static void Conv2DGradient_old(Tensor input, Tensor kernels, Tensor gradient, int stride, PaddingType padding, Tensor inputGradient, Tensor kernelsGradient)
         {
             inputGradient.Zero();
             kernelsGradient.Zero();
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, input.Width, input.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
-            Op.Conv2DGradient_old(this, input, kernels, gradient, stride, paddingX, paddingY, inputGradient, kernelsGradient);
+            Op.Conv2DGradient_old(input, kernels, gradient, stride, paddingX, paddingY, inputGradient, kernelsGradient);
         }
 
         public enum PoolType

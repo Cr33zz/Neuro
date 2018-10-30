@@ -125,11 +125,11 @@ namespace Neuro.Tests
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor kernelsGradient = new Tensor(kernels);
-            Tensor.Conv2DKernelsGradient(output, input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient);
+            Tensor.Conv2DKernelsGradient(input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient);
 
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor kernelsGradient2 = new Tensor(kernels);
-            Tensor.Conv2DKernelsGradient(output, input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient2);
+            Tensor.Conv2DKernelsGradient(input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient2);
 
             Assert.IsTrue(kernelsGradient.Equals(kernelsGradient2));
         }

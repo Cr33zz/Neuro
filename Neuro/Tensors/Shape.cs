@@ -79,6 +79,8 @@ namespace Neuro.Tensors
 
         public int Length { get; }
 
+        public override string ToString() { return $"{Width}x{Height}x{Depth}x{Batches}"; }
+
         private readonly int Dim0;
         private readonly int Dim0Dim1;
         private readonly int Dim0Dim1Dim2;

@@ -108,29 +108,27 @@ namespace Neuro.Tensors
                 inputGradients.Values[k] += resultPartials[k, partialId];
         }
 
-        public override void Conv2DKernelsGradient(Tensor output, Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
+        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
         {
-            CudaShape[] shapes = new[] { new CudaShape(output.Shape),
-                                         new CudaShape(input.Shape),
+            CudaShape[] shapes = new[] { new CudaShape(input.Shape),
                                          new CudaShape(kernelsGradient.Shape),
                                          new CudaShape(gradient.Shape),
                                          new CudaShape(kernelsGradient.Shape),
-                                         new CudaShape(output.Width, output.Height, 1, output.Batches) };
+                                         new CudaShape(gradient.Width, gradient.Height, 1, gradient.Batches) };
 
-            double[] devOutput = Gpu.CopyToDevice(output.Values);
             double[] devGradient = Gpu.CopyToDevice(gradient.Values);
             CudaShape[] devShapes = Gpu.CopyToDevice(shapes);
 
-            int threadsRequiredPerResultElem = output.Batches * output.Height * output.Width;
+            int threadsRequiredPerResultElem = gradient.Batches * gradient.Height * gradient.Width;
             double[,] resultPartials = new double[kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)];
 
             double[] devInput = Gpu.CopyToDevice(input.Values);
             double[,] devResultPartials = Gpu.Allocate(resultPartials);
 
             // simulate
-            //GpuConv2DKernelsGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), output.Values, input.Values, gradient.Values, kernelsGradientPartials, shapes, paddingX, paddingY, stride);
+            //GpuConv2DKernelsGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), input.Values, gradient.Values, kernelsGradientPartials, shapes, paddingX, paddingY, stride);
 
-            Gpu.Launch(new dim3(kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)), THREADS_PER_BLOCK).GpuConv2DKernelsGradient(devOutput, devInput, devGradient, devResultPartials, devShapes, paddingX, paddingY, stride);
+            Gpu.Launch(new dim3(kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)), THREADS_PER_BLOCK).GpuConv2DKernelsGradient(devInput, devGradient, devResultPartials, devShapes, paddingX, paddingY, stride);
             Gpu.Synchronize();
 
             Gpu.CopyFromDevice(devResultPartials, resultPartials);
@@ -352,7 +350,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2DKernelsGradient(GThread thread, double[] output, double[] input, double[] gradient, double[,] resultPartials, CudaShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2DKernelsGradient(GThread thread, double[] input, double[] gradient, double[,] resultPartials, CudaShape[] shapes, int paddingX, int paddingY, int stride)
         {
             /*
             for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
@@ -360,9 +358,9 @@ namespace Neuro.Tensors
             for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
             for (int kernelN = 0; kernelN < kernels.Batches; ++kernelN)
             {
-                for (int n = 0; n < output.Batches; ++n)
-                for (int h = -paddingY, outH = 0; outH < output.Height; h += stride, ++outH)
-                for (int w = -paddingX, outW = 0; outW < output.Width; w += stride, ++outW)
+                for (int n = 0; n < gradient.Batches; ++n)
+                for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
+                for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
                     double grad = gradient[outW, outH, kernelN, n];
                     double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
@@ -378,15 +376,15 @@ namespace Neuro.Tensors
             int tid = thread.threadIdx.x;
             int id = (thread.blockDim.x * thread.blockIdx.y) + thread.threadIdx.x;
 
-            int threadsRequiredPerResultElem = shapes[5].Batches * shapes[5].Height * shapes[5].Width;
+            int threadsRequiredPerResultElem = shapes[4].Batches * shapes[4].Height * shapes[4].Width;
 
-            int kernelN = shapes[2].GetBatch(resultElemId);
-            int kernelD = shapes[2].GetDepth(resultElemId);
-            int kernelH = shapes[2].GetHeight(resultElemId);
-            int kernelW = shapes[2].GetWidth(resultElemId);
-            int n = shapes[5].GetBatch(id);
-            int outH = shapes[5].GetHeight(id);
-            int outW = shapes[5].GetWidth(id);
+            int kernelN = shapes[1].GetBatch(resultElemId);
+            int kernelD = shapes[1].GetDepth(resultElemId);
+            int kernelH = shapes[1].GetHeight(resultElemId);
+            int kernelW = shapes[1].GetWidth(resultElemId);
+            int n = shapes[4].GetBatch(id);
+            int outH = shapes[4].GetHeight(id);
+            int outW = shapes[4].GetWidth(id);
 
             int h = -paddingY + stride * outH;
             int w = -paddingX + stride * outW;
@@ -394,9 +392,9 @@ namespace Neuro.Tensors
             double temp = 0;
             if (id < threadsRequiredPerResultElem)
             {
-                int inputIndex = shapes[1].TryGetIndex(w + kernelW, h + kernelH, kernelD, n);
+                int inputIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelD, n);
                 if (inputIndex >= 0)
-                    temp = input[inputIndex] * gradient[shapes[3].GetIndex(outW, outH, kernelN, n)];
+                    temp = input[inputIndex] * gradient[shapes[2].GetIndex(outW, outH, kernelN, n)];
 
                 //if (resultElemId == 0)
                 //    Console.WriteLine("tid=%d - %f", id, temp);

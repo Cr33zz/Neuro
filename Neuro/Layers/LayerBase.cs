@@ -83,12 +83,12 @@ namespace Neuro.Layers
         {
             if (trainingSamples > 0)
                 OnUpdateParameters(trainingSamples);
-            OnResetDeltas();
+            ResetParametersGradients();
         }
 
         protected virtual void OnUpdateParameters(int trainingSamples) {}
 
-        protected virtual void OnResetDeltas() {}
+        protected virtual void ResetParametersGradients() {}
 
         public virtual Tensor GetParameters() { return null; }
 

@@ -135,6 +135,44 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Conv2DInputGradient_3Batches_10Kernels()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor output = new Tensor(new Shape(24, 24, 10, 3)); output.FillWithRand();
+            Tensor input = new Tensor(new Shape(26, 26, 32, 3)); input.FillWithRand();
+            Tensor kernels = new Tensor(new Shape(3, 3, 32, 10)); kernels.FillWithRand();
+            Tensor gradient = new Tensor(output); gradient.FillWithRand();
+
+            Tensor inputGradient = new Tensor(input);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient);
+
+            Tensor inputGradient2 = new Tensor(input);
+            Tensor kernelsGradient = new Tensor(kernels);
+            Tensor.Conv2DGradient_old(input, kernels, gradient, 1, Tensor.PaddingType.Valid, inputGradient2, kernelsGradient);
+
+            Assert.IsTrue(inputGradient.Equals(inputGradient2));
+        }
+
+        [TestMethod]
+        public void Conv2DKernelsGradient_3Batches_10Kernels()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor output = new Tensor(new Shape(24, 24, 10, 3)); output.FillWithRand();
+            Tensor input = new Tensor(new Shape(26, 26, 32, 3)); input.FillWithRand();
+            Tensor kernels = new Tensor(new Shape(3, 3, 32, 10)); kernels.FillWithRand();
+            Tensor gradient = new Tensor(output); gradient.FillWithRand();
+
+            Tensor kernelsGradient = new Tensor(kernels);
+            Tensor.Conv2DKernelsGradient(input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient);
+
+            Tensor inputGradient = new Tensor(input);
+            Tensor kernelsGradient2 = new Tensor(kernels);
+            Tensor.Conv2DGradient_old(input, kernels, gradient, 1, Tensor.PaddingType.Valid, inputGradient, kernelsGradient2);
+
+            Assert.IsTrue(kernelsGradient.Equals(kernelsGradient2));
+        }
+
+        [TestMethod]
         public void Pool_Max_Valid_1Batch_Stride2()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
