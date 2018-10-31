@@ -11,17 +11,17 @@ namespace Neuro.Optimizers
             LearningRate = lr;
         }
 
-        public override Tensor GetGradients(Tensor inputGradients)
+        public override Tensor GetGradientStep(Tensor gradient)
         {
             if (M == null)
             {
-                M = new Tensor(inputGradients.Shape);
-                V = new Tensor(inputGradients.Shape);
+                M = new Tensor(gradient.Shape);
+                V = new Tensor(gradient.Shape);
             }
 
             ++T;
-            M = M.Mul(Beta1).Add(inputGradients.Mul(1 - Beta1));
-            V = V.Mul(Beta2).Add(inputGradients.Map(x => x * x).Mul(1 - Beta2));
+            M = M.Mul(Beta1).Add(gradient.Mul(1 - Beta1));
+            V = V.Mul(Beta2).Add(gradient.Map(x => x * x).Mul(1 - Beta2));
             Tensor mCap = M.Div(1 - Math.Pow(Beta1, T));
             Tensor vCap = V.Div(1 - Math.Pow(Beta2, T));
             return mCap.Div(vCap.Map(x => Math.Sqrt(x)).Add(Epsilon)).Mul(LearningRate);

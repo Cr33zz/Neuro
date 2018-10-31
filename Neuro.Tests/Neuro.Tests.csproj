@@ -81,6 +81,7 @@
     <Compile Include="PoolingLayerTests.cs" />
     <Compile Include="ShapeTests.cs" />
     <Compile Include="LossTests.cs" />
+    <Compile Include="OptimizerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

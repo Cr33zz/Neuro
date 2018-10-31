@@ -9,9 +9,9 @@ namespace Neuro.Optimizers
             LearningRate = lr;
         }
 
-        public override Tensor GetGradients(Tensor inputGradients)
+        public override Tensor GetGradientStep(Tensor gradient)
         {
-            return inputGradients.Mul(LearningRate);
+            return gradient.Mul(LearningRate);
         }
 
         public override OptimizerBase Clone()

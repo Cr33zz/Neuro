@@ -51,7 +51,7 @@ namespace Neuro.Layers
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Dense() errors gradient:\n{InputGradient}\n");
 
-            var gradient = Optimizer != null ? Optimizer.GetGradients(outputGradient) : outputGradient;
+            var gradient = Optimizer != null ? Optimizer.GetGradientStep(outputGradient) : outputGradient;
             WeightsGradient.Add(gradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
             BiasGradient.Add(gradient.SumBatches(), BiasGradient);
         }

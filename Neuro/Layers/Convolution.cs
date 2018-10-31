@@ -46,7 +46,7 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            var gradient = Optimizer != null ? Optimizer.GetGradients(outputGradient) : outputGradient;
+            var gradient = Optimizer != null ? Optimizer.GetGradientStep(outputGradient) : outputGradient;
 
             Tensor.Conv2DInputsGradient(gradient, Kernels, Stride, InputGradient);
             Tensor.Conv2DKernelsGradient(Input, gradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);

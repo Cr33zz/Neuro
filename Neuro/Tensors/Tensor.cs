@@ -118,11 +118,11 @@ namespace Neuro.Tensors
             return output;
         }
 
-        public void FillWithRand(int seed = 0)
+        public void FillWithRand(int seed = -1, double min = -1, double max = 1)
         {
             Random rng = seed > 0 ? new Random(seed) : new Random();
             for (int i = 0; i < Values.Length; ++i)
-                Values[i] = rng.NextDouble();
+                Values[i] = min + (max - min) * rng.NextDouble();
         }
 
         public void FillWithRange(double start = 0, double increment = 1)
