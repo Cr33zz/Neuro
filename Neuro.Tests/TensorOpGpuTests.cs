@@ -133,5 +133,69 @@ namespace Neuro.Tests
 
             Assert.IsTrue(kernelsGradient.Equals(kernelsGradient2));
         }
+
+        [TestMethod]
+        public void Pool_Max_Valid_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(27, 27, 20, 3)); t.FillWithRand();
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t.Pool(3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = t.Pool(3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
+
+            Assert.IsTrue(r.Equals(r2));
+        }
+
+        [TestMethod]
+        public void Pool_Avg_Valid_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(27, 27, 20, 3)); t.FillWithRand();
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t.Pool(3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = t.Pool(3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid);
+
+            Assert.IsTrue(r.Equals(r2));
+        }
+
+        [TestMethod]
+        public void PoolGradient_Max_Valid_CompareWithCpuResult()
+        {
+            Tensor input = new Tensor(new Shape(27, 27, 20, 3)); input.FillWithRand();
+            Tensor output = input.Pool(3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
+            Tensor outputGradient = new Tensor(output.Shape); outputGradient.FillWithRand();
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(input.Shape);
+            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(input.Shape);
+            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r2);
+
+            Assert.IsTrue(r.Equals(r2));
+        }
+
+        [TestMethod]
+        public void PoolGradient_Avg_Valid_CompareWithCpuResult()
+        {
+            Tensor input = new Tensor(new Shape(27, 27, 20, 3)); input.FillWithRand();
+            Tensor output = input.Pool(3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid);
+            Tensor outputGradient = new Tensor(output.Shape); outputGradient.FillWithRand();
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(input.Shape);
+            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(input.Shape);
+            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r2);
+
+            Assert.IsTrue(r.Equals(r2));
+        }
     }
 }

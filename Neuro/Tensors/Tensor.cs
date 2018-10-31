@@ -539,14 +539,14 @@ namespace Neuro.Tensors
         }
 
         // Assuming result matrix is of the dimensions of input to pooling layer
-        public static void PoolGradient(Tensor output, Tensor input, Tensor gradient, int filterSize, int stride, PoolType type, PaddingType padding, Tensor result)
+        public static void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, PoolType type, PaddingType padding, Tensor result)
         {
-            Debug.Assert(output.SameDimensions(gradient));
+            Debug.Assert(output.SameDimensions(outputGradient));
 
             int outWidth = 0, outHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, result.Width, result.Height, filterSize, filterSize, stride, out outHeight, out outWidth, out paddingX, out paddingY);
 
-            Op.PoolGradient(output, input, gradient, filterSize, stride, type, paddingX, paddingY, result);
+            Op.PoolGradient(output, input, outputGradient, filterSize, stride, type, paddingX, paddingY, result);
         }
 
         public override string ToString()
