@@ -121,7 +121,7 @@ namespace Neuro.Tests
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var output = new Tensor(new Shape(3, 3, 3, batches));
-            output.FillWithRand();
+            output.FillWithRand(10);
 
             // for derivation purposes activation functions expect already processed input
             var error = new Tensor(output.Shape);
@@ -148,7 +148,7 @@ namespace Neuro.Tests
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var output = new Tensor(new Shape(3, 3, 3, batches));
-            output.FillWithRand();
+            output.FillWithRand(10);
 
             var error = new Tensor(output.Shape);
             func.Compute(targetOutput, output, error);

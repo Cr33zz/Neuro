@@ -278,6 +278,18 @@ namespace Neuro.Tensors
             return result;
         }
 
+        public void Clipped(double min, double max, Tensor result)
+        {
+            Map(x => x < min ? min : (x > max ? max : x), result);
+        }
+
+        public Tensor Clipped(double min, double max)
+        {
+            Tensor result = new Tensor(Shape);
+            Clipped(min, max, result);
+            return result;
+        }
+
         public Tensor DiagFlat()
         {
             Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, Batches));
@@ -311,7 +323,7 @@ namespace Neuro.Tensors
         public Tensor Map(Func<double, double, double> func, Tensor other)
         {
             Tensor result = new Tensor(Shape);
-            Map(func, result);
+            Map(func, other, result);
             return result;
         }
 

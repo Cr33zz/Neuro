@@ -30,15 +30,6 @@ namespace Neuro
             return hits;
         }
 
-        public static double Clip(double v, double min, double max)
-        {
-            if (v < min)
-                return min;
-            if (v > max)
-                return max;
-            return v;
-        }
-
         public static void Shuffle<T>(this IList<T> list)
         {
             int n = list.Count;

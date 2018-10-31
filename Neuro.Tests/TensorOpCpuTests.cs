@@ -323,6 +323,67 @@ namespace Neuro.Tests
 
             Assert.IsTrue(result.Equals(correct));
         }
+
+        [TestMethod]
+        public void Clip_Max()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(t.Shape.Length, 0.5);
+            var result = t.Clipped(-0.1, 0.1);
+
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), 0.1, 1e-7);
+        }
+
+        [TestMethod]
+        public void Clip_Min()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(-t.Shape.Length, 0.5);
+            var result = t.Clipped(-0.1, 0.1);
+
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), -0.1, 1e-7);
+        }
+
+        [TestMethod]
+        public void Negated()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRand();
+            var result = t.Negated();
+
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), -t.GetFlat(i), 1e-7);
+        }
+
+        [TestMethod]
+        public void Map()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRand();
+            var result = t.Map(x => x * 2);
+
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), 2 * t.GetFlat(i), 1e-7);
+        }
+
+        [TestMethod]
+        public void Map_With_Other()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRand();
+            var other = new Tensor(new Shape(2, 3, 4, 5)); other.FillWithRand();
+            var result = t.Map((x, x2) => x * x2, other);
+
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) * other.GetFlat(i), 1e-7);
+        }
     }
 }
 

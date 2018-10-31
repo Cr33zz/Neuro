@@ -22,14 +22,14 @@ namespace Neuro
     {
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
-            targetOutput.Negated().MulElem(clippedOutput.Map(x => Math.Log(x)), result);
+            Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
+            targetOutput.Map((yTrue, y) => -yTrue * Math.Log(y), clippedOutput, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
         {
-            Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
-            targetOutput.Negated().Div(clippedOutput, result);
+            Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
+            targetOutput.Map((yTrue, y) => -yTrue / y, clippedOutput, result);
         }
     }
 
@@ -38,14 +38,14 @@ namespace Neuro
     {
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
-            targetOutput.Negated().MulElem(clippedOutput.Map(x => Math.Log(x))).Sub(targetOutput.Map(x => 1 - x).MulElem(clippedOutput.Map(x => Math.Log(1 - x))), result);
+            Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
+            targetOutput.Map((yTrue, y) => -yTrue * Math.Log(y) - (1 - yTrue) * Math.Log(1 - y), clippedOutput, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
         {
-            Tensor clippedOutput = output.Map(x => Tools.Clip(x, Tools._EPSILON, 1 - Tools._EPSILON));
-            targetOutput.Negated().Div(clippedOutput).Add(targetOutput.Map(x => 1 - x).Div(clippedOutput.Map(x => 1 - x)), result);
+            Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
+            targetOutput.Map((yTrue, y) => -yTrue / y + (1 - yTrue) / (1 - y), clippedOutput, result);
         }
     }
 
@@ -53,9 +53,7 @@ namespace Neuro
     {
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            targetOutput.Sub(output, result);
-            result.Map(x => x * x, result);
-            result.Mul(0.5, result);
+            targetOutput.Map((yTrue, y) => (yTrue - y) * (yTrue - y) * 0.5, output, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
