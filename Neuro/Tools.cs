@@ -17,7 +17,7 @@ namespace Neuro
         public static int BinaryClassificationEquality(Tensor target, Tensor output)
         {
             int hits = 0;
-            for (int n = 0; n < output.Batches; ++n)
+            for (int n = 0; n < output.BatchSize; ++n)
                 hits += target[0, 0, 0, n].Equals(Math.Round(output[0, 0, 0, n])) ? 1 : 0;
             return hits;
         }
@@ -25,7 +25,7 @@ namespace Neuro
         public static int CategoricalClassificationEquality(Tensor target, Tensor output)
         {
             int hits = 0;
-            for (int n = 0; n < output.Batches; ++n)
+            for (int n = 0; n < output.BatchSize; ++n)
                 hits += target.ArgMax(n).Equals(output.ArgMax(n)) ? 1 : 0;
             return hits;
         }

@@ -21,7 +21,7 @@ namespace Neuro
             Legend.Font = new Font(Chart.Font.Name, 11);
             Chart.Width = 1000;
             Chart.Height = 600;
-            Chart.Titles.Add(new Title(title, Docking.Top, new Font(Chart.Font.Name, 14), Color.Black));            
+            Chart.Titles.Add(new Title(title, Docking.Top, new Font(Chart.Font.Name, 13), Color.Black));
         }
 
         public void AddSeries(int id, string label, Color color, bool useSecondaryAxis = false)

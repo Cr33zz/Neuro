@@ -8,7 +8,7 @@ namespace Neuro.Tensors
     {
         public override void Add(Tensor t1, Tensor t2, Tensor result)
         {
-            if (t2.Batches == t1.Batches)
+            if (t2.BatchSize == t1.BatchSize)
             {
                 var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
                 Parallel.ForEach(rangePartitioner, range =>
@@ -21,7 +21,7 @@ namespace Neuro.Tensors
 
             var rangePartitioner2 = Partitioner.Create(0, t1.BatchLength);
 
-            for (int n = 0; n < t1.Batches; ++n)
+            for (int n = 0; n < t1.BatchSize; ++n)
             {
                 Parallel.ForEach(rangePartitioner2, range =>
                 {
@@ -33,7 +33,7 @@ namespace Neuro.Tensors
 
         public override void Sub(Tensor t1, Tensor t2, Tensor result)
         {
-            if (t2.Batches == t1.Batches)
+            if (t2.BatchSize == t1.BatchSize)
             {
                 var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
                 Parallel.ForEach(rangePartitioner, range =>
@@ -46,7 +46,7 @@ namespace Neuro.Tensors
 
             var rangePartitioner2 = Partitioner.Create(0, t1.BatchLength);
 
-            for (int n = 0; n < t1.Batches; ++n)
+            for (int n = 0; n < t1.BatchSize; ++n)
             {
                 Parallel.ForEach(rangePartitioner2, range =>
                 {
@@ -58,14 +58,14 @@ namespace Neuro.Tensors
 
         public override void Mul(Tensor t1, Tensor t2, Tensor result)
         {
-            Parallel.For(0, result.Batches, n =>
+            Parallel.For(0, result.BatchSize, n =>
             {
                 Parallel.For(0, t1.Depth, d => {
                 for (int h = 0; h < t1.Height; ++h)
                 for (int w = 0; w < t2.Width; ++w)
                 for (int i = 0; i < t1.Width; ++i)
-                    result[w, h, d, n] += t1.Get(i, h, d, Math.Min(n, t1.Batches - 1)) *
-                                          t2.Get(w, i, d, Math.Min(n, t2.Batches - 1));
+                    result[w, h, d, n] += t1.Get(i, h, d, Math.Min(n, t1.BatchSize - 1)) *
+                                          t2.Get(w, i, d, Math.Min(n, t2.BatchSize - 1));
                 });
             });
         }
@@ -82,9 +82,9 @@ namespace Neuro.Tensors
 
         public override void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
         {
-            Parallel.For(0, t.Batches, n =>
+            Parallel.For(0, t.BatchSize, n =>
             {
-                Parallel.For(0, kernels.Batches, outD => {
+                Parallel.For(0, kernels.BatchSize, outD => {
                 for (int h = -paddingY, outH = 0; outH < result.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < result.Width; w += stride, ++outW)
                 {
@@ -103,13 +103,13 @@ namespace Neuro.Tensors
 
         public override void Conv2DInputGradient(Tensor gradients, Tensor rotKernels, int stride, int paddingX, int paddingY, Tensor inputGradients)
         {
-            Parallel.For(0, gradients.Batches, n =>
+            Parallel.For(0, gradients.BatchSize, n =>
             {
                 for (int outH = 0, h = -paddingY; outH < inputGradients.Height; h += stride, ++outH)
                 for (int outW = 0, w = -paddingX; outW < inputGradients.Width; w += stride, ++outW)
                 Parallel.For(0, inputGradients.Depth, outD =>
                 {
-                    for (int kernelN = 0; kernelN < rotKernels.Batches; ++kernelN)
+                    for (int kernelN = 0; kernelN < rotKernels.BatchSize; ++kernelN)
                     for (int kernelH = 0; kernelH < rotKernels.Height; ++kernelH)
                     for (int kernelW = 0; kernelW < rotKernels.Width; ++kernelW)
                     {
@@ -121,9 +121,9 @@ namespace Neuro.Tensors
 
         public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
         {
-            for (int n = 0; n < gradient.Batches; ++n)
+            for (int n = 0; n < gradient.BatchSize; ++n)
             {
-                Parallel.For(0, kernelsGradient.Batches, outD =>
+                Parallel.For(0, kernelsGradient.BatchSize, outD =>
                 {
                     for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                     for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
@@ -144,7 +144,7 @@ namespace Neuro.Tensors
 
         public override void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            Parallel.For(0, t.Batches, outN => 
+            Parallel.For(0, t.BatchSize, outN => 
             {
                 Parallel.For(0, t.Depth, outD =>
                 {
@@ -179,7 +179,7 @@ namespace Neuro.Tensors
 
         public override void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            Parallel.For(0, output.Batches, outN =>
+            Parallel.For(0, output.BatchSize, outN =>
             {
                 Parallel.For(0, output.Depth, outD =>
                 {

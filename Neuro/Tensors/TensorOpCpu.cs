@@ -11,40 +11,40 @@ namespace Neuro.Tensors
     {
         public virtual void Add(Tensor t1, Tensor t2, Tensor result)
         {
-            if (t2.Batches == t1.Batches)
+            if (t2.BatchSize == t1.BatchSize)
             {
                 for (int i = 0; i < t1.Values.Length; ++i)
                     result.Values[i] = t1.Values[i] + t2.Values[i];
                 return;
             }
 
-            for (int n = 0; n < t1.Batches; ++n)
+            for (int n = 0; n < t1.BatchSize; ++n)
                 for (int i = 0, idx = n * t1.BatchLength; i < t1.BatchLength; ++i, ++idx)
                     result.Values[idx] = t1.Values[idx] + t2.Values[i];
         }
 
         public virtual void Sub(Tensor t1, Tensor t2, Tensor result)
         {
-            if (t2.Batches == t1.Batches)
+            if (t2.BatchSize == t1.BatchSize)
             {
                 for (int i = 0; i < t1.Values.Length; ++i)
                     result.Values[i] = t1.Values[i] - t2.Values[i];
                 return;
             }
 
-            for (int n = 0; n < t1.Batches; ++n)
+            for (int n = 0; n < t1.BatchSize; ++n)
             for (int i = 0, idx = n * t1.BatchLength; i < t1.BatchLength; ++i, ++idx)
                 result.Values[idx] = t1.Values[idx] - t2.Values[i];
         }
 
         public virtual void Mul(Tensor t1, Tensor t2, Tensor result)
         {
-            for (int n = 0; n < result.Batches; ++n)
+            for (int n = 0; n < result.BatchSize; ++n)
             for (int d = 0; d < t1.Depth; ++d)
             for (int h = 0; h < t1.Height; ++h)
             for (int w = 0; w < t2.Width; ++w)
             for (int i = 0; i < t1.Width; ++i)
-                result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.Batches - 1)] * t2[w, i, d, Math.Min(n, t2.Batches - 1)];
+                result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.BatchSize - 1)] * t2[w, i, d, Math.Min(n, t2.BatchSize - 1)];
         }
 
         public virtual void MulElem(Tensor t1, Tensor t2, Tensor result)
@@ -61,9 +61,9 @@ namespace Neuro.Tensors
 
         public virtual void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
         {
-            for (int n = 0; n < t.Batches; ++n)
+            for (int n = 0; n < t.BatchSize; ++n)
             {
-                for (int outD = 0; outD < kernels.Batches; ++outD)
+                for (int outD = 0; outD < kernels.BatchSize; ++outD)
                 for (int h = -paddingY, outH = 0; outH < result.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < result.Width; w += stride, ++outW)
                 {
@@ -81,13 +81,13 @@ namespace Neuro.Tensors
 
         public virtual void Conv2DInputGradient(Tensor gradients, Tensor rotKernels, int stride, int paddingX, int paddingY, Tensor inputGradients)
         {
-            for (int n = 0; n < gradients.Batches; ++n)
+            for (int n = 0; n < gradients.BatchSize; ++n)
             {
                 for (int outH = 0, h = -paddingY; outH < inputGradients.Height; h += stride, ++outH)
                 for (int outW = 0, w = -paddingX; outW < inputGradients.Width; w += stride, ++outW)
                 for (int outD = 0; outD < inputGradients.Depth; ++outD)
                 {
-                    for (int kernelN = 0; kernelN < rotKernels.Batches; ++kernelN)
+                    for (int kernelN = 0; kernelN < rotKernels.BatchSize; ++kernelN)
                     for (int kernelH = 0; kernelH < rotKernels.Height; ++kernelH)
                     for (int kernelW = 0; kernelW < rotKernels.Width; ++kernelW)
                     {
@@ -102,9 +102,9 @@ namespace Neuro.Tensors
             for (int kernelD = 0; kernelD < kernelsGradient.Depth; ++kernelD)
             for (int kernelH = 0; kernelH < kernelsGradient.Height; ++kernelH)
             for (int kernelW = 0; kernelW < kernelsGradient.Width; ++kernelW)
-            for (int kernelN = 0; kernelN < kernelsGradient.Batches; ++kernelN)
+            for (int kernelN = 0; kernelN < kernelsGradient.BatchSize; ++kernelN)
             {
-                for (int outN = 0; outN < gradient.Batches; ++outN)
+                for (int outN = 0; outN < gradient.BatchSize; ++outN)
                 for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
@@ -122,7 +122,7 @@ namespace Neuro.Tensors
 
         public virtual void Conv2DGradient_old(Tensor input, Tensor kernels, Tensor outputGradient, int stride, int paddingX, int paddingY, Tensor inputGradient, Tensor kernelsGradient)
         {
-            for (var n = 0; n < input.Batches; n++)
+            for (var n = 0; n < input.BatchSize; n++)
             {
                 for (var depth = 0; depth < outputGradient.Depth; depth++)
                 {
@@ -181,7 +181,7 @@ namespace Neuro.Tensors
 
         public virtual void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            for (int outN = 0; outN < t.Batches; ++outN)
+            for (int outN = 0; outN < t.BatchSize; ++outN)
             for (int outD = 0; outD < t.Depth; ++outD)
             for (int outH = 0, h = -paddingY; outH < result.Height; h += stride, ++outH)
             for (int outW = 0, w = -paddingX; outW < result.Width; w += stride, ++outW)
@@ -212,7 +212,7 @@ namespace Neuro.Tensors
 
         public virtual void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            for (int outN = 0; outN < output.Batches; ++outN)
+            for (int outN = 0; outN < output.BatchSize; ++outN)
             for (int outD = 0; outD < output.Depth; ++outD)
             for (int outH = 0, h = -paddingY; outH < output.Height; ++outH, h += stride)
             for (int outW = 0, w = -paddingX; outW < output.Width; ++outW, w += stride)

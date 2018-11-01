@@ -46,13 +46,13 @@ namespace Neuro.Tensors
 
         public override void Mul(Tensor t1, Tensor t2, Tensor result)
         {
-            int threadsRequired = result.Batches * t1.Depth * t1.Height * t2.Width;
-            CudaShape[] shapes = new [] { new CudaShape(t1.Shape), new CudaShape(t2.Shape), new CudaShape(result.Shape) };
+            int threadsRequired = result.BatchSize * t1.Depth * t1.Height * t2.Width;
+            GpuShape[] shapes = new [] { new GpuShape(t1.Shape), new GpuShape(t2.Shape), new GpuShape(result.Shape) };
 
             double[] devT1 = Gpu.CopyToDevice(t1.Values);
             double[] devT2 = Gpu.CopyToDevice(t2.Values);
             double[] devResult = Gpu.Allocate(result.Values);
-            CudaShape[] devShapes = Gpu.CopyToDevice(shapes);
+            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuMul(devT1, devT2, devResult, devShapes);
             Gpu.Synchronize();
@@ -63,13 +63,13 @@ namespace Neuro.Tensors
 
         public override void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
         {
-            int threadsRequired = t.Batches * kernels.Batches * result.Width * result.Height;
-            CudaShape[] shapes = new[] { new CudaShape(t.Shape), new CudaShape(kernels.Shape), new CudaShape(result.Shape) };
+            int threadsRequired = t.BatchSize * kernels.BatchSize * result.Width * result.Height;
+            GpuShape[] shapes = new[] { new GpuShape(t.Shape), new GpuShape(kernels.Shape), new GpuShape(result.Shape) };
 
             double[] devT = Gpu.CopyToDevice(t.Values);
             double[] devKernels = Gpu.CopyToDevice(kernels.Values);
             double[] devResult = Gpu.Allocate(result.Values);
-            CudaShape[] devShapes = Gpu.CopyToDevice(shapes);
+            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuConv2D(devT, devKernels, devResult, devShapes, paddingX, paddingY, stride);
             Gpu.Synchronize();
@@ -80,16 +80,16 @@ namespace Neuro.Tensors
 
         public override void Conv2DInputGradient(Tensor gradient, Tensor rotKernels, int stride, int paddingX, int paddingY, Tensor inputGradients)
         {
-            CudaShape[] shapes = new[] { new CudaShape(gradient.Shape),
-                                         new CudaShape(rotKernels.Shape),
-                                         new CudaShape(inputGradients.Shape),
-                                         new CudaShape(rotKernels.Width, rotKernels.Height, 1, rotKernels.Batches) };
+            GpuShape[] shapes = new[] { new GpuShape(gradient.Shape),
+                                        new GpuShape(rotKernels.Shape),
+                                        new GpuShape(inputGradients.Shape),
+                                        new GpuShape(rotKernels.Width, rotKernels.Height, 1, rotKernels.BatchSize) };
 
             double[] devGradient = Gpu.CopyToDevice(gradient.Values);
             double[] devRotKernels = Gpu.CopyToDevice(rotKernels.Values);
-            CudaShape[] devShapes = Gpu.CopyToDevice(shapes);
+            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
-            int threadsRequiredPerResultElem = rotKernels.Batches * rotKernels.Height * rotKernels.Width;
+            int threadsRequiredPerResultElem = rotKernels.BatchSize * rotKernels.Height * rotKernels.Width;
             double[,] resultPartials = new double[inputGradients.Length, GetBlocksNum(threadsRequiredPerResultElem)];
             double[,] devResultPartials = Gpu.Allocate(resultPartials);
 
@@ -110,16 +110,16 @@ namespace Neuro.Tensors
 
         public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
         {
-            CudaShape[] shapes = new[] { new CudaShape(input.Shape),
-                                         new CudaShape(kernelsGradient.Shape),
-                                         new CudaShape(gradient.Shape),
-                                         new CudaShape(kernelsGradient.Shape),
-                                         new CudaShape(gradient.Width, gradient.Height, 1, gradient.Batches) };
+            GpuShape[] shapes = new[] { new GpuShape(input.Shape),
+                                        new GpuShape(kernelsGradient.Shape),
+                                        new GpuShape(gradient.Shape),
+                                        new GpuShape(kernelsGradient.Shape),
+                                        new GpuShape(gradient.Width, gradient.Height, 1, gradient.BatchSize) };
 
             double[] devGradient = Gpu.CopyToDevice(gradient.Values);
-            CudaShape[] devShapes = Gpu.CopyToDevice(shapes);
+            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
-            int threadsRequiredPerResultElem = gradient.Batches * gradient.Height * gradient.Width;
+            int threadsRequiredPerResultElem = gradient.BatchSize * gradient.Height * gradient.Width;
             double[,] resultPartials = new double[kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)];
 
             double[] devInput = Gpu.CopyToDevice(input.Values);
@@ -157,20 +157,20 @@ namespace Neuro.Tensors
         private GPGPU Gpu;
 
         [Cudafy]
-        private struct CudaShape
+        private struct GpuShape
         {
             [CudafyIgnore]
-            public CudaShape(Shape shape)
-            : this(shape.Width, shape.Height, shape.Depth, shape.Batches)
+            public GpuShape(Shape shape)
+            : this(shape.Width, shape.Height, shape.Depth, shape.BatchSize)
             {
             }
 
-            public CudaShape(int width, int height = 1, int depth = 1, int batches = 1)
+            public GpuShape(int width, int height = 1, int depth = 1, int batchSize = 1)
             {
                 Width = width;
                 Height = height;
                 Depth = depth;
-                Batches = batches;
+                BatchSize = batchSize;
                 Dim0 = width;
                 Dim0Dim1 = Dim0 * height;
                 Dim0Dim1Dim2 = Dim0Dim1 * depth;
@@ -212,7 +212,7 @@ namespace Neuro.Tensors
             public int Width;
             public int Height;
             public int Depth;
-            public int Batches;
+            public int BatchSize;
             public int Dim0;
             public int Dim0Dim1;
             public int Dim0Dim1Dim2;
@@ -241,7 +241,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuMul(GThread thread, double[] t1, double[] t2, double[] result, CudaShape[] shapes)
+        private static void GpuMul(GThread thread, double[] t1, double[] t2, double[] result, GpuShape[] shapes)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -254,11 +254,11 @@ namespace Neuro.Tensors
             int w = shapes[2].GetWidth(id);
 
             for (int i = 0; i < shapes[0].Width; ++i)
-                result[id] += t1[shapes[0].GetIndex(i, h, d, Math.Min(n, shapes[0].Batches - 1))] * t2[shapes[1].GetIndex(w, i, d, Math.Min(n, shapes[1].Batches - 1))];
+                result[id] += t1[shapes[0].GetIndex(i, h, d, Math.Min(n, shapes[0].BatchSize - 1))] * t2[shapes[1].GetIndex(w, i, d, Math.Min(n, shapes[1].BatchSize - 1))];
         }
 
         [Cudafy]
-        private static void GpuConv2D(GThread thread, double[] t, double[] kernels, double[] result, CudaShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2D(GThread thread, double[] t, double[] kernels, double[] result, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -289,15 +289,15 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2DInputGradient(GThread thread, double[] gradient, double[] rotKernels, double[,] resultPartials, CudaShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2DInputGradient(GThread thread, double[] gradient, double[] rotKernels, double[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             /*
-            for (int n = 0; n < gradients.Batches; ++n)
+            for (int n = 0; n < gradients.BatchSize; ++n)
             for (int outW = 0, w = -paddingX; outW < inputGradients.Width; w += stride, ++outW)
             for (int outH = 0, h = -paddingY; outH < inputGradients.Height; h += stride, ++outH)            
             for (int outD = 0; outD < inputGradients.Depth; ++outD)
             {
-                for (int kernelN = 0; kernelN < rotKernels.Batches; ++kernelN)
+                for (int kernelN = 0; kernelN < rotKernels.BatchSize; ++kernelN)
                 for (int kernelH = 0; kernelH < rotKernels.Height; ++kernelH)
                 for (int kernelW = 0; kernelW < rotKernels.Width; ++kernelW)
                     inputGradients[outW, outH, outD, n] += gradients.TryGet(0, w + kernelW, h + kernelH, kernelN, n) * rotKernels[kernelW, kernelH, outD, kernelN];
@@ -311,7 +311,7 @@ namespace Neuro.Tensors
             int tid = thread.threadIdx.x;
             int id = (thread.blockDim.x * thread.blockIdx.y) + thread.threadIdx.x;
 
-            int threadsRequiredPerResultElem = shapes[1].Batches * shapes[1].Height * shapes[1].Width;
+            int threadsRequiredPerResultElem = shapes[1].BatchSize * shapes[1].Height * shapes[1].Width;
 
             int outN = shapes[2].GetBatch(resultElemId);
             int outD = shapes[2].GetDepth(resultElemId);
@@ -350,15 +350,15 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2DKernelsGradient(GThread thread, double[] input, double[] gradient, double[,] resultPartials, CudaShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2DKernelsGradient(GThread thread, double[] input, double[] gradient, double[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             /*
             for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
             for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
             for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
-            for (int kernelN = 0; kernelN < kernels.Batches; ++kernelN)
+            for (int kernelN = 0; kernelN < kernels.BatchSize; ++kernelN)
             {
-                for (int n = 0; n < gradient.Batches; ++n)
+                for (int n = 0; n < gradient.BatchSize; ++n)
                 for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
@@ -376,7 +376,7 @@ namespace Neuro.Tensors
             int tid = thread.threadIdx.x;
             int id = (thread.blockDim.x * thread.blockIdx.y) + thread.threadIdx.x;
 
-            int threadsRequiredPerResultElem = shapes[4].Batches * shapes[4].Height * shapes[4].Width;
+            int threadsRequiredPerResultElem = shapes[4].BatchSize * shapes[4].Height * shapes[4].Width;
 
             int kernelN = shapes[1].GetBatch(resultElemId);
             int kernelD = shapes[1].GetDepth(resultElemId);

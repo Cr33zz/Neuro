@@ -91,7 +91,7 @@ namespace Neuro.Tensors
 
         public int Depth => Shape.Depth;
 
-        public int Batches => Shape.Batches;
+        public int BatchSize => Shape.BatchSize;
 
         public int BatchLength => Shape.Width * Shape.Height * Shape.Depth;
 
@@ -104,7 +104,7 @@ namespace Neuro.Tensors
 
         public Bitmap ToBitmap()
         {
-            Debug.Assert(Batches == 1);
+            Debug.Assert(BatchSize == 1);
 
             Bitmap output = new Bitmap(Width, Height);
             bool grayScale = (Depth == 1);
@@ -153,7 +153,7 @@ namespace Neuro.Tensors
 
         public Tensor Mul(Tensor t)
         {
-            Tensor result = new Tensor(new Shape(t.Shape.Width, Height, Depth, Batches));
+            Tensor result = new Tensor(new Shape(t.Shape.Width, Height, Depth, BatchSize));
             Mul(t, result);
             return result;
         }
@@ -161,7 +161,9 @@ namespace Neuro.Tensors
         // Element-wise multiplication
         public virtual void MulElem(Tensor t, Tensor result)
         {
-            Debug.Assert(SameDimensions(t));
+            Debug.Assert(SameDimensionsExceptBatches(t));
+            Debug.Assert(t.BatchSize == result.BatchSize);
+
             Op.MulElem(this, t, result);
         }
 
@@ -187,7 +189,8 @@ namespace Neuro.Tensors
 
         public virtual void Div(Tensor t, Tensor result)
         {
-            Debug.Assert(SameDimensions(t));
+            Debug.Assert(SameDimensionsExceptBatches(t));
+            Debug.Assert(t.BatchSize == result.BatchSize);
 
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] / t.Values[i];
@@ -215,7 +218,9 @@ namespace Neuro.Tensors
 
         public virtual void Add(Tensor t, Tensor result)
         {
-            Debug.Assert(SameDimensions(t));
+            Debug.Assert(SameDimensionsExceptBatches(t));
+            Debug.Assert(t.BatchSize == result.BatchSize || t.BatchSize == 1);
+
             Op.Add(this, t, result);
         }
 
@@ -241,7 +246,9 @@ namespace Neuro.Tensors
 
         public virtual void Sub(Tensor t, Tensor result)
         {
-            Debug.Assert(SameDimensions(t));
+            Debug.Assert(SameDimensionsExceptBatches(t));
+            Debug.Assert(t.BatchSize == result.BatchSize || t.BatchSize == 1);
+
             Op.Sub(this, t, result);
         }
 
@@ -292,9 +299,9 @@ namespace Neuro.Tensors
 
         public Tensor DiagFlat()
         {
-            Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, Batches));
+            Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, BatchSize));
 
-            for (int b = 0; b < Batches; ++b)
+            for (int b = 0; b < BatchSize; ++b)
             for (int i = 0; i < BatchLength; ++i)
                 result[i, i, 0, b] = Values[b * BatchLength + i];
 
@@ -331,7 +338,7 @@ namespace Neuro.Tensors
         {
             Tensor result = new Tensor(new Shape(Shape.Width, Shape.Height, Shape.Depth, 1));
 
-            for (int n = 0; n < Batches; ++n)
+            for (int n = 0; n < BatchSize; ++n)
             for (int i = 0, idx = n * BatchLength; i < BatchLength; ++i, ++idx)
                     result.Values[i] += Values[idx];
 
@@ -405,8 +412,8 @@ namespace Neuro.Tensors
 
         public virtual Tensor Transposed()
         {
-            Tensor result = new Tensor(new Shape(Height, Width, Depth, Batches));
-            for (int n = 0; n < Batches; ++n)
+            Tensor result = new Tensor(new Shape(Height, Width, Depth, BatchSize));
+            for (int n = 0; n < BatchSize; ++n)
             for (int d = 0; d < Depth; ++d)
             for (int h = 0; h < Height; ++h)
             for (int w = 0; w < Width; ++w)
@@ -419,29 +426,29 @@ namespace Neuro.Tensors
         // One of dimensions can be -1, in that case it will be calculated based on remaining dimensions.
         public Tensor Reshaped(Shape shape)
         {
-            return new Tensor(Values, Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.Batches }));
+            return new Tensor(Values, Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.BatchSize }));
         }
 
         public void Reshape(Shape shape)
         {
-            Shape = Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.Batches });
+            Shape = Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.BatchSize });
         }
 
         public Tensor FlattenHoriz()
         {
-            return Reshaped(Shape.Reshaped(new[] { Shape.Auto, 1, 1, Shape.Batches }));
+            return Reshaped(Shape.Reshaped(new[] { Shape.Auto, 1, 1, Shape.BatchSize }));
         }
 
         public Tensor FlattenVert()
         {
-            return Reshaped(Shape.Reshaped(new[] { 1, Shape.Auto, 1, Shape.Batches }));
+            return Reshaped(Shape.Reshaped(new[] { 1, Shape.Auto, 1, Shape.BatchSize }));
         }
 
         public void Rotated180(Tensor result)
         {
-            Debug.Assert(SameDimensions(result));
+            Debug.Assert(SameDimensionsExceptBatches(result));
 
-            for (int n = 0; n < Batches; ++n)
+            for (int n = 0; n < BatchSize; ++n)
             for (int d = 0; d < Depth; ++d)
             for (int h = Height - 1; h >= 0; --h)
             for (int w = Width - 1; w >= 0; --w)
@@ -477,7 +484,7 @@ namespace Neuro.Tensors
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, Width, Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
 
-            Tensor result = new Tensor(new Shape(outputWidth, outputHeight, kernels.Batches, Batches));
+            Tensor result = new Tensor(new Shape(outputWidth, outputHeight, kernels.BatchSize, BatchSize));
             Conv2D(kernels, stride, padding, result);
             return result;
         }
@@ -522,7 +529,7 @@ namespace Neuro.Tensors
 
             Debug.Assert(result.Width == outWidth);
             Debug.Assert(result.Height == outHeight);
-            Debug.Assert(result.Batches == Batches);
+            Debug.Assert(result.BatchSize == BatchSize);
 
             Op.Pool(this, filterSize, stride, type, paddingX, paddingY, result);
         }
@@ -532,7 +539,7 @@ namespace Neuro.Tensors
             int outWidth = 0, outHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, Width, Height, filterSize, filterSize, stride, out outHeight, out outWidth, out paddingX, out paddingY);
 
-            Tensor result = new Tensor(new Shape(outWidth, outHeight, Depth, Batches));
+            Tensor result = new Tensor(new Shape(outWidth, outHeight, Depth, BatchSize));
             Pool(filterSize, stride, type, padding, result);
 
             return result;
@@ -541,7 +548,7 @@ namespace Neuro.Tensors
         // Assuming result matrix is of the dimensions of input to pooling layer
         public static void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, PoolType type, PaddingType padding, Tensor result)
         {
-            Debug.Assert(output.SameDimensions(outputGradient));
+            Debug.Assert(output.SameDimensionsExceptBatches(outputGradient));
 
             int outWidth = 0, outHeight = 0, paddingX = 0, paddingY = 0;
             GetPaddingParams(padding, result.Width, result.Height, filterSize, filterSize, stride, out outHeight, out outWidth, out paddingX, out paddingY);
@@ -552,7 +559,7 @@ namespace Neuro.Tensors
         public override string ToString()
         {
             string s = "";
-            for (int n = 0; n < Batches; ++n)
+            for (int n = 0; n < BatchSize; ++n)
             {
                 s += "{\n  ";
                 for (int d = 0; d < Depth; ++d)
@@ -569,13 +576,13 @@ namespace Neuro.Tensors
                     }
                     s += "}" + (d == Depth - 1 ? "\n" : ",\n  ");
                 }
-                s += "}" + (n < Batches - 1 ? "\n" : "");
+                s += "}" + (n < BatchSize - 1 ? "\n" : "");
             }
 
             return s;
         }
 
-        public bool SameDimensions(Tensor t)
+        public bool SameDimensionsExceptBatches(Tensor t)
         {
             return Width == t.Width && Height == t.Height && Depth == t.Depth;
         }
@@ -658,7 +665,7 @@ namespace Neuro.Tensors
 
         public void TrySet(double value, int w, int h = 0, int d = 0, int n = 0)
         {
-            if (h < 0 || h >= Height || w < 0 || w >= Width || d < 0 || d >= Depth || n < 0 || n > Batches)
+            if (h < 0 || h >= Height || w < 0 || w >= Width || d < 0 || d >= Depth || n < 0 || n > BatchSize)
                 return;
 
             Set(value, w, h, d, n);

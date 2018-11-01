@@ -42,7 +42,7 @@ namespace Neuro.Layers
 
             Input = new Tensor(input);
 
-            var outShape = new Shape(OutputShape.Width, OutputShape.Height, OutputShape.Depth, input.Batches);
+            var outShape = new Shape(OutputShape.Width, OutputShape.Height, OutputShape.Depth, input.BatchSize);
             if (Output == null || !Output.Shape.Equals(outShape))
                 Output = new Tensor(outShape);
 
@@ -61,7 +61,7 @@ namespace Neuro.Layers
 
         public Tensor BackProp(Tensor outputGradient)
         {
-            var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, outputGradient.Batches);
+            var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, outputGradient.BatchSize);
             if (InputGradient == null || !InputGradient.Shape.Equals(deltaShape))
                 InputGradient = new Tensor(deltaShape);
 

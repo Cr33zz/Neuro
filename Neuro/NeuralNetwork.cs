@@ -103,12 +103,12 @@ namespace Neuro
         {
             LogLines.Clear();
 
-            bool trainingDataAlreadyBatched = trainingData[0].Input.Batches > 1;
+            bool trainingDataAlreadyBatched = trainingData[0].Input.BatchSize > 1;
             for (int i = 0; i < trainingData.Count; ++i)
             {
                 Data d = trainingData[i];
-                Debug.Assert(d.Input.Batches == d.Output.Batches, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
-                Debug.Assert(d.Input.Batches == trainingData[0].Input.Batches, "Training data set contains batches of different size!");
+                Debug.Assert(d.Input.BatchSize == d.Output.BatchSize, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
+                Debug.Assert(d.Input.BatchSize == trainingData[0].Input.BatchSize, "Training data set contains batches of different size!");
             }
 
             if (batchSize < 0)
@@ -158,7 +158,7 @@ namespace Neuro
                 for (int b = 0; b < batchedTrainingData.Count; ++b)
                 {
                     // this will be equal to batch size; however, the last batch size may be different if there is a reminder of training data by batch size division
-                    int samples = batchedTrainingData[b].Input.Batches;
+                    int samples = batchedTrainingData[b].Input.BatchSize;
                     GradientDescentStep(batchedTrainingData[b], samples, accuracyFunc, ref trainTotalError, ref trainHits);
 
                     if (verbose)
@@ -183,7 +183,7 @@ namespace Neuro
 
                 if (validationData != null)
                 {
-                    int validationSamples = validationData.Count * validationData[0].Input.Batches;
+                    int validationSamples = validationData.Count * validationData[0].Input.BatchSize;
                     double testHits = 0;
 
                     for (int i = 0; i < validationData.Count; ++i)

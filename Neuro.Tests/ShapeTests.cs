@@ -20,7 +20,7 @@ namespace Neuro.Tests
             Assert.AreEqual(1, shape.Width);
             Assert.AreEqual(2, shape.Height);
             Assert.AreEqual(3, shape.Depth);
-            Assert.AreEqual(4, shape.Batches);
+            Assert.AreEqual(4, shape.BatchSize);
         }
 
         [TestMethod]

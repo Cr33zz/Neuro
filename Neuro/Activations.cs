@@ -79,7 +79,7 @@ namespace Neuro
             Tensor shifted = input.Sub(input.Max());
             Tensor exps = shifted.Map(x => Math.Exp(x));
 
-            for (int n = 0; n < input.Batches; ++n)
+            for (int n = 0; n < input.BatchSize; ++n)
             {
                 double sum = exps.Sum(n);
 
@@ -92,7 +92,7 @@ namespace Neuro
 
         public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
         {
-            var outputReshaped = output.Reshaped(new Shape(1, Shape.Auto, 1, output.Batches));
+            var outputReshaped = output.Reshaped(new Shape(1, Shape.Auto, 1, output.BatchSize));
             Tensor jacob = outputReshaped.DiagFlat().Sub(outputReshaped.Mul(outputReshaped.Transposed()));
             jacob.Mul(outputGradient, result);
         }

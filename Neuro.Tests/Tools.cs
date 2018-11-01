@@ -11,10 +11,10 @@ namespace Neuro.Tests
         private static readonly double DERIVATIVE_EPSILON = 1e-4;
         private static readonly double LOSS_DERIVATIVE_EPSILON = 1e-5;
 
-        public static void VerifyInputGradient(LayerBase layer, int batches = 1)
+        public static void VerifyInputGradient(LayerBase layer, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batches));
+            var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batchSize));
             input.FillWithRand(7);
             var output = layer.FeedForward(input);
             var outputGradient = new Tensor(output.Shape);
@@ -48,10 +48,10 @@ namespace Neuro.Tests
             }
         }
 
-        public static void VerifyParametersGradient(LayerBase layer, int batches = 1)
+        public static void VerifyParametersGradient(LayerBase layer, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batches));
+            var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batchSize));
             input.FillWithRand(7);
             var output = layer.FeedForward(input);
             var outputGradient = new Tensor(output.Shape);
@@ -87,13 +87,13 @@ namespace Neuro.Tests
             }
         }
 
-        public static void VerifyActivationFuncDerivative(ActivationFunc func, int batches = 1)
+        public static void VerifyActivationFuncDerivative(ActivationFunc func, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var input = new Tensor(new Shape(3, 3, 3, batches));
+            var input = new Tensor(new Shape(3, 3, 3, batchSize));
             input.FillWithRange(-1.0, 2.0 / input.Length);
 
-            var outputGradient = new Tensor(new Shape(3, 3, 3, batches));
+            var outputGradient = new Tensor(new Shape(3, 3, 3, batchSize));
             outputGradient.FillWithValue(1.0);
 
             // for derivation purposes activation functions expect already processed input
@@ -117,10 +117,10 @@ namespace Neuro.Tests
             Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
         }
 
-        public static void VerifyLossFuncDerivative(LossFunc func, Tensor targetOutput, bool onlyPositiveOutput = false, int batches = 1)
+        public static void VerifyLossFuncDerivative(LossFunc func, Tensor targetOutput, bool onlyPositiveOutput = false, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var output = new Tensor(new Shape(3, 3, 3, batches));
+            var output = new Tensor(new Shape(3, 3, 3, batchSize));
             output.FillWithRand(10, onlyPositiveOutput ? 0 : -1);
 
             // for derivation purposes activation functions expect already processed input
@@ -144,10 +144,10 @@ namespace Neuro.Tests
             Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
         }
 
-        public static void VerifyLossFunc(LossFunc func, Tensor targetOutput, Func<double, double, double> testFunc, bool onlyPositiveOutput = false, int batches = 1)
+        public static void VerifyLossFunc(LossFunc func, Tensor targetOutput, Func<double, double, double> testFunc, bool onlyPositiveOutput = false, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var output = new Tensor(new Shape(3, 3, 3, batches));
+            var output = new Tensor(new Shape(3, 3, 3, batchSize));
             output.FillWithRand(10, onlyPositiveOutput ? 0 : -1);
 
             var error = new Tensor(output.Shape);

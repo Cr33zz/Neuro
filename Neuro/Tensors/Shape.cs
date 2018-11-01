@@ -7,13 +7,13 @@ namespace Neuro.Tensors
     {
         public static int Auto = -1; // Automatically guesses
 
-        public Shape(int width, int height = 1, int depth = 1, int batches = 1)
+        public Shape(int width, int height = 1, int depth = 1, int batchSize = 1)
         {
-            Dimensions = new[] { width, height, depth, batches };
+            Dimensions = new[] { width, height, depth, batchSize };
             Dim0 = width;
             Dim0Dim1 = Dim0 * height;
             Dim0Dim1Dim2 = Dim0Dim1 * depth;
-            Length = Dim0Dim1Dim2 * batches;
+            Length = Dim0Dim1Dim2 * batchSize;
         }
 
         public static Shape From(int[] dimensions)
@@ -57,7 +57,7 @@ namespace Neuro.Tensors
             Debug.Assert(w < Width);
             Debug.Assert(h < Height);
             Debug.Assert(d < Depth);
-            Debug.Assert(n < Batches);
+            Debug.Assert(n < BatchSize);
             return Dim0Dim1Dim2 * n + Dim0Dim1 * d + Dim0 * h + w;
         }
 
@@ -78,13 +78,13 @@ namespace Neuro.Tensors
 
         public int Depth => Dimensions[2];
 
-        public int Batches => Dimensions[3];
+        public int BatchSize => Dimensions[3];
 
         public int[] Dimensions { get; }
 
         public int Length { get; }
 
-        public override string ToString() { return $"{Width}x{Height}x{Depth}x{Batches}"; }
+        public override string ToString() { return $"{Width}x{Height}x{Depth}x{BatchSize}"; }
 
         private readonly int Dim0;
         private readonly int Dim0Dim1;
