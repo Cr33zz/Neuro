@@ -9,81 +9,93 @@ namespace Neuro.Tests
         [TestMethod]
         public void Add()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
-            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(2, 2);
-            var result = new Tensor(left.Shape);
+            var t1 = new Tensor(new Shape(2, 3, 4, 5)); t1.FillWithRange(1);
+            var t2 = new Tensor(new Shape(2, 3, 4, 5)); t2.FillWithRange(2, 2);
+            var result = new Tensor(t1.Shape);
 
-            left.Add(right, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], left.GetFlat(i) * 3);
+            t1.Add(t2, result);
+            for (int i = 0; i < t1.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t1.GetFlat(i) * 3);
         }
 
         [TestMethod]
         public void Add_Scalar()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
-            var result = new Tensor(left.Shape);
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(1);
+            var result = new Tensor(t.Shape);
 
-            left.Add(2, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], left.GetFlat(i) + 2, 1e-4);
+            t.Add(2, result);
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) + 2, 1e-4);
         }
 
         [TestMethod]
         public void Sub()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
-            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(2, 2);
-            var result = new Tensor(left.Shape);
+            var t1 = new Tensor(new Shape(2, 3, 4, 5)); t1.FillWithRange(1);
+            var t2 = new Tensor(new Shape(2, 3, 4, 5)); t2.FillWithRange(2, 2);
+            var result = new Tensor(t1.Shape);
 
-            left.Sub(right, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], -left.GetFlat(i), 1e-4);
+            t1.Sub(t2, result);
+            for (int i = 0; i < t1.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), -t1.GetFlat(i), 1e-4);
         }
 
         [TestMethod]
         public void Sub_Scalar()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(1);
-            var result = new Tensor(left.Shape);
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(1);
+            var result = new Tensor(t.Shape);
 
-            left.Sub(2, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], left.GetFlat(i) - 2, 1e-4);
+            t.Sub(2, result);
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) - 2, 1e-4);
         }
 
         [TestMethod]
         public void Div()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
-            var right = new Tensor(new Shape(2, 3, 4, 5)); right.FillWithRange(1);
-            var result = new Tensor(left.Shape);
+            var t1 = new Tensor(new Shape(2, 3, 4, 5)); t1.FillWithRange(2, 2);
+            var t2 = new Tensor(new Shape(2, 3, 4, 5)); t2.FillWithRange(1);
+            var result = new Tensor(t1.Shape);
 
-            left.Div(right, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], 2, 1e-4);
+            t1.Div(t2, result);
+            for (int i = 0; i < t1.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), 2, 1e-4);
         }
 
         [TestMethod]
         public void Div_Scalar()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
-            var result = new Tensor(left.Shape);
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(2, 2);
+            var result = new Tensor(t.Shape);
 
-            left.Div(2, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], left.GetFlat(i) / 2, 1e-4);
+            t.Div(2, result);
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) / 2, 1e-4);
         }
 
         [TestMethod]
         public void Mul_Scalar()
         {
-            var left = new Tensor(new Shape(2, 3, 4, 5)); left.FillWithRange(2, 2);
-            var result = new Tensor(left.Shape);
+            var t = new Tensor(new Shape(2, 3, 4, 5)); t.FillWithRange(2, 2);
+            var result = new Tensor(t.Shape);
 
-            left.Mul(2, result);
-            for (int i = 0; i < left.Shape.Length; ++i)
-                Assert.AreEqual(result[i], left.GetFlat(i) * 2, 1e-4);
+            t.Mul(2, result);
+            for (int i = 0; i < t.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) * 2, 1e-4);
+        }
+
+        [TestMethod]
+        public void MulElem()
+        {
+            var t1 = new Tensor(new Shape(2, 3, 4, 5)); t1.FillWithRand();
+            var t2 = new Tensor(new Shape(2, 3, 4, 5)); t2.FillWithRand();
+            var result = new Tensor(t1.Shape);
+
+            t1.MulElem(t2, result);
+            for (int i = 0; i < t1.Shape.Length; ++i)
+                Assert.AreEqual(result.GetFlat(i), t1.GetFlat(i) * t2.GetFlat(i), 1e-5);
         }
 
         [TestMethod]
@@ -358,6 +370,75 @@ namespace Neuro.Tests
 
             for (int i = 0; i < t.Shape.Length; ++i)
                 Assert.AreEqual(result.GetFlat(i), -t.GetFlat(i), 1e-7);
+        }
+
+        [TestMethod]
+        public void Sum_Per_Batch()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 3)); t.FillWithRange(1);
+            var sums = new double[] { 10, 26, 42 };
+
+            for (int i = 0; i < t.Batches; ++i)
+                Assert.AreEqual(t.Sum(i), sums[i], 1e-7);
+        }
+
+        [TestMethod]
+        public void Sum()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 3)); t.FillWithRange(1);
+
+            Assert.AreEqual(t.Sum(), 78, 1e-7);
+        }
+
+        [TestMethod]
+        public void SumBatches()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 4)); t.FillWithRange(1);
+            var result = t.SumBatches();
+            var correct = new Tensor(new double[] { 28, 32, 36, 40 }, new Shape(2, 2, 1, 1));
+
+            Assert.IsTrue(result.Equals(correct));
+        }
+
+        [TestMethod]
+        public void ArgMax()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new double[] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
+                        
+            Assert.AreEqual(t.ArgMax(), 10);
+        }
+
+        [TestMethod]
+        public void ArgMax_Per_Batch()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new double [] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
+            var maxes = new int[] { 2, 4, 10, 15 };
+
+            for (int i = 0; i < t.Batches; ++i)
+                Assert.AreEqual(t.ArgMax(i), maxes[i]);
+        }
+
+        [TestMethod]
+        public void CopyBatchTo()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 4)); t.FillWithRange(1);
+            var result = new Tensor(new Shape(2, 2, 1, 1));
+            t.CopyBatchTo(1, 0, result);
+            var correct = new Tensor(result.Shape); correct.FillWithRange(5);
+
+            Assert.IsTrue(result.Equals(correct));
         }
 
         [TestMethod]

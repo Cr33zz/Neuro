@@ -670,20 +670,13 @@ namespace Neuro.Tensors
             Array.Copy(Values, result.Values, Length);
         }
 
-        public void CopyBatchTo(int n, int resultN, Tensor result)
+        public void CopyBatchTo(int batchId, int targetBatchId, Tensor result)
         {
             Debug.Assert(Shape.Width == result.Shape.Width && Shape.Height == result.Shape.Height && Shape.Depth == result.Shape.Depth);
             int valuesPerBatch = Shape.Width * Shape.Height * Shape.Depth;
-            Array.Copy(Values, n * valuesPerBatch, result.Values, resultN * valuesPerBatch, valuesPerBatch);
+            Array.Copy(Values, batchId * valuesPerBatch, result.Values, targetBatchId * valuesPerBatch, valuesPerBatch);
         }
-
-        public void CopyBatchFrom(int n, int inputN, Tensor input)
-        {
-            Debug.Assert(Shape.Width == input.Shape.Width && Shape.Height == input.Shape.Height && Shape.Depth == input.Shape.Depth);
-            int valuesPerBatch = Shape.Width * Shape.Height * Shape.Depth;
-            Array.Copy(input.Values, inputN * valuesPerBatch, Values, n * valuesPerBatch, valuesPerBatch);
-        }
-
+        
         public bool Equals(Tensor other, double epsilon = 0.0000001)
         {
             if (other == null)

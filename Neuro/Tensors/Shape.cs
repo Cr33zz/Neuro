@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Neuro.Tensors
 {
@@ -53,6 +54,10 @@ namespace Neuro.Tensors
 
         public int GetIndex(int w, int h = 0, int d = 0, int n = 0)
         {
+            Debug.Assert(w < Width);
+            Debug.Assert(h < Height);
+            Debug.Assert(d < Depth);
+            Debug.Assert(n < Batches);
             return Dim0Dim1Dim2 * n + Dim0Dim1 * d + Dim0 * h + w;
         }
 

@@ -80,7 +80,7 @@ namespace Neuro.Tests
 
                 var approxGrad = new double[output.Shape.Length];
                 for (var j = 0; j < output.Shape.Length; j++)
-                    approxGrad[j] = result.Get(j) / (2.0 * DERIVATIVE_EPSILON);
+                    approxGrad[j] = result.GetFlat(j) / (2.0 * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
                 Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 1e-3, $"At element {i}");
