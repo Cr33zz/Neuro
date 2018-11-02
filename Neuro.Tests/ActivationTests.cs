@@ -7,6 +7,18 @@ namespace Neuro.Tests
     public class ActivationTests
     {
         [TestMethod]
+        public void Linear_Derivative_1Batch()
+        {
+            Tools.VerifyActivationFuncDerivative(Activation.Linear);
+        }
+
+        [TestMethod]
+        public void Linear_Derivative_3Batches()
+        {
+            Tools.VerifyActivationFuncDerivative(Activation.Linear, 3);
+        }
+
+        [TestMethod]
         public void Sigmoid_Derivative_1Batch()
         {
             Tools.VerifyActivationFuncDerivative(Activation.Sigmoid);

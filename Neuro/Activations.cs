@@ -11,11 +11,25 @@ namespace Neuro
 
     public static class Activation
     {
+        public static ActivationFunc Linear = new Linear();
         public static ActivationFunc Sigmoid = new Sigmoid();
         public static ActivationFunc Tanh = new Tanh();
         public static ActivationFunc ReLU = new ReLU();
         public static ActivationFunc ELU = new ELU();
         public static ActivationFunc Softmax = new Softmax();
+    }
+
+    public class Linear : ActivationFunc
+    {
+        public override void Compute(Tensor input, Tensor result)
+        {
+            input.CopyTo(result);
+        }
+
+        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
+        {
+            outputGradient.CopyTo(result);
+        }
     }
 
     public class Sigmoid : ActivationFunc
