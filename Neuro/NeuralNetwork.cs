@@ -297,7 +297,6 @@ namespace Neuro
         }
 
         public static bool DebugMode = false;
-        private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
         private List<Layers.LayerBase> Layers = new List<Layers.LayerBase>();
         private LossFunc Error = Loss.MeanSquareError;
         private Optimizers.OptimizerBase Optimizer;
