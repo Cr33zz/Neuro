@@ -23,6 +23,11 @@ namespace Neuro.Layers
             Stride = stride;
         }
 
+        public override LayerBase Clone()
+        {
+            return new Pooling(InputShape, FilterSize, Stride, Type);
+        }
+
         protected override void FeedForwardInternal()
         {
             Input.Pool(FilterSize, Stride, Type, Tensor.PaddingType.Valid, Output);

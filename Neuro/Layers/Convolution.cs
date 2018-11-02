@@ -27,6 +27,14 @@ namespace Neuro.Layers
             BiasGradient = new Tensor(Bias.Shape);
         }
 
+        public override LayerBase Clone()
+        {
+            var clone = new Convolution(InputShape, FilterSize, FiltersNum, Stride, Activation);
+            clone.Kernels = Kernels.Clone();
+            clone.Bias = Bias.Clone();
+            return clone;
+        }
+
         public override void Init()
         {
             KernelInitializer.Init(Kernels, InputShape.Length, OutputShape.Length);

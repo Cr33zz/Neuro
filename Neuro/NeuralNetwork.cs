@@ -33,10 +33,17 @@ namespace Neuro
             }
         }
 
+        public NeuralNetwork Clone()
+        {
+            var clone = new NeuralNetwork(Name, Seed);
+            foreach (var layer in Layers)
+                clone.Layers.Add(layer.Clone());
+            clone.Optimize(Optimizer, Error);
+            return clone;
+        }
+
         public string Name;
         public string FilePrefix { get { return Name.ToLower().Replace(" ", "_"); } }
-
-        private List<Layers.LayerBase> Layers = new List<Layers.LayerBase>();
 
         public Layers.LayerBase Layer(int i)
         {
@@ -291,9 +298,11 @@ namespace Neuro
 
         public static bool DebugMode = false;
         private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
+        private List<Layers.LayerBase> Layers = new List<Layers.LayerBase>();
         private LossFunc Error = Loss.MeanSquareError;
         private Optimizers.OptimizerBase Optimizer;
         private int Seed;
+        private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
         private List<string> LogLines = new List<string>();
     }
 }

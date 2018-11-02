@@ -19,6 +19,8 @@ namespace Neuro.Layers
         // For serialization purposes only
         internal LayerBase() {}
 
+        public abstract LayerBase Clone();
+        
         // The concept of layer is that it is a 'blockbox' that supports feed forward and backward propagation.
         // Feed forward: input Tensor -> |logic| -> output Tensor
         // Back propagation: error gradients (for its outputs) -> |learning| -> error gradients (for predecessing layer outputs) and internal parameters deltas

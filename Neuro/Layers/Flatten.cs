@@ -15,6 +15,11 @@ namespace Neuro.Layers
         {
         }
 
+        public override LayerBase Clone()
+        {
+            return new Flatten(InputShape);
+        }
+
         protected override void FeedForwardInternal()
         {
             // output is already of proper shape thanks to LayerBase.FeedForward

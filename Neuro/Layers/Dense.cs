@@ -25,6 +25,14 @@ namespace Neuro.Layers
             BiasGradient = new Tensor(Bias.Shape);
         }
 
+        public override LayerBase Clone()
+        {
+            var clone = new Dense(InputShape.Length, OutputShape.Length, Activation);
+            clone.Weights = Weights.Clone();
+            clone.Bias = Bias.Clone();
+            return clone;
+        }
+
         public override void Init()
         {
             KernelInitializer.Init(Weights, InputShape.Length, OutputShape.Length);
