@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Tensors;
+using System.IO;
 
 namespace Neuro.Tests
 {
@@ -72,6 +73,25 @@ namespace Neuro.Tests
             Assert.IsFalse(shape1.Equals(shape7));
             Assert.IsFalse(shape1.Equals(shape8));
             Assert.IsTrue(shape1.Equals(shape1));
+        }
+
+        [TestMethod]
+        public void Serialize_Deserialize()
+        {
+            string tempFilename = "shape_tmp.txt";
+
+            var shape = new Shape(5, 4, 3, 2);
+            using (BinaryWriter writer = new BinaryWriter(File.Open(tempFilename, FileMode.Create)))
+            {
+                shape.Serialize(writer);
+            }
+
+            using (BinaryReader reader = new BinaryReader(File.Open(tempFilename, FileMode.Open)))
+            {
+                Assert.IsTrue(shape.Equals(Shape.Deserialize(reader)));
+            }
+
+            File.Delete(tempFilename);
         }
     }
 }

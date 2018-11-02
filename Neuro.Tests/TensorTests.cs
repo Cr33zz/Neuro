@@ -1,10 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 using Neuro.Tensors;
 
 namespace Neuro.Tests
 {
     [TestClass]
-    public class TensorOpCpuTests
+    public class TensorTests
     {
         [TestMethod]
         public void Add_SameBatchSize()
@@ -127,13 +129,13 @@ namespace Neuro.Tests
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
-            Tensor t1 = new Tensor(new Shape(4,2,2));
+            Tensor t1 = new Tensor(new Shape(4, 2, 2));
             t1.FillWithRange(0);
-            Tensor t2 = new Tensor(new Shape(2,4,2));
+            Tensor t2 = new Tensor(new Shape(2, 4, 2));
             t2.FillWithRange(0);
 
             Tensor r = t1.Mul(t2);
-            Tensor correct = new Tensor(new double[]{28,34,76,98,428,466,604,658}, new Shape(2,2,2));
+            Tensor correct = new Tensor(new double[] { 28, 34, 76, 98, 428, 466, 604, 658 }, new Shape(2, 2, 2));
 
             Assert.IsTrue(r.Equals(correct));
         }
@@ -295,7 +297,7 @@ namespace Neuro.Tests
 
             Tensor t1 = new Tensor(new Shape(6, 6));
             t1.FillWithRange(0);
-            
+
             Tensor r = t1.Pool(2, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
             Tensor correct = new Tensor(new double[] { 7, 9, 11, 19, 21, 23, 31, 33, 35 }, new Shape(3, 3, 1));
 
@@ -436,7 +438,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
             var t = new Tensor(new double[] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
-                        
+
             Assert.AreEqual(t.ArgMax(), 10);
         }
 
@@ -445,7 +447,7 @@ namespace Neuro.Tests
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
-            var t = new Tensor(new double [] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
+            var t = new Tensor(new double[] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
             var maxes = new int[] { 2, 4, 10, 15 };
 
             for (int i = 0; i < t.BatchSize; ++i)
@@ -489,6 +491,25 @@ namespace Neuro.Tests
             for (int i = 0; i < t.Shape.Length; ++i)
                 Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) * other.GetFlat(i), 1e-7);
         }
+
+        [TestMethod]
+        public void Serialize_Deserialize()
+        {
+            string tempFilename = "tensor_tmp.txt";
+
+            var t = new Tensor(new Shape(5, 4, 3, 2));
+            t.FillWithRand();
+            using (BinaryWriter writer = new BinaryWriter(File.Open(tempFilename, FileMode.Create)))
+            {
+                t.Serialize(writer);
+            }
+
+            using (BinaryReader reader = new BinaryReader(File.Open(tempFilename, FileMode.Open)))
+            {
+                Assert.IsTrue(t.Equals(Tensor.Deserialize(reader)));
+            }
+
+            File.Delete(tempFilename);
+        }
     }
 }
-

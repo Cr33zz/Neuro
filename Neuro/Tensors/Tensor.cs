@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Xml;
 
@@ -627,6 +628,24 @@ namespace Neuro.Tensors
         {
             Shape = Shape.From(elem.GetAttribute("shape").Split(',').Select(w => int.Parse(w)).ToArray());
             Values = elem.InnerText.Split(',').Select(w => double.Parse(w)).ToArray();
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            Shape.Serialize(writer);
+            writer.Write(Values.Length);
+            foreach (var val in Values)
+                writer.Write(val);
+        }
+
+        public static Tensor Deserialize(BinaryReader reader)
+        {
+            var t = new Tensor(Shape.Deserialize(reader));
+            int valuesCount = reader.ReadInt32();
+            t.Values = new double[valuesCount];
+            for (int i = 0; i < valuesCount; ++i)
+                t.Values[i] = reader.ReadDouble();
+            return t;
         }
 
         public double GetFlat(int i)

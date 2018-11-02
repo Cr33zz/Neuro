@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace Neuro.Tensors
 {
@@ -70,6 +71,20 @@ namespace Neuro.Tensors
                 return true;
             
             return Width == other.Width && Height == other.Height && Depth == other.Depth;
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write(Width);
+            writer.Write(Height);
+            writer.Write(Depth);
+            writer.Write(BatchSize);
+        }
+
+        public static Shape Deserialize(BinaryReader reader)
+        {
+            int[] dims = new [] { reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32() };
+            return Shape.From(dims);
         }
 
         public int Width => Dimensions[0];
