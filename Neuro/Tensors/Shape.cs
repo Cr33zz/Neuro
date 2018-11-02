@@ -101,8 +101,8 @@ namespace Neuro.Tensors
 
         public override string ToString() { return $"{Width}x{Height}x{Depth}x{BatchSize}"; }
 
-        private readonly int Dim0;
-        private readonly int Dim0Dim1;
-        private readonly int Dim0Dim1Dim2;
+        public readonly int Dim0;
+        public readonly int Dim0Dim1;
+        public readonly int Dim0Dim1Dim2;
     }
 }

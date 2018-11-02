@@ -372,9 +372,23 @@ namespace Neuro.Tensors
             return max;
         }
 
-        public static Tensor Merge(List<Tensor> list)
+        public static Tensor Merge(List<Tensor> list, int axis)
         {
-            Tensor output = new Tensor(new Shape(list[0].Width, list[0].Height, list[0].Depth, list.Count));
+            if (list.Count == 0)
+                throw new Exception("List cannot be empty.");
+            if (axis < 0 || axis > 3)
+                throw new Exception("Invalid axis.");
+
+            Tensor output;
+                
+            if (axis == 3)
+                output = new Tensor(new Shape(list[0].Width, list[0].Height, list[0].Depth, list.Count));
+            else if (axis == 2)
+                output = new Tensor(new Shape(list[0].Width, list[0].Height, list.Count));
+            else if (axis == 1)
+                output = new Tensor(new Shape(list[0].Width, list.Count));
+            else
+                output = new Tensor(new Shape(list.Count));
 
             for (int n = 0; n < list.Count; ++n)
             {
@@ -699,10 +713,29 @@ namespace Neuro.Tensors
         public void CopyBatchTo(int batchId, int targetBatchId, Tensor result)
         {
             Debug.Assert(Shape.Width == result.Shape.Width && Shape.Height == result.Shape.Height && Shape.Depth == result.Shape.Depth);
-            int valuesPerBatch = Shape.Width * Shape.Height * Shape.Depth;
-            Array.Copy(Values, batchId * valuesPerBatch, result.Values, targetBatchId * valuesPerBatch, valuesPerBatch);
+            Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2, result.Values, targetBatchId * Shape.Dim0Dim1Dim2, Shape.Dim0Dim1Dim2);
         }
-        
+
+        public void CopyDepthTo(int depthId, int batchId, int targetDepthId, int targetBatchId, Tensor result)
+        {
+            Debug.Assert(Shape.Width == result.Shape.Width && Shape.Height == result.Shape.Height);
+            Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2 + depthId * Shape.Dim0Dim1, result.Values, targetBatchId * Shape.Dim0Dim1Dim2 + targetDepthId * Shape.Dim0Dim1, Shape.Dim0Dim1);
+        }
+
+        public Tensor GetBatch(int batchId)
+        {
+            Tensor result = new Tensor(new Shape(Width, Height, Depth));
+            CopyBatchTo(batchId, 0, result);
+            return result;
+        }
+
+        public Tensor GetDepth(int depthId, int batchId = 0)
+        {
+            Tensor result = new Tensor(new Shape(Width, Height));
+            CopyDepthTo(depthId, batchId, 0, 0, result);
+            return result;
+        }
+
         public bool Equals(Tensor other, double epsilon = 0.0000001)
         {
             if (other == null)

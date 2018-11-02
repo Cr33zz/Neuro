@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using Neuro.Tensors;
@@ -465,6 +466,46 @@ namespace Neuro.Tests
             var correct = new Tensor(result.Shape); correct.FillWithRange(5);
 
             Assert.IsTrue(result.Equals(correct));
+        }
+
+        [TestMethod]
+        public void Merge_Batch()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            List<Tensor> tensors = new List<Tensor>();
+
+            for (int i = 0; i < 5; ++i)
+            {
+                var t = new Tensor(new Shape(2,3,4));
+                t.FillWithRand();
+                tensors.Add(t);
+            }
+
+            var result = Tensor.Merge(tensors, 3);
+
+            for (int i = 0; i < tensors.Count; ++i)
+                Assert.IsTrue(result.GetBatch(i).Equals(tensors[i]));
+        }
+
+        [TestMethod]
+        public void Merge_Depth()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            List<Tensor> tensors = new List<Tensor>();
+
+            for (int i = 0; i < 5; ++i)
+            {
+                var t = new Tensor(new Shape(2, 3));
+                t.FillWithRand();
+                tensors.Add(t);
+            }
+
+            var result = Tensor.Merge(tensors, 2);
+
+            for (int i = 0; i < tensors.Count; ++i)
+                Assert.IsTrue(result.GetDepth(i).Equals(tensors[i]));
         }
 
         [TestMethod]

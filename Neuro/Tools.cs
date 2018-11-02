@@ -207,8 +207,8 @@ namespace Neuro
 
             for (int b = 0; b < batchesNum; ++b)
             {
-                mergedData.Add(new Data() { Input = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Input).ToList()),
-                                            Output = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Output).ToList())});
+                mergedData.Add(new Data() { Input = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Input).ToList(), 3),
+                                            Output = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Output).ToList(), 3)});
             }
 
             // add support for reminder of training data
