@@ -121,7 +121,8 @@ namespace Neuro.Tensors
 
         public void FillWithRand(int seed = -1, double min = -1, double max = 1)
         {
-            Random rng = seed > 0 ? new Random(seed) : new Random();
+            Random rng = seed > 0 ? new Random(seed) : Rng;
+            
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = min + (max - min) * rng.NextDouble();
         }
@@ -758,6 +759,7 @@ namespace Neuro.Tensors
         public Shape Shape { get; private set; }
 
         private static TensorOpCpu Op = new TensorOpCpu();
+        private static Random Rng = new Random();
 
         internal double[] Values;
     }

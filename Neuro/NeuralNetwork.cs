@@ -140,8 +140,15 @@ namespace Neuro
             int batchesNum = trainingData.Count / batchSize;
             int trainingSamples = trainingData.Count;
 
-            AccuracyFunc accuracyFunc = Tools.CategoricalClassificationEquality;
-            if (outputsNum == 1) accuracyFunc = Tools.BinaryClassificationEquality;
+            AccuracyFunc accuracyFunc = Tools.AccNone;
+
+            if (trackFlags.HasFlag(Track.TrainAccuracy) || trackFlags.HasFlag(Track.TestAccuracy))
+            {
+                if (outputsNum == 1)
+                    accuracyFunc = Tools.AccBinaryClassificationEquality;
+                else
+                    accuracyFunc = Tools.AccCategoricalClassificationEquality;
+            }
 
             Stopwatch trainTimer = new Stopwatch();
 
@@ -180,11 +187,18 @@ namespace Neuro
 
                 output = Tools.GetProgressString(trainingSamples, trainingSamples);
 
-                if (verbose)
-                    Console.Write(output);
+                LogLine(output);
 
-                chartGen.AddData(e, trainTotalError / trainingSamples, (int)Track.TrainError);
+                double trainError = trainTotalError / trainingSamples;
+
+                chartGen.AddData(e, trainError, (int)Track.TrainError);
                 chartGen.AddData(e, (double)trainHits / trainingSamples, (int)Track.TrainAccuracy);
+
+                string s = $" - loss: {Math.Round(trainError, 6)}";
+                if (trackFlags.HasFlag(Track.TrainAccuracy))
+                    s += $" - acc: {Math.Round((double)trainHits / trainingSamples * 100, 4)}%";
+                s += $" - eta: {trainTimer.Elapsed}";
+                LogLine(s);
 
                 double testTotalError = 0;
 
@@ -209,17 +223,8 @@ namespace Neuro
                         }
                     }
 
-                    chartGen.AddData(e, testTotalError / validationSamples, (int)Track.TestError);
+                    chartGen.AddData(e, testTotalError / (validationSamples * lastLayer.OutputShape.Length), (int)Track.TestError);
                     chartGen.AddData(e, (double)testHits / validationSamples, (int)Track.TestAccuracy);
-                }
-
-                if (verbose)
-                {
-                    string s = $" - loss: {Math.Round(trainTotalError / trainingSamples, 6)}";
-                    if (trackFlags.HasFlag(Track.TrainAccuracy))
-                        s += $" - acc: {Math.Round((double)trainHits / trainingSamples * 100, 4)}%";
-                    s += $" - eta: {trainTimer.Elapsed}";
-                    LogLine(s);
                 }
 
                 chartGen.Save();

@@ -14,7 +14,12 @@ namespace Neuro
 
         public static Random Rng = new Random();
 
-        public static int BinaryClassificationEquality(Tensor target, Tensor output)
+        public static int AccNone(Tensor target, Tensor output)
+        {
+            return 0;
+        }
+
+        public static int AccBinaryClassificationEquality(Tensor target, Tensor output)
         {
             int hits = 0;
             for (int n = 0; n < output.BatchSize; ++n)
@@ -22,7 +27,7 @@ namespace Neuro
             return hits;
         }
 
-        public static int CategoricalClassificationEquality(Tensor target, Tensor output)
+        public static int AccCategoricalClassificationEquality(Tensor target, Tensor output)
         {
             int hits = 0;
             for (int n = 0; n < output.BatchSize; ++n)
