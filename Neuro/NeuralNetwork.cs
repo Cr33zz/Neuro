@@ -197,7 +197,7 @@ namespace Neuro
                 string s = $" - loss: {Math.Round(trainError, 6)}";
                 if (trackFlags.HasFlag(Track.TrainAccuracy))
                     s += $" - acc: {Math.Round((double)trainHits / trainingSamples * 100, 4)}%";
-                s += $" - eta: {trainTimer.Elapsed}";
+                s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");
                 LogLine(s);
 
                 double testTotalError = 0;
