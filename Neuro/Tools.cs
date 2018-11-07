@@ -52,6 +52,22 @@ namespace Neuro
             return value < min ? min : (value > max ? max : value);
         }
 
+        public static List<double> LinSpace(double start, double stop, int num = 50, bool endPoint = true)
+        {
+            List<double> result = new List<double>();
+            double interval = (stop - start) / num;
+            for (int i = 0; i < num; ++i)
+            {
+                result.Add(start);
+                start += interval;
+            }
+
+            if (endPoint)
+                result.Add(stop);
+
+            return result;
+        }
+
         public static string GetProgressString(int iteration, int maxIterations, string extraStr = "", int barLength = 30)
         {
             int maxIterLen = maxIterations.ToString().Length;
