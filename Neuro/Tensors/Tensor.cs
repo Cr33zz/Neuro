@@ -289,7 +289,7 @@ namespace Neuro.Tensors
 
         public void Clipped(double min, double max, Tensor result)
         {
-            Map(x => x < min ? min : (x > max ? max : x), result);
+            Map(x => Tools.Clip(x, min, max), result);
         }
 
         public Tensor Clipped(double min, double max)

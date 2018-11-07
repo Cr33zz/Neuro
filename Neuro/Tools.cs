@@ -47,6 +47,11 @@ namespace Neuro
             }
         }
 
+        public static double Clip(double value, double min, double max)
+        {
+            return value < min ? min : (value > max ? max : value);
+        }
+
         public static string GetProgressString(int iteration, int maxIterations, string extraStr = "", int barLength = 30)
         {
             int maxIterLen = maxIterations.ToString().Length;
