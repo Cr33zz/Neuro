@@ -52,6 +52,11 @@ namespace Neuro
             return value < min ? min : (value > max ? max : value);
         }
 
+        public static int Sign(double value)
+        {
+            return value < 0 ? -1 : (value > 0 ? 1 : 0);
+        }
+
         public static List<double> LinSpace(double start, double stop, int num = 50, bool endPoint = true)
         {
             List<double> result = new List<double>();
