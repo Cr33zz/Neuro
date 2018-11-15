@@ -140,7 +140,9 @@ namespace Neuro
                 batchSize = trainingData.Count;
 
             string outFilename = $"{FilePrefix}_training_data_{Optimizer.GetType().Name.ToLower()}_b{batchSize}{(Seed > 0 ? ("_seed" + Seed) : "")}_{Tensor.CurrentOpMode}";
-            var chartGen = new ChartGenerator($"{outFilename}.png", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
+            ChartGenerator chartGen = null;
+            if (trackFlags != Track.Nothing)
+                chartGen = new ChartGenerator($"{outFilename}.png", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
 
             if (trackFlags.HasFlag(Track.TrainError))
                 chartGen.AddSeries((int)Track.TrainError, "Error on train data\n(left Y axis)", Color.DarkRed);
@@ -211,8 +213,8 @@ namespace Neuro
 
                 double trainError = trainTotalError / trainingSamples;
 
-                chartGen.AddData(e, trainError, (int)Track.TrainError);
-                chartGen.AddData(e, (double)trainHits / trainingSamples, (int)Track.TrainAccuracy);
+                chartGen?.AddData(e, trainError, (int)Track.TrainError);
+                chartGen?.AddData(e, (double)trainHits / trainingSamples, (int)Track.TrainAccuracy);
 
                 string s = $" - loss: {Math.Round(trainError, 6)}";
                 if (trackFlags.HasFlag(Track.TrainAccuracy))
@@ -244,11 +246,11 @@ namespace Neuro
                         }
                     }
 
-                    chartGen.AddData(e, testTotalError / (validationSamples * lastLayer.OutputShape.Length), (int)Track.TestError);
-                    chartGen.AddData(e, (double)testHits / validationSamples, (int)Track.TestAccuracy);
+                    chartGen?.AddData(e, testTotalError / (validationSamples * lastLayer.OutputShape.Length), (int)Track.TestError);
+                    chartGen?.AddData(e, (double)testHits / validationSamples, (int)Track.TestAccuracy);
                 }
 
-                chartGen.Save();
+                chartGen?.Save();
                 File.WriteAllLines($"{outFilename}_log.txt", LogLines);
             }
         }
