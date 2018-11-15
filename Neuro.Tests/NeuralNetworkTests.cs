@@ -78,7 +78,7 @@ namespace Neuro.Tests
             var tData = GenerateTrainingData(samples, net.LastLayer().InputShape, expectedWeights, MatMult);
 
             net.Optimize(new SGD(0.07), Loss.MeanSquareError);
-            net.Fit(tData, batchSize, epochs, null, false, Track.TrainError);
+            net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
 
             var learnedParams = net.LastLayer().GetParameters();
 
@@ -97,7 +97,7 @@ namespace Neuro.Tests
             var tData = GenerateTrainingData(samples, net.LastLayer().InputShape, expectedKernels, convFunc);
             
             net.Optimize(new SGD(), Loss.MeanSquareError);
-            net.Fit(tData, batchSize, epochs, null, false, Track.TrainError);
+            net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
 
             var learnedParams = net.LastLayer().GetParameters();
 

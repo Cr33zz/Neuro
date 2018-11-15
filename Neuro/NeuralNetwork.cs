@@ -61,15 +61,21 @@ namespace Neuro
             Layers.Add(layer);
         }
 
-        public Tensor FeedForward(Tensor input)
+        public Tensor Predict(Tensor input)
+        {
+            for (int l = 0; l < Layers.Count; l++)
+                Layers[l].FeedForward(l == 0 ? input : Layers[l - 1].Output);
+
+            return Layers.Last().Output.Clone();
+        }
+
+        private void FeedForward(Tensor input)
         {
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Input:\n{input}\n");
 
             for (int l = 0; l < Layers.Count; l++)
                 Layers[l].FeedForward(l == 0 ? input : Layers[l - 1].Output);
-
-            return Layers.Last().Output;
         }
 
         private void BackProp(Tensor delta)
@@ -96,17 +102,29 @@ namespace Neuro
                 Layers[l].Optimizer = optimizer.Clone();
         }
 
-        public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, bool verbose = true, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        public void Fit(Tensor input, Tensor output, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        {
+            List<Data> trainingData = new List<Data>();
+            for (int i = 0; i < input.BatchSize; ++i)
+                trainingData.Add(new Data() { Input = input.GetBatch(i), Output = output.GetBatch(i) });
+            Fit(trainingData, -1, epochs, null, verbose, trackFlags);
+        }
+
+        public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
         {
             List<Data> trainingData = new List<Data>();
             for (int i = 0; i < inputs.Count; ++i)
+            {
+                if (inputs[i].BatchSize != 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
+                if (outputs[i].BatchSize != 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
                 trainingData.Add(new Data() { Input = inputs[i], Output = outputs[i] });
+            }
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags);
         }
 
         // Training method, when batch size is -1 the whole training set is used for single gradient descent step (in other words, batch size equals to training set size)
-        public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, bool verbose = true, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
         {
             LogLines.Clear();
 
@@ -156,7 +174,8 @@ namespace Neuro
             {
                 string output;
 
-                LogLine($"Epoch {e}/{epochs}");
+                if (verbose > 0)
+                    LogLine($"Epoch {e}/{epochs}");
 
                 // no point shuffling stuff when we have single batch
                 if (batchesNum > 1 && !trainingDataAlreadyBatched)
@@ -175,7 +194,7 @@ namespace Neuro
                     int samples = batchedTrainingData[b].Input.BatchSize;
                     GradientDescentStep(batchedTrainingData[b], samples, accuracyFunc, ref trainTotalError, ref trainHits);
 
-                    if (verbose)
+                    if (verbose == 2)
                     {
                         output = Tools.GetProgressString(b * batchSize + samples, trainingSamples);
                         Console.Write(output);
@@ -187,7 +206,8 @@ namespace Neuro
 
                 output = Tools.GetProgressString(trainingSamples, trainingSamples);
 
-                LogLine(output);
+                if (verbose > 0)
+                    LogLine(output);
 
                 double trainError = trainTotalError / trainingSamples;
 
@@ -198,7 +218,8 @@ namespace Neuro
                 if (trackFlags.HasFlag(Track.TrainAccuracy))
                     s += $" - acc: {Math.Round((double)trainHits / trainingSamples * 100, 4)}%";
                 s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");
-                LogLine(s);
+                if (verbose > 0)
+                    LogLine(s);
 
                 double testTotalError = 0;
 
@@ -215,7 +236,7 @@ namespace Neuro
                         testTotalError += loss.Sum() / outputsNum;
                         testHits += accuracyFunc(validationData[i].Output, lastLayer.Output);
 
-                        if (verbose)
+                        if (verbose == 2)
                         {
                             string progress = " - validating: " + Math.Round(i / (double)validationData.Count * 100) + "%";
                             Console.Write(progress);
