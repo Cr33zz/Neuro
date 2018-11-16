@@ -758,7 +758,7 @@ namespace Neuro.Tensors
 
         public Shape Shape { get; private set; }
 
-        private static TensorOpCpu Op = new TensorOpCpu();
+        private static TensorOpCpu Op = new TensorOpMultiCpu();
         private static Random Rng = new Random();
 
         internal double[] Values;

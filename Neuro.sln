@@ -7,20 +7,37 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neuro.Tests", "Neuro.Tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neuro", "Neuro\Neuro.csproj", "{9895C169-C511-4686-8E53-742F6BE8AA63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neuro.PerfTests", "Neuro.PerfTests\Neuro.PerfTests.csproj", "{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9895C169-C511-4686-8E53-742F6BE8AA63} = {9895C169-C511-4686-8E53-742F6BE8AA63}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Debug|x64.ActiveCfg = Debug|x64
 		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Debug|x64.Build.0 = Debug|x64
+		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Release|Any CPU.ActiveCfg = Release|x64
 		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Release|x64.ActiveCfg = Release|x64
 		{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}.Release|x64.Build.0 = Release|x64
+		{9895C169-C511-4686-8E53-742F6BE8AA63}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{9895C169-C511-4686-8E53-742F6BE8AA63}.Debug|x64.ActiveCfg = Debug|x64
 		{9895C169-C511-4686-8E53-742F6BE8AA63}.Debug|x64.Build.0 = Debug|x64
+		{9895C169-C511-4686-8E53-742F6BE8AA63}.Release|Any CPU.ActiveCfg = Release|x64
 		{9895C169-C511-4686-8E53-742F6BE8AA63}.Release|x64.ActiveCfg = Release|x64
 		{9895C169-C511-4686-8E53-742F6BE8AA63}.Release|x64.Build.0 = Release|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Debug|x64.ActiveCfg = Debug|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Debug|x64.Build.0 = Debug|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Release|Any CPU.ActiveCfg = Release|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Release|x64.ActiveCfg = Release|x64
+		{0D3FEAF4-D0BC-4A9B-A32C-35735374559F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
