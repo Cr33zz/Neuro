@@ -11,6 +11,18 @@ namespace Neuro.Tests
     public class NeuralNetworkTests
     {
         [TestMethod]
+        public void Two_Dense_Layers_Batch_10()
+        {
+            TestDenseNetwork(2, 100, 10, 100);
+        }
+
+        [TestMethod]
+        public void Two_Dense_Layers_Batch_1()
+        {
+            TestDenseNetwork(2, 5, 1, 500);
+        }
+
+        [TestMethod]
         public void Single_Dense_Layer_Batch_10()
         {
             TestDenseLayer(3, 2, 100, 10, 50);
@@ -75,15 +87,40 @@ namespace Neuro.Tests
             net.AddLayer(new Dense(inputs, outputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
 
             var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
-            var tData = GenerateTrainingData(samples, net.LastLayer().InputShape, expectedWeights, MatMult);
+            var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedWeights, MatMult);
 
             net.Optimize(new SGD(0.07), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
 
-            var learnedParams = net.LastLayer().GetParameters();
+            var learnedParams = net.LastLayer.GetParameters();
 
             for (int i = 0; i < expectedWeights.Length; ++i)
                 Assert.AreEqual(learnedParams.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
+        }
+
+        private void TestDenseNetwork(int inputs, int samples, int batchSize, int epochs)
+        {
+            var net = new NeuralNetwork("deep_dense_test", 7);
+            net.AddLayer(new Dense(inputs, 12, Activation.Sigmoid) { KernelInitializer = new Initializers.Constant(1) });
+            net.AddLayer(new Dense(net.LastLayer, 12, Activation.Sigmoid) { KernelInitializer = new Initializers.Constant(1) });
+            net.AddLayer(new Dense(net.LastLayer, inputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
+
+            List<Data> tData = new List<Data>();
+
+            for (int i = 0; i < samples; ++i)
+            {
+                var input = new Tensor(net.Layer(0).InputShape);
+                input.FillWithRand();
+                var output = new Tensor(net.Layer(0).InputShape);
+                output.FillWithRand();
+                tData.Add(new Data() { Input = input, Output = output});
+            }
+
+            net.Optimize(new SGD(0.05), Loss.MeanSquareError);
+            net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
+
+            for (int i = 0; i < tData.Count; ++i)
+                Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input), 0.001));
         }
 
         private void TestConvolutionLayer(Shape inputShape, int kernelSize, int kernelsNum, int stride, int samples, int batchSize, int epochs, TrainDataFunc convFunc)
@@ -94,23 +131,31 @@ namespace Neuro.Tests
             var expectedKernels = new Tensor(new Shape(kernelSize, kernelSize, inputShape.Depth, kernelsNum));
             expectedKernels.FillWithRand(17);
 
-            var tData = GenerateTrainingData(samples, net.LastLayer().InputShape, expectedKernels, convFunc);
+            var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedKernels, convFunc);
             
             net.Optimize(new SGD(), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
 
-            var learnedParams = net.LastLayer().GetParameters();
+            var learnedParams = net.LastLayer.GetParameters();
 
             for (int i = 0; i < expectedKernels.Length; ++i)
                 Assert.AreEqual(learnedParams.GetFlat(i), expectedKernels.GetFlat(i), 1e-2);
         }
 
         private delegate Tensor TrainDataFunc(Tensor input, Tensor expectedParams);
+        private delegate Tensor TrainDataFuncNoParams(Tensor input);
 
         private Tensor MatMult(Tensor input, Tensor expectedParams)
         {
             return expectedParams.Mul(input);
         }
+
+        //private Tensor TestFunc1(Tensor input)
+        //{
+        //    var o = new Tensor(input.Shape);
+
+        //    return ;
+        //}
 
         private Tensor ConvValidStride1(Tensor input, Tensor expectedParams)
         {

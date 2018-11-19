@@ -27,9 +27,9 @@ namespace Neuro.PerfTests
 
             var net = new NeuralNetwork("simple_net_perf_test");
             net.AddLayer(new Flatten(inShape));
-            net.AddLayer(new Dense(net.LastLayer(), 24, Activation.ReLU));
-            net.AddLayer(new Dense(net.LastLayer(), 24, Activation.ReLU));
-            net.AddLayer(new Dense(net.LastLayer(), outShape.Length, Activation.Linear));
+            net.AddLayer(new Dense(net.LastLayer, 24, Activation.ReLU));
+            net.AddLayer(new Dense(net.LastLayer, 24, Activation.ReLU));
+            net.AddLayer(new Dense(net.LastLayer, outShape.Length, Activation.Linear));
             net.Optimize(new Adam(), Loss.MeanSquareError);
 
             var timer = new Stopwatch();

@@ -43,16 +43,20 @@ namespace Neuro
         }
 
         public string Name;
-        public string FilePrefix { get { return Name.ToLower().Replace(" ", "_"); } }
+
+        public string FilePrefix
+        {
+            get { return Name.ToLower().Replace(" ", "_"); }
+        }
 
         public Layers.LayerBase Layer(int i)
         {
             return Layers[i];
         }
 
-        public Layers.LayerBase LastLayer() 
+        public Layers.LayerBase LastLayer
         {
-            return Layers.Last();
+            get { return Layers.Last(); }
         }
 
         public void AddLayer(Layers.LayerBase layer)
@@ -142,7 +146,7 @@ namespace Neuro
             string outFilename = $"{FilePrefix}_training_data_{Optimizer.GetType().Name.ToLower()}_b{batchSize}{(Seed > 0 ? ("_seed" + Seed) : "")}_{Tensor.CurrentOpMode}";
             ChartGenerator chartGen = null;
             if (trackFlags != Track.Nothing)
-                chartGen = new ChartGenerator($"{outFilename}.png", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
+                chartGen = new ChartGenerator($"{outFilename}", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
 
             if (trackFlags.HasFlag(Track.TrainError))
                 chartGen.AddSeries((int)Track.TrainError, "Error on train data\n(left Y axis)", Color.DarkRed);
@@ -250,9 +254,11 @@ namespace Neuro
                     chartGen?.AddData(e, (double)testHits / validationSamples, (int)Track.TestAccuracy);
                 }
 
-                chartGen?.Save();
-                File.WriteAllLines($"{outFilename}_log.txt", LogLines);
+                if (e % 20 == 0 || e == epochs)
+                    chartGen?.Save();
             }
+
+            File.WriteAllLines($"{outFilename}_log.txt", LogLines);
         }
 
         // This is vectorized gradient descent

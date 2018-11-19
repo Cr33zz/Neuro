@@ -7,9 +7,9 @@ namespace Neuro
 {
     public class ChartGenerator
     {
-        public ChartGenerator(string outputFile, string title = "", string xAxisLabel = "")
+        public ChartGenerator(string outputFileName, string title = "", string xAxisLabel = "")
         {
-            OutputFile = outputFile;
+            OutputFileName = $"{outputFileName}_{DateTime.Now.ToString("ddMMyyy_Hmm")}";
             ChartArea.AxisX.Title = xAxisLabel;
             ChartArea.AxisX.TitleFont = new Font(Chart.Font.Name, 11);
             ChartArea.AxisX.LabelStyle.Format = "#";
@@ -56,10 +56,10 @@ namespace Neuro
         {
             ChartArea.AxisX.Minimum = DataMinX;
             ChartArea.AxisX.Maximum = DataMaxX;
-            Chart.SaveImage(OutputFile, ChartImageFormat.Png);
+            Chart.SaveImage($"{OutputFileName}.png", ChartImageFormat.Png);
         }
 
-        public readonly string OutputFile;
+        public readonly string OutputFileName;
         private Chart Chart = new Chart();
         private ChartArea ChartArea = new ChartArea();
         private Legend Legend = new Legend("leg");
