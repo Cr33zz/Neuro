@@ -11,25 +11,25 @@ namespace Neuro.Tests
     public class NeuralNetworkTests
     {
         [TestMethod]
-        public void Two_Dense_Layers_Batch_10()
+        public void Dense_Network_BS10()
         {
-            TestDenseNetwork(2, 100, 10, 100);
+            TestDenseNetwork(2, 50, 10, 100);
         }
 
         [TestMethod]
-        public void Two_Dense_Layers_Batch_1()
+        public void Dense_Network_BS1()
         {
-            TestDenseNetwork(2, 5, 1, 500);
+            TestDenseNetwork(2, 50, 1, 500);
         }
 
         [TestMethod]
-        public void Single_Dense_Layer_Batch_10()
+        public void Single_Dense_Layer_BS10()
         {
             TestDenseLayer(3, 2, 100, 10, 50);
         }
 
         [TestMethod]
-        public void Single_Dense_Layer_Batch_1()
+        public void Single_Dense_Layer_BS1()
         {
             TestDenseLayer(3, 2, 100, 1, 50);
         }
@@ -41,13 +41,13 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
-        public void Single_Convolution_Layer_Batch_10_VS1()
+        public void Single_Convolution_Layer_BS10_VS1()
         {
             TestConvolutionLayer(new Shape(9, 9, 2), 3, 4, 1, 100, 10, 15, ConvValidStride1);
         }
 
         [TestMethod]
-        public void Single_Convolution_Layer_Batch_1_VS1()
+        public void Single_Convolution_Layer_BS1_VS1()
         {
             TestConvolutionLayer(new Shape(9, 9, 2), 3, 4, 1, 100, 1, 10, ConvValidStride1);
         }
@@ -59,13 +59,13 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
-        public void Single_Convolution_Layer_Batch_10_VS2()
+        public void Single_Convolution_Layer_BS10_VS2()
         {
             TestConvolutionLayer(new Shape(9, 9, 2), 3, 4, 2, 100, 10, 15, ConvValidStride2);
         }
 
         [TestMethod]
-        public void Single_Convolution_Layer_Batch_10_VS3()
+        public void Single_Convolution_Layer_BS10_VS3()
         {
             TestConvolutionLayer(new Shape(9, 9, 2), 3, 4, 3, 100, 10, 15, ConvValidStride3);
         }
@@ -101,23 +101,20 @@ namespace Neuro.Tests
         private void TestDenseNetwork(int inputs, int samples, int batchSize, int epochs)
         {
             var net = new NeuralNetwork("deep_dense_test", 7);
-            net.AddLayer(new Dense(inputs, 12, Activation.Sigmoid) { KernelInitializer = new Initializers.Constant(1) });
-            net.AddLayer(new Dense(net.LastLayer, 12, Activation.Sigmoid) { KernelInitializer = new Initializers.Constant(1) });
-            net.AddLayer(new Dense(net.LastLayer, inputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
+            net.AddLayer(new Dense(inputs, 4, Activation.Linear));
+            net.AddLayer(new Dense(net.LastLayer, 6, Activation.Linear));
+            net.AddLayer(new Dense(net.LastLayer, inputs, Activation.Linear));
 
             List<Data> tData = new List<Data>();
-
             for (int i = 0; i < samples; ++i)
             {
                 var input = new Tensor(net.Layer(0).InputShape);
-                input.FillWithRand();
-                var output = new Tensor(net.Layer(0).InputShape);
-                output.FillWithRand();
-                tData.Add(new Data() { Input = input, Output = output});
+                input.FillWithRand(10 * i, -2, 2);
+                tData.Add(new Data() { Input = input, Output = input.Mul(1.7) });
             }
 
-            net.Optimize(new SGD(0.05), Loss.MeanSquareError);
-            net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
+            net.Optimize(new SGD(0.04), Loss.MeanSquareError);
+            net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
 
             for (int i = 0; i < tData.Count; ++i)
                 Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input), 0.001));
@@ -149,13 +146,6 @@ namespace Neuro.Tests
         {
             return expectedParams.Mul(input);
         }
-
-        //private Tensor TestFunc1(Tensor input)
-        //{
-        //    var o = new Tensor(input.Shape);
-
-        //    return ;
-        //}
 
         private Tensor ConvValidStride1(Tensor input, Tensor expectedParams)
         {

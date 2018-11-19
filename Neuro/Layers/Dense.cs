@@ -30,13 +30,15 @@ namespace Neuro.Layers
             var clone = new Dense(InputShape.Length, OutputShape.Length, Activation);
             clone.Weights = Weights.Clone();
             clone.Bias = Bias.Clone();
+            clone.UseBias = UseBias;
             return clone;
         }
 
         public override void Init()
         {
             KernelInitializer.Init(Weights, InputShape.Length, OutputShape.Length);
-            BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
+            if (UseBias)
+                BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
         }
 
         public override int GetParamsNum() { return Weights.Length; }
@@ -44,7 +46,8 @@ namespace Neuro.Layers
         protected override void FeedForwardInternal()
         {
             Weights.Mul(Input, Output);
-            Output.Add(Bias, Output);
+            if (UseBias)
+                Output.Add(Bias, Output);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Dense() output:\n{Output}\n");
@@ -61,21 +64,26 @@ namespace Neuro.Layers
 
             var gradient = Optimizer != null ? Optimizer.GetGradientStep(outputGradient) : outputGradient;
             WeightsGradient.Add(gradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
-            BiasGradient.Add(gradient.SumBatches(), BiasGradient);
+            if (UseBias)
+                BiasGradient.Add(gradient.SumBatches(), BiasGradient);
         }
 
         protected override void OnUpdateParameters(int trainingSamples)
         {
             WeightsGradient.Div(trainingSamples, WeightsGradient);
             Weights.Sub(WeightsGradient, Weights);
-            BiasGradient.Div(trainingSamples, BiasGradient);
-            Bias.Sub(BiasGradient, Bias);
+            if (UseBias)
+            {
+                BiasGradient.Div(trainingSamples, BiasGradient);
+                Bias.Sub(BiasGradient, Bias);
+            }
         }
 
         protected override void ResetParametersGradients()
         {
             WeightsGradient.Zero();
-            BiasGradient.Zero();
+            if (UseBias)
+                BiasGradient.Zero();
         }
 
         public override Tensor GetParameters() { return Weights; }
@@ -84,6 +92,7 @@ namespace Neuro.Layers
 
         public Tensor Weights;
         public Tensor Bias;
+        public bool UseBias = true;
 
         public Initializers.InitializerBase KernelInitializer = new GlorotUniform();
         public Initializers.InitializerBase BiasInitializer = new Zeros();

@@ -59,6 +59,11 @@ namespace Neuro
             get { return Layers.Last(); }
         }
 
+        public int LayersCount
+        {
+            get { return Layers.Count; }
+        }
+
         public void AddLayer(Layers.LayerBase layer)
         {
             layer.Init();
