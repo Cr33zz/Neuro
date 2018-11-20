@@ -39,12 +39,51 @@ namespace Neuro.Tensors
 
         public virtual void Mul(Tensor t1, Tensor t2, Tensor result)
         {
+            //for (int n = 0; n < result.BatchSize; ++n)
+            //for (int d = 0; d < t1.Depth; ++d)
+            //for (int h = 0; h < t1.Height; ++h)
+            //for (int w = 0; w < t2.Width; ++w)
+            //for (int i = 0; i < t1.Width; ++i)
+            //    result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.BatchSize - 1)] * t2[w, i, d, Math.Min(n, t2.BatchSize - 1)];
+
+            //const int BLOCK_SIZE = 32 / sizeof(double);
+            int N = t1.Height;
+            int M = t2.Width;
+            int K = t1.Width;
+
             for (int n = 0; n < result.BatchSize; ++n)
-            for (int d = 0; d < t1.Depth; ++d)
-            for (int h = 0; h < t1.Height; ++h)
-            for (int w = 0; w < t2.Width; ++w)
-            for (int i = 0; i < t1.Width; ++i)
-                result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.BatchSize - 1)] * t2[w, i, d, Math.Min(n, t2.BatchSize - 1)];
+            {
+                int t1N = Math.Min(n, t1.BatchSize - 1);
+                int t2N = Math.Min(n, t2.BatchSize - 1);
+
+                for (int d = 0; d < t1.Depth; ++d)
+                for (int i = 0; i < N; ++i)
+                for (int j = 0; j < M; ++j)
+                for (int k = 0; k < K; ++k)
+                    result[j, i, d, n] += t1[k, i, d, t1N] * t2[j, k, d, t2N];
+            }
+
+            //for (int n = 0; n < result.BatchSize; ++n)
+            //for (int d = 0; d < t1.Depth; ++d)
+            //{
+            //    int t1N = Math.Min(n, t1.BatchSize - 1);
+            //    int t2N = Math.Min(n, t2.BatchSize - 1);
+
+            //    for (int jj = 0; jj < M; jj += BLOCK_SIZE)
+            //    {
+            //        int jMax = Math.Min(jj + BLOCK_SIZE, M);
+
+            //        for (int kk = 0; kk < K; kk += BLOCK_SIZE)
+            //        {
+            //            int kMax = Math.Min(kk + BLOCK_SIZE, K);
+
+            //            for (int i = 0; i < N; ++i)
+            //            for (int j = jj; j < jMax; ++j)
+            //            for (int k = kk; k < kMax; ++k)
+            //                result[j, i, d, n] += t1[k, i, d, t1N] * t2[j, k, d, t2N];
+            //        }
+            //    }
+            //}
         }
 
         public virtual void MulElem(Tensor t1, Tensor t2, Tensor result)

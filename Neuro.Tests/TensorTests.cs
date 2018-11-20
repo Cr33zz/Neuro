@@ -142,6 +142,22 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Mul_1Batch_2D()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            Tensor t1 = new Tensor(new Shape(4, 2));
+            t1.FillWithRange(0);
+            Tensor t2 = new Tensor(new Shape(2, 4));
+            t2.FillWithRange(0);
+
+            Tensor r = t1.Mul(t2);
+            Tensor correct = new Tensor(new double[] { 28, 34, 76, 98 }, new Shape(2, 2));
+
+            Assert.IsTrue(r.Equals(correct));
+        }
+
+        [TestMethod]
         public void Mul_2Batches_1Batch()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);

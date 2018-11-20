@@ -60,12 +60,15 @@ namespace Neuro.Tensors
         {
             Parallel.For(0, result.BatchSize, n =>
             {
+                int t1N = Math.Min(n, t1.BatchSize - 1);
+                int t2N = Math.Min(n, t2.BatchSize - 1);
+
                 Parallel.For(0, t1.Depth, d => {
                 for (int h = 0; h < t1.Height; ++h)
                 for (int w = 0; w < t2.Width; ++w)
                 for (int i = 0; i < t1.Width; ++i)
-                    result[w, h, d, n] += t1.Get(i, h, d, Math.Min(n, t1.BatchSize - 1)) *
-                                          t2.Get(w, i, d, Math.Min(n, t2.BatchSize - 1));
+                    result[w, h, d, n] += t1.Get(i, h, d, t1N) *
+                                          t2.Get(w, i, d, t2N);
                 });
             });
         }

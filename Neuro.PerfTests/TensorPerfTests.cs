@@ -8,11 +8,11 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-            //Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
 
-            Tensor t1 = new Tensor(new Shape(32, 64, 4, 2));
+            Tensor t1 = new Tensor(new Shape(64, 128, 4, 2));
             t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(64, 32, 4, 2));
+            Tensor t2 = new Tensor(new Shape(128, 64, 4, 2));
             t2.FillWithRand();
 
             var timer = new Stopwatch();
