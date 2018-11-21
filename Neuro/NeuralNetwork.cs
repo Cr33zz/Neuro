@@ -113,19 +113,22 @@ namespace Neuro
 
         public void Fit(Tensor input, Tensor output, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
         {
+            if (input.BatchSize != output.BatchSize) throw new Exception($"Mismatched input and output batch size.");
+
             List<Data> trainingData = new List<Data>();
-            for (int i = 0; i < input.BatchSize; ++i)
-                trainingData.Add(new Data() { Input = input.GetBatch(i), Output = output.GetBatch(i) });
+            trainingData.Add(new Data() { Input = input, Output = output });
             Fit(trainingData, -1, epochs, null, verbose, trackFlags);
         }
 
         public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
         {
+            if (inputs.Count != outputs.Count) throw new Exception($"Mismatched number of inputs and outputs.");
+
             List<Data> trainingData = new List<Data>();
             for (int i = 0; i < inputs.Count; ++i)
             {
-                if (inputs[i].BatchSize != 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
-                if (outputs[i].BatchSize != 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
+                if (inputs[i].BatchSize != 1 && inputs.Count > 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
+                if (outputs[i].BatchSize != 1 && outputs.Count > 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
                 trainingData.Add(new Data() { Input = inputs[i], Output = outputs[i] });
             }
 
@@ -138,6 +141,7 @@ namespace Neuro
             LogLines.Clear();
 
             bool trainingDataAlreadyBatched = trainingData[0].Input.BatchSize > 1;
+
             for (int i = 0; i < trainingData.Count; ++i)
             {
                 Data d = trainingData[i];
@@ -146,7 +150,7 @@ namespace Neuro
             }
 
             if (batchSize < 0)
-                batchSize = trainingData.Count;
+                batchSize = trainingDataAlreadyBatched ? trainingData[0].Input.BatchSize : trainingData.Count;
 
             string outFilename = $"{FilePrefix}_training_data_{Optimizer.GetType().Name.ToLower()}_b{batchSize}{(Seed > 0 ? ("_seed" + Seed) : "")}_{Tensor.CurrentOpMode}";
             ChartGenerator chartGen = null;
@@ -163,11 +167,10 @@ namespace Neuro
                 chartGen.AddSeries((int)Track.TestAccuracy, "Accuracy on test\n(right Y axis)", Color.CornflowerBlue, true);
 
             var lastLayer = Layers.Last();
-            Shape inputShape = Layers[0].InputShape;
             int outputsNum = lastLayer.OutputShape.Length;
 
-            int batchesNum = trainingData.Count / batchSize;
-            int trainingSamples = trainingData.Count;
+            int batchesNum = trainingDataAlreadyBatched ? trainingData.Count : (trainingData.Count / batchSize);
+            int totalTrainingSamples = trainingData.Count * trainingData[0].Input.BatchSize;
 
             AccuracyFunc accuracyFunc = Tools.AccNone;
 
@@ -189,7 +192,7 @@ namespace Neuro
                     LogLine($"Epoch {e}/{epochs}");
 
                 // no point shuffling stuff when we have single batch
-                if (batchesNum > 1 && !trainingDataAlreadyBatched)
+                if (batchesNum > 1)
                     trainingData.Shuffle();
 
                 List<Data> batchedTrainingData = trainingDataAlreadyBatched ? trainingData : Tools.MergeData(trainingData, batchSize);
@@ -207,7 +210,7 @@ namespace Neuro
 
                     if (verbose == 2)
                     {
-                        output = Tools.GetProgressString(b * batchSize + samples, trainingSamples);
+                        output = Tools.GetProgressString(b * batchSize + samples, totalTrainingSamples);
                         Console.Write(output);
                         Console.Write(new string('\b', output.Length));
                     }
@@ -215,22 +218,25 @@ namespace Neuro
 
                 trainTimer.Stop();
 
-                output = Tools.GetProgressString(trainingSamples, trainingSamples);
+                output = Tools.GetProgressString(totalTrainingSamples, totalTrainingSamples);
 
                 if (verbose > 0)
                     LogLine(output);
 
-                double trainError = trainTotalError / trainingSamples;
+                double trainError = trainTotalError / totalTrainingSamples;
 
                 chartGen?.AddData(e, trainError, (int)Track.TrainError);
-                chartGen?.AddData(e, (double)trainHits / trainingSamples, (int)Track.TrainAccuracy);
+                chartGen?.AddData(e, (double)trainHits / totalTrainingSamples, (int)Track.TrainAccuracy);
 
-                string s = $" - loss: {Math.Round(trainError, 6)}";
-                if (trackFlags.HasFlag(Track.TrainAccuracy))
-                    s += $" - acc: {Math.Round((double)trainHits / trainingSamples * 100, 4)}%";
-                s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");
                 if (verbose > 0)
+                {
+                    string s = $" - loss: {Math.Round(trainError, 6)}";
+                    if (trackFlags.HasFlag(Track.TrainAccuracy))
+                        s += $" - acc: {Math.Round((double)trainHits / totalTrainingSamples * 100, 4)}%";
+                    s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");
+
                     LogLine(s);
+                }
 
                 double testTotalError = 0;
 

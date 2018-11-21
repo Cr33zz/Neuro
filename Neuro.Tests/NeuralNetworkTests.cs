@@ -17,6 +17,64 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Fit_Batched_Tensors()
+        {
+            NeuralNetwork net = CreateFitTestNet();
+            
+            var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
+            var tData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
+
+            var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tData.Count));
+            var outputs = new Tensor(new Shape(net.LastLayer.OutputShape.Width, net.LastLayer.OutputShape.Height, net.LastLayer.OutputShape.Depth, tData.Count));
+            for (int i = 0; i < tData.Count; ++i)
+            {
+                tData[i].Input.CopyBatchTo(0, i, inputs);
+                tData[i].Output.CopyBatchTo(0, i, outputs);
+            }
+
+            net.Fit(inputs, outputs, 300, 0, Track.Nothing);
+
+            var learnedParams = net.LastLayer.GetParameters();
+
+            for (int i = 0; i < expectedWeights.Length; ++i)
+                Assert.AreEqual(learnedParams.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
+        }
+
+        [TestMethod]
+        public void Fit_Batched_Data()
+        {
+            NeuralNetwork net = CreateFitTestNet();
+
+            var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
+            var tempData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
+
+            var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tempData.Count));
+            var outputs = new Tensor(new Shape(net.LastLayer.OutputShape.Width, net.LastLayer.OutputShape.Height, net.LastLayer.OutputShape.Depth, tempData.Count));
+            for (int i = 0; i < tempData.Count; ++i)
+            {
+                tempData[i].Input.CopyBatchTo(0, i, inputs);
+                tempData[i].Output.CopyBatchTo(0, i, outputs);
+            }
+
+            var tData = new List<Data> { new Data() { Input = inputs, Output = outputs } };
+
+            net.Fit(tData, -1, 300, null, 0, Track.Nothing);
+
+            var learnedParams = net.LastLayer.GetParameters();
+
+            for (int i = 0; i < expectedWeights.Length; ++i)
+                Assert.AreEqual(learnedParams.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
+        }
+
+        private NeuralNetwork CreateFitTestNet()
+        {
+            var net = new NeuralNetwork("fit_test", 7);
+            net.AddLayer(new Dense(3, 2, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
+            net.Optimize(new SGD(0.07), Loss.MeanSquareError);
+            return net;
+        }
+
+        [TestMethod]
         public void Dense_Network_BS1()
         {
             TestDenseNetwork(2, 50, 1, 500);
