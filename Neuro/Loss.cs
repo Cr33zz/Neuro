@@ -14,6 +14,7 @@ namespace Neuro
         public static LossFunc CategoricalCrossEntropy = new CategoricalCrossEntropy();
         public static LossFunc CrossEntropy = new CrossEntropy();
         public static LossFunc MeanSquareError = new MeanSquareError();
+        public static Huber Huber1 = new Huber(1);
     }
 
     // This function can be used for any output being probability distribution (i.e. softmaxed)
@@ -53,12 +54,32 @@ namespace Neuro
     {
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            targetOutput.Map((yTrue, y) => (yTrue - y) * (yTrue - y) * 0.5, output, result);
+            targetOutput.Map((yTrue, y) => (y - yTrue) * (y - yTrue) * 0.5, output, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
         {
             output.Sub(targetOutput, result);
         }
+    }
+
+    public class Huber : LossFunc
+    {
+        public Huber(double delta)
+        {
+            Delta = delta;
+        }
+
+        public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
+        {
+            targetOutput.Map((yTrue, y) => { double a = y - yTrue; return Math.Abs(a) <= Delta ? (0.5 * a * a) : (Delta * Math.Abs(a) - 0.5 * Delta * Delta); }, output, result);
+        }
+
+        public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
+        {
+            targetOutput.Map((yTrue, y) => { double a = y - yTrue; return Math.Abs(a) <= Delta ? a : (Delta * Tools.Sign(a)); }, output, result);
+        }
+
+        public readonly double Delta;
     }
 }
