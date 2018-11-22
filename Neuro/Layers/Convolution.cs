@@ -35,6 +35,15 @@ namespace Neuro.Layers
             return clone;
         }
 
+        public override void CopyParametersTo(LayerBase target)
+        {
+            base.CopyParametersTo(target);
+
+            var targetConv = target as Convolution;            
+            Kernels.CopyTo(targetConv.Kernels);
+            Bias.CopyTo(targetConv.Bias);
+        }
+
         public override void Init()
         {
             KernelInitializer.Init(Kernels, InputShape.Length, OutputShape.Length);

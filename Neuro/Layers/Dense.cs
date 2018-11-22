@@ -2,6 +2,7 @@
 using System.Xml;
 using Neuro.Initializers;
 using Neuro.Tensors;
+using System;
 
 namespace Neuro.Layers
 {
@@ -32,6 +33,15 @@ namespace Neuro.Layers
             clone.Bias = Bias.Clone();
             clone.UseBias = UseBias;
             return clone;
+        }
+
+        public override void CopyParametersTo(LayerBase target)
+        {
+            base.CopyParametersTo(target);
+
+            var targetDense = target as Dense;
+            Weights.CopyTo(targetDense.Weights);
+            Bias.CopyTo(targetDense.Bias);
         }
 
         public override void Init()

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Xml;
 using Neuro.Tensors;
+using System;
 
 namespace Neuro.Layers
 {
@@ -20,7 +21,13 @@ namespace Neuro.Layers
         internal LayerBase() {}
 
         public abstract LayerBase Clone();
-        
+
+        public virtual void CopyParametersTo(LayerBase target)
+        {
+            if (!InputShape.Equals(target.InputShape) || !OutputShape.Equals(target.OutputShape))
+                throw new Exception("Cannot copy parameters between incompatible layers.");
+        }
+
         // The concept of layer is that it is a 'blockbox' that supports feed forward and backward propagation.
         // Feed forward: input Tensor -> |logic| -> output Tensor
         // Back propagation: error gradients (for its outputs) -> |learning| -> error gradients (for predecessing layer outputs) and internal parameters deltas

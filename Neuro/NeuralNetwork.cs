@@ -42,6 +42,12 @@ namespace Neuro
             return clone;
         }
 
+        public void CopyParametersTo(NeuralNetwork target)
+        {
+            for (int i = 0; i < Layers.Count; ++i)
+                Layers[i].CopyParametersTo(target.Layers[i]);
+        }
+
         public string Name;
 
         public string FilePrefix
