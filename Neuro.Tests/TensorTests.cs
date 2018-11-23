@@ -465,7 +465,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
             var t = new Tensor(new double[] { -20, 1, 5, 5, 6, -1, 3, 4, 2, 1, 16, 5, 3, 1, 10, 11 }, new Shape(2, 2, 1, 4));
-            var maxes = new int[] { 2, 4, 10, 15 };
+            var maxes = new int[] { 2, 0, 2, 3 };
 
             for (int i = 0; i < t.BatchSize; ++i)
                 Assert.AreEqual(t.ArgMax(i), maxes[i]);

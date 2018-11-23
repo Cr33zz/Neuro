@@ -9,7 +9,7 @@ namespace Neuro
     {
         public ChartGenerator(string outputFileName, string title = "", string xAxisLabel = "")
         {
-            OutputFileName = $"{outputFileName}_{DateTime.Now.ToString("ddMMyyy_Hmm")}";
+            OutputFileName = $"{outputFileName}_{DateTime.Now.ToString("ddMMyyy_HHmm")}";
             ChartArea.AxisX.Title = xAxisLabel;
             ChartArea.AxisX.TitleFont = new Font(Chart.Font.Name, 11);
             ChartArea.AxisX.LabelStyle.Format = "#";

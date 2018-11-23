@@ -362,15 +362,8 @@ namespace Neuro.Tensors
 
         public double Max(int batch = -1)
         {
-            if (batch < 0)
-                return Values.Max();
-
-            double max = double.MinValue;
-            
-            for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
-                max = Math.Max(max, Values[idx]);
-
-            return max;
+            int maxIndex;
+            return GetMaxData(batch, out maxIndex);
         }
 
         public static Tensor Merge(List<Tensor> list, int axis)
@@ -406,24 +399,12 @@ namespace Neuro.Tensors
             Map(x => x / sum, result);
         }
 
+        // ArgMax will return local index inside given batch if batch is non -1
         public int ArgMax(int batch = -1)
         {
-            double max = Max(batch);
-
-            if (batch < 0)
-            {
-                for (int i = 0; i < Values.Length; ++i)
-                    if (Values[i] == max)
-                        return i;
-            }
-            else
-            {
-                for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
-                    if (Values[idx] == max)
-                        return idx;
-            }
-
-            return -1;
+            int maxIndex;
+            GetMaxData(batch, out maxIndex);
+            return maxIndex;
         }
 
         public virtual Tensor Transposed()
@@ -754,6 +735,33 @@ namespace Neuro.Tensors
                      return false;
 
             return true;
+        }
+
+        private double GetMaxData(int batch, out int maxIndex)
+        {
+            maxIndex = -1;
+            double maxValue = double.MinValue;
+
+            if (batch < 0)
+            {
+                for (int i = 0; i < Values.Length; ++i)
+                    if (Values[i] > maxValue)
+                    {
+                        maxValue = Values[i];
+                        maxIndex = i;
+                    }
+            }
+            else
+            {
+                for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
+                    if(Values[idx] > maxValue)
+                    {
+                        maxValue = Values[idx];
+                        maxIndex = i;
+                    }
+            }
+
+            return maxValue;
         }
 
         public Shape Shape { get; private set; }
