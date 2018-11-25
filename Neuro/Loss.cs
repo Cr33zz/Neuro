@@ -54,12 +54,12 @@ namespace Neuro
     {
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            targetOutput.Map((yTrue, y) => (y - yTrue) * (y - yTrue) * 0.5, output, result);
+            targetOutput.Map((yTrue, y) => (y - yTrue) * (y - yTrue), output, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
         {
-            output.Sub(targetOutput, result);
+            targetOutput.Map((yTrue, y) => (y - yTrue), output, result);
         }
     }
 

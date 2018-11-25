@@ -32,7 +32,7 @@ namespace Neuro.Tests
                 tData[i].Output.CopyBatchTo(0, i, outputs);
             }
 
-            net.Fit(inputs, outputs, 300, 0, Track.Nothing);
+            net.Fit(inputs, outputs, -1, 300, 0, Track.Nothing);
 
             var learnedParams = net.LastLayer.GetParameters();
 

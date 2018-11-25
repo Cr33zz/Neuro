@@ -117,16 +117,25 @@ namespace Neuro
                 Layers[l].Optimizer = optimizer.Clone();
         }
 
-        public void Fit(Tensor input, Tensor output, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        public void Fit(Tensor input, Tensor output, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
             if (input.BatchSize != output.BatchSize) throw new Exception($"Mismatched input and output batch size.");
 
             List<Data> trainingData = new List<Data>();
-            trainingData.Add(new Data() { Input = input, Output = output });
-            Fit(trainingData, -1, epochs, null, verbose, trackFlags);
+
+            if (batchSize > 0 && batchSize != input.BatchSize)
+            {
+                // we have to split input and output tensors into datas so they can be shuffled later on
+                for (int i = 0; i < input.BatchSize; ++i)
+                    trainingData.Add(new Data() { Input = input.GetBatch(i), Output = output.GetBatch(i) });
+            }
+            else
+                trainingData.Add(new Data() { Input = input, Output = output });
+
+            Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
         }
 
-        public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
             if (inputs.Count != outputs.Count) throw new Exception($"Mismatched number of inputs and outputs.");
 
@@ -138,11 +147,11 @@ namespace Neuro
                 trainingData.Add(new Data() { Input = inputs[i], Output = outputs[i] });
             }
 
-            Fit(trainingData, batchSize, epochs, null, verbose, trackFlags);
+            Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
         }
 
         // Training method, when batch size is -1 the whole training set is used for single gradient descent step (in other words, batch size equals to training set size)
-        public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy)
+        public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
             LogLines.Clear();
 
@@ -198,7 +207,7 @@ namespace Neuro
                     LogLine($"Epoch {e}/{epochs}");
 
                 // no point shuffling stuff when we have single batch
-                if (batchesNum > 1)
+                if (batchesNum > 1 && shuffle)
                     trainingData.Shuffle();
 
                 List<Data> batchedTrainingData = trainingDataAlreadyBatched ? trainingData : Tools.MergeData(trainingData, batchSize);
