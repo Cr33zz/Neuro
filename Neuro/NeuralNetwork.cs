@@ -99,7 +99,10 @@ namespace Neuro
                 Trace.WriteLine($"Errors gradient:\n{delta}\n");
 
             for (int l = Layers.Count - 1; l >= 0; --l)
+            {
+                ++Layers[l].Optimizer.Iteration;
                 delta = Layers[l].BackProp(delta);
+            }
         }
 
         private void UpdateParameters(int trainingSamples)

@@ -6,6 +6,8 @@ namespace Neuro.Optimizers
     public abstract class OptimizerBase
     {
         public abstract Tensor GetGradientStep(Tensor gradient);
-        public abstract OptimizerBase Clone();        
+        public abstract OptimizerBase Clone();
+
+        public float Iteration;
     }
 }
