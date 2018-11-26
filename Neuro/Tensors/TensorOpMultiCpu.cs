@@ -91,7 +91,7 @@ namespace Neuro.Tensors
                 for (int h = -paddingY, outH = 0; outH < result.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < result.Width; w += stride, ++outW)
                 {
-                    double val = 0;
+                    float val = 0;
 
                     for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
                     for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
@@ -131,13 +131,13 @@ namespace Neuro.Tensors
                     for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                     for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                     {
-                        double grad = gradient[outW, outH, outD, n];
+                        float grad = gradient[outW, outH, outD, n];
 
                         for (int kernelD = 0; kernelD < kernelsGradient.Depth; ++kernelD)
                         for (int kernelH = 0; kernelH < kernelsGradient.Height; ++kernelH)
                         for (int kernelW = 0; kernelW < kernelsGradient.Width; ++kernelW)
                         {
-                            double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
+                            float kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
                             kernelsGradient[kernelW, kernelH, kernelD, outD] += kernGradVal;
                         }
                     }
@@ -156,19 +156,19 @@ namespace Neuro.Tensors
                     {
                         if (type == Tensor.PoolType.Max)
                         {
-                            double value = double.MinValue;
+                            float value = float.MinValue;
 
                             for (int poolY = 0; poolY < filterSize; ++poolY)
                             for (int poolX = 0; poolX < filterSize; ++poolX)
                             {
-                                value = Math.Max(value, t.TryGet(double.MinValue, w + poolX, h + poolY, outD, outN));
+                                value = Math.Max(value, t.TryGet(float.MinValue, w + poolX, h + poolY, outD, outN));
                             }
 
                             result[outW, outH, outD, outN] = value;
                         }
                         else if (type == Tensor.PoolType.Avg)
                         {
-                            double sum = 0;
+                            float sum = 0;
                             for (int poolY = 0; poolY < filterSize; ++poolY)
                             for (int poolX = 0; poolX < filterSize; ++poolX)
                                 sum += t.TryGet(0, w + poolX, h + poolY, outD, outN);
@@ -195,13 +195,13 @@ namespace Neuro.Tensors
                             for (int poolH = 0; poolH < filterSize; ++poolH)
                             for (int poolW = 0; poolW < filterSize; ++poolW)
                             {
-                                double value = input.TryGet(Double.MinValue, w + poolW, h + poolH, outD, outN);
+                                float value = input.TryGet(Single.MinValue, w + poolW, h + poolH, outD, outN);
                                 result.TrySet(value == output[outW, outH, outD, outN] ? outputGradient.Get(outW, outH, outD, outN) : 0, w + poolW, h + poolH, outD, outN);
                             }
                         }
                         else if (type == Tensor.PoolType.Avg)
                         {
-                            double filterElementsNum = filterSize * filterSize;
+                            float filterElementsNum = filterSize * filterSize;
 
                             for (int poolH = 0; poolH < filterSize; ++poolH)
                             for (int poolW = 0; poolW < filterSize; ++poolW)

@@ -24,7 +24,7 @@ namespace Neuro
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
             Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
-            targetOutput.Map((yTrue, y) => -yTrue * Math.Log(y), clippedOutput, result);
+            targetOutput.Map((yTrue, y) => -yTrue * (float)Math.Log(y), clippedOutput, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
@@ -40,7 +40,7 @@ namespace Neuro
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
             Tensor clippedOutput = output.Clipped(Tools._EPSILON, 1 - Tools._EPSILON);
-            targetOutput.Map((yTrue, y) => -yTrue * Math.Log(y) - (1 - yTrue) * Math.Log(1 - y), clippedOutput, result);
+            targetOutput.Map((yTrue, y) => -yTrue * (float)Math.Log(y) - (1 - yTrue) * (float)Math.Log(1 - y), clippedOutput, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
@@ -65,21 +65,21 @@ namespace Neuro
 
     public class Huber : LossFunc
     {
-        public Huber(double delta)
+        public Huber(float delta)
         {
             Delta = delta;
         }
 
         public override void Compute(Tensor targetOutput, Tensor output, Tensor result)
         {
-            targetOutput.Map((yTrue, y) => { double a = y - yTrue; return Math.Abs(a) <= Delta ? (0.5 * a * a) : (Delta * Math.Abs(a) - 0.5 * Delta * Delta); }, output, result);
+            targetOutput.Map((yTrue, y) => { float a = y - yTrue; return Math.Abs(a) <= Delta ? (0.5f * a * a) : (Delta * (float)Math.Abs(a) - 0.5f * Delta * Delta); }, output, result);
         }
 
         public override void Derivative(Tensor targetOutput, Tensor output, Tensor result)
         {
-            targetOutput.Map((yTrue, y) => { double a = y - yTrue; return Math.Abs(a) <= Delta ? a : (Delta * Tools.Sign(a)); }, output, result);
+            targetOutput.Map((yTrue, y) => { float a = y - yTrue; return Math.Abs(a) <= Delta ? a : (Delta * Tools.Sign(a)); }, output, result);
         }
 
-        public readonly double Delta;
+        public readonly float Delta;
     }
 }

@@ -19,9 +19,9 @@ namespace Neuro.Tensors
         public override void Add(Tensor t1, Tensor t2, Tensor result)
         {
             int threadsRequired = result.Length;
-            double[] devT1 = Gpu.CopyToDevice(t1.Values);
-            double[] devT2 = Gpu.CopyToDevice(t2.Values);
-            double[] devResult = Gpu.Allocate(result.Values);
+            float[] devT1 = Gpu.CopyToDevice(t1.Values);
+            float[] devT2 = Gpu.CopyToDevice(t2.Values);
+            float[] devResult = Gpu.Allocate(result.Values);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuAdd(devT1, devT2, devResult);
             Gpu.Synchronize();
@@ -33,9 +33,9 @@ namespace Neuro.Tensors
         public override void Sub(Tensor t1, Tensor t2, Tensor result)
         {
             int threadsRequired = result.Length;
-            double[] devT1 = Gpu.CopyToDevice(t1.Values);
-            double[] devT2 = Gpu.CopyToDevice(t2.Values);
-            double[] devResult = Gpu.Allocate(result.Values);
+            float[] devT1 = Gpu.CopyToDevice(t1.Values);
+            float[] devT2 = Gpu.CopyToDevice(t2.Values);
+            float[] devResult = Gpu.Allocate(result.Values);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuSub(devT1, devT2, devResult);
             Gpu.Synchronize();
@@ -49,9 +49,9 @@ namespace Neuro.Tensors
             int threadsRequired = result.BatchSize * t1.Depth * t1.Height * t2.Width;
             GpuShape[] shapes = new [] { new GpuShape(t1.Shape), new GpuShape(t2.Shape), new GpuShape(result.Shape) };
 
-            double[] devT1 = Gpu.CopyToDevice(t1.Values);
-            double[] devT2 = Gpu.CopyToDevice(t2.Values);
-            double[] devResult = Gpu.Allocate(result.Values);
+            float[] devT1 = Gpu.CopyToDevice(t1.Values);
+            float[] devT2 = Gpu.CopyToDevice(t2.Values);
+            float[] devResult = Gpu.Allocate(result.Values);
             GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuMul(devT1, devT2, devResult, devShapes);
@@ -66,9 +66,9 @@ namespace Neuro.Tensors
             int threadsRequired = t.BatchSize * kernels.BatchSize * result.Width * result.Height;
             GpuShape[] shapes = new[] { new GpuShape(t.Shape), new GpuShape(kernels.Shape), new GpuShape(result.Shape) };
 
-            double[] devT = Gpu.CopyToDevice(t.Values);
-            double[] devKernels = Gpu.CopyToDevice(kernels.Values);
-            double[] devResult = Gpu.Allocate(result.Values);
+            float[] devT = Gpu.CopyToDevice(t.Values);
+            float[] devKernels = Gpu.CopyToDevice(kernels.Values);
+            float[] devResult = Gpu.Allocate(result.Values);
             GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuConv2D(devT, devKernels, devResult, devShapes, paddingX, paddingY, stride);
@@ -85,13 +85,13 @@ namespace Neuro.Tensors
                                         new GpuShape(inputGradients.Shape),
                                         new GpuShape(rotKernels.Width, rotKernels.Height, 1, rotKernels.BatchSize) };
 
-            double[] devGradient = Gpu.CopyToDevice(gradient.Values);
-            double[] devRotKernels = Gpu.CopyToDevice(rotKernels.Values);
+            float[] devGradient = Gpu.CopyToDevice(gradient.Values);
+            float[] devRotKernels = Gpu.CopyToDevice(rotKernels.Values);
             GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             int threadsRequiredPerResultElem = rotKernels.BatchSize * rotKernels.Height * rotKernels.Width;
-            double[,] resultPartials = new double[inputGradients.Length, GetBlocksNum(threadsRequiredPerResultElem)];
-            double[,] devResultPartials = Gpu.Allocate(resultPartials);
+            float[,] resultPartials = new float[inputGradients.Length, GetBlocksNum(threadsRequiredPerResultElem)];
+            float[,] devResultPartials = Gpu.Allocate(resultPartials);
 
             // simulate
             //GpuConv2DInputGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), gradient.Values, rotKernels.Values, resultPartials, shapes, paddingX, paddingY, stride);
@@ -116,14 +116,14 @@ namespace Neuro.Tensors
                                         new GpuShape(kernelsGradient.Shape),
                                         new GpuShape(gradient.Width, gradient.Height, 1, gradient.BatchSize) };
 
-            double[] devGradient = Gpu.CopyToDevice(gradient.Values);
+            float[] devGradient = Gpu.CopyToDevice(gradient.Values);
             GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
             int threadsRequiredPerResultElem = gradient.BatchSize * gradient.Height * gradient.Width;
-            double[,] resultPartials = new double[kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)];
+            float[,] resultPartials = new float[kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)];
 
-            double[] devInput = Gpu.CopyToDevice(input.Values);
-            double[,] devResultPartials = Gpu.Allocate(resultPartials);
+            float[] devInput = Gpu.CopyToDevice(input.Values);
+            float[,] devResultPartials = Gpu.Allocate(resultPartials);
 
             // simulate
             //GpuConv2DKernelsGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), input.Values, gradient.Values, kernelsGradientPartials, shapes, paddingX, paddingY, stride);
@@ -148,7 +148,7 @@ namespace Neuro.Tensors
 
         private int GetBlocksNum(int threadsRequired)
         {
-            return (int)Math.Ceiling(threadsRequired / (double)THREADS_PER_BLOCK);
+            return (int)Math.Ceiling(threadsRequired / (float)THREADS_PER_BLOCK);
         }
 
         private const int THREADS_PER_BLOCK = 256;
@@ -219,7 +219,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuAdd(GThread thread, double[] t1, double[] t2, double[] result)
+        private static void GpuAdd(GThread thread, float[] t1, float[] t2, float[] result)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -230,7 +230,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuSub(GThread thread, double[] t1, double[] t2, double[] result)
+        private static void GpuSub(GThread thread, float[] t1, float[] t2, float[] result)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -241,7 +241,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuMul(GThread thread, double[] t1, double[] t2, double[] result, GpuShape[] shapes)
+        private static void GpuMul(GThread thread, float[] t1, float[] t2, float[] result, GpuShape[] shapes)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -258,7 +258,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2D(GThread thread, double[] t, double[] kernels, double[] result, GpuShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2D(GThread thread, float[] t, float[] kernels, float[] result, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
 
@@ -273,7 +273,7 @@ namespace Neuro.Tensors
             int h = -paddingY + stride * outH;
             int w = -paddingX + stride * outW;
 
-            double val = 0;
+            float val = 0;
 
             for (int kernelD = 0; kernelD < shapes[1].Depth; ++kernelD)
             for (int kernelH = 0; kernelH < shapes[1].Height; ++kernelH)
@@ -289,7 +289,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2DInputGradient(GThread thread, double[] gradient, double[] rotKernels, double[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2DInputGradient(GThread thread, float[] gradient, float[] rotKernels, float[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             /*
             for (int n = 0; n < gradients.BatchSize; ++n)
@@ -305,7 +305,7 @@ namespace Neuro.Tensors
             */
 
             // this shared memory will store partial sums that later on will be reduced
-            double[] sdata = thread.AllocateShared<double>("sdata", THREADS_PER_BLOCK);
+            float[] sdata = thread.AllocateShared<float>("sdata", THREADS_PER_BLOCK);
 
             int resultElemId = thread.blockIdx.x;
             int tid = thread.threadIdx.x;
@@ -325,7 +325,7 @@ namespace Neuro.Tensors
             int h = -paddingY + stride * outH;
             int w = -paddingX + stride * outW;
 
-            double temp = 0;
+            float temp = 0;
             if (id < threadsRequiredPerResultElem)
             {
                 int gradientIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelN, outN);
@@ -350,7 +350,7 @@ namespace Neuro.Tensors
         }
 
         [Cudafy]
-        private static void GpuConv2DKernelsGradient(GThread thread, double[] input, double[] gradient, double[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
+        private static void GpuConv2DKernelsGradient(GThread thread, float[] input, float[] gradient, float[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
         {
             /*
             for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
@@ -362,15 +362,15 @@ namespace Neuro.Tensors
                 for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
-                    double grad = gradient[outW, outH, kernelN, n];
-                    double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
+                    float grad = gradient[outW, outH, kernelN, n];
+                    float kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
                     kernelsGradient[kernelW, kernelH, kernelD, kernelN] += kernGradVal;
                 }
             }
             */
 
             // this shared memory will store partial sums that later on will be reduced
-            double[] sdata = thread.AllocateShared<double>("sdata", THREADS_PER_BLOCK);
+            float[] sdata = thread.AllocateShared<float>("sdata", THREADS_PER_BLOCK);
 
             int resultElemId = thread.blockIdx.x;
             int tid = thread.threadIdx.x;
@@ -389,7 +389,7 @@ namespace Neuro.Tensors
             int h = -paddingY + stride * outH;
             int w = -paddingX + stride * outW;
 
-            double temp = 0;
+            float temp = 0;
             if (id < threadsRequiredPerResultElem)
             {
                 int inputIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelD, n);

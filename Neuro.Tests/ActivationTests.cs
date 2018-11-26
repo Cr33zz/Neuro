@@ -79,7 +79,7 @@ namespace Neuro.Tests
             //Loss.CategoricalCrossEntropy(new Tensor(new[] { 1.0, 0.0, 0.0 }, input.Shape), output, true, outputGradient);
 
             var outputGradient = new Tensor(input.Shape);
-            outputGradient.FillWithValue(1.0);
+            outputGradient.FillWithValue(1.0f);
 
             var result = new Tensor(input.Shape);
             Activation.Softmax.Derivative(output, outputGradient, result);
@@ -98,7 +98,7 @@ namespace Neuro.Tests
             Activation.Softmax.Compute(input, output);
 
             var outputGradient = new Tensor(input.Shape);
-            outputGradient.FillWithValue(1.0);
+            outputGradient.FillWithValue(1.0f);
 
             var result = new Tensor(input.Shape);
             Activation.Softmax.Derivative(output, outputGradient, result);

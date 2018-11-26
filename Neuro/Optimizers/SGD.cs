@@ -4,7 +4,7 @@ namespace Neuro.Optimizers
 {
     public class SGD : OptimizerBase
     {
-        public SGD(double lr = 0.02)
+        public SGD(float lr = 0.02f)
         {
             LearningRate = lr;
         }
@@ -24,6 +24,6 @@ namespace Neuro.Optimizers
             return $"SGD(lr={LearningRate})";
         }
 
-        private readonly double LearningRate;
+        private readonly float LearningRate;
     }
 }

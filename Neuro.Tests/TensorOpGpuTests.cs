@@ -18,7 +18,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor r2 = t1.Mul(t2);
 
-            Assert.IsTrue(r.Equals(r2));
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
         }
 
         [TestMethod]
@@ -93,7 +93,7 @@ namespace Neuro.Tests
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor r2 = t.Conv2D(kernals, 1, Tensor.PaddingType.Valid);
 
-            Assert.IsTrue(r.Equals(r2));
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
         }
 
         [TestMethod]
@@ -112,7 +112,7 @@ namespace Neuro.Tests
             Tensor inputGradient2 = new Tensor(input);
             Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient2);
 
-            Assert.IsTrue(inputGradient.Equals(inputGradient2));
+            Assert.IsTrue(inputGradient.Equals(inputGradient2, 1e-4f));
         }
 
         [TestMethod]
@@ -131,7 +131,7 @@ namespace Neuro.Tests
             Tensor kernelsGradient2 = new Tensor(kernels);
             Tensor.Conv2DKernelsGradient(input, gradient, 1, Tensor.PaddingType.Valid, kernelsGradient2);
 
-            Assert.IsTrue(kernelsGradient.Equals(kernelsGradient2));
+            Assert.IsTrue(kernelsGradient.Equals(kernelsGradient2, 1e-4f));
         }
 
         [TestMethod]

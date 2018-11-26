@@ -8,8 +8,8 @@ namespace Neuro.Tests
 {
     public static class Tools
     {
-        private static readonly double DERIVATIVE_EPSILON = 1e-4;
-        private static readonly double LOSS_DERIVATIVE_EPSILON = 1e-5;
+        private static readonly float DERIVATIVE_EPSILON = 1e-4f;
+        private static readonly float LOSS_DERIVATIVE_EPSILON = 1e-5f;
 
         public static void VerifyInputGradient(LayerBase layer, int batchSize = 1)
         {
@@ -39,12 +39,12 @@ namespace Neuro.Tests
 
                 output2.Sub(output1, result);
 
-                var approxGrad = new double[output.Shape.Length];
+                var approxGrad = new float[output.Shape.Length];
                 for (var j = 0; j < output.Shape.Length; j++)
-                    approxGrad[j] = result.GetFlat(j) / (2.0 * DERIVATIVE_EPSILON);
+                    approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, layer.InputGradient.GetFlat(i), 1e-3, $"At element {i}");
+                Assert.AreEqual(approxGradient, layer.InputGradient.GetFlat(i), 0.02, $"At element {i}");
             }
         }
 
@@ -68,7 +68,7 @@ namespace Neuro.Tests
             {
                 result.Zero();
 
-                double oldValue = parameters.GetFlat(i);
+                float oldValue = parameters.GetFlat(i);
                 parameters.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
                 var output1 = layer.FeedForward(input).Clone();
                 parameters.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
@@ -78,12 +78,12 @@ namespace Neuro.Tests
 
                 output1.Sub(output2, result);
 
-                var approxGrad = new double[output.Shape.Length];
+                var approxGrad = new float[output.Shape.Length];
                 for (var j = 0; j < output.Shape.Length; j++)
-                    approxGrad[j] = result.GetFlat(j) / (2.0 * DERIVATIVE_EPSILON);
+                    approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 1e-3, $"At element {i}");
+                Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 0.02, $"At element {i}");
             }
         }
 
@@ -91,10 +91,10 @@ namespace Neuro.Tests
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var input = new Tensor(new Shape(3, 3, 3, batchSize));
-            input.FillWithRange(-1.0, 2.0 / input.Length);
+            input.FillWithRange(-1.0f, 2.0f / input.Length);
 
             var outputGradient = new Tensor(new Shape(3, 3, 3, batchSize));
-            outputGradient.FillWithValue(1.0);
+            outputGradient.FillWithValue(1.0f);
 
             // for derivation purposes activation functions expect already processed input
             var output = new Tensor(input.Shape);
@@ -114,10 +114,10 @@ namespace Neuro.Tests
 
             var approxDerivative = result.Div(2 * DERIVATIVE_EPSILON);
 
-            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
+            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-2f));
         }
 
-        public static void VerifyLossFuncDerivative(LossFunc func, Tensor targetOutput, bool onlyPositiveOutput = false, int batchSize = 1)
+        public static void VerifyLossFuncDerivative(LossFunc func, Tensor targetOutput, bool onlyPositiveOutput = false, int batchSize = 1, float tolerance = 0.01f)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var output = new Tensor(new Shape(3, 3, 3, batchSize));
@@ -141,10 +141,10 @@ namespace Neuro.Tests
 
             var approxDerivative = result.Div(2 * LOSS_DERIVATIVE_EPSILON);
 
-            Assert.IsTrue(approxDerivative.Equals(derivative, 1e-4));
+            Assert.IsTrue(approxDerivative.Equals(derivative, tolerance));
         }
 
-        public static void VerifyLossFunc(LossFunc func, Tensor targetOutput, Func<double, double, double> testFunc, bool onlyPositiveOutput = false, int batchSize = 1)
+        public static void VerifyLossFunc(LossFunc func, Tensor targetOutput, Func<float, float, float> testFunc, bool onlyPositiveOutput = false, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             var output = new Tensor(new Shape(3, 3, 3, batchSize));

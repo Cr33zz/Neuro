@@ -46,7 +46,7 @@ namespace Neuro.Tensors
             //for (int i = 0; i < t1.Width; ++i)
             //    result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.BatchSize - 1)] * t2[w, i, d, Math.Min(n, t2.BatchSize - 1)];
 
-            //const int BLOCK_SIZE = 32 / sizeof(double);
+            //const int BLOCK_SIZE = 32 / sizeof(float);
             int N = t1.Height;
             int M = t2.Width;
             int K = t1.Width;
@@ -92,7 +92,7 @@ namespace Neuro.Tensors
                 result.Values[i] = t1.Values[i] * t2.Values[i];
         }
 
-        public virtual void Map(Tensor t, Func<double, double> func, Tensor result)
+        public virtual void Map(Tensor t, Func<float, float> func, Tensor result)
         {
             for (int i = 0; i < t.Values.Length; ++i)
                 result.Values[i] = func(t.Values[i]);
@@ -106,7 +106,7 @@ namespace Neuro.Tensors
                 for (int h = -paddingY, outH = 0; outH < result.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < result.Width; w += stride, ++outW)
                 {
-                    double val = 0;
+                    float val = 0;
 
                     for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
                     for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
@@ -147,8 +147,8 @@ namespace Neuro.Tensors
                 for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
                 for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
                 {
-                    double grad = gradient[outW, outH, kernelN, outN];
-                    double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, outN) * grad;
+                    float grad = gradient[outW, outH, kernelN, outN];
+                    float kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, outN) * grad;
                     kernelsGradient[kernelW, kernelH, kernelD, kernelN] += kernGradVal;
 
                     //if (kernelsGradient.Shape.GetIndex(kernelW, kernelH, kernelD, kernelN) == 0)
@@ -202,16 +202,16 @@ namespace Neuro.Tensors
             //    for (int outH = 0, h = -paddingY; outH < output.Height; h += stride, ++outH)
             //    for (int outW = 0, w = -paddingX; outW < output.Width; w += stride, ++outW)
             //    {
-            //        double grad = gradient[outW, outH, outD, n];
+            //        float grad = gradient[outW, outH, outD, n];
 
             //        for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
             //        for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
             //        for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
             //        {
-            //            double inputGradVal = kernels[kernelW, kernelH, kernelD, outD] * grad;
+            //            float inputGradVal = kernels[kernelW, kernelH, kernelD, outD] * grad;
             //            inputGradient.TrySet(inputGradient.TryGet(0, w + kernelW, h + kernelH, kernelD, n) + inputGradVal, w + kernelW, h + kernelH, kernelD, n);
 
-            //            double kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
+            //            float kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
             //            kernelsGradient[kernelW, kernelH, kernelD, outD] += kernGradVal;
             //        }
             //    }
@@ -227,19 +227,19 @@ namespace Neuro.Tensors
             {
                 if (type == Tensor.PoolType.Max)
                 {
-                    double value = double.MinValue;
+                    float value = float.MinValue;
 
                     for (int poolY = 0; poolY < filterSize; ++poolY)
                     for (int poolX = 0; poolX < filterSize; ++poolX)
                     {
-                        value = Math.Max(value, t.TryGet(double.MinValue, w + poolX, h + poolY, outD, outN));
+                        value = Math.Max(value, t.TryGet(float.MinValue, w + poolX, h + poolY, outD, outN));
                     }
 
                     result[outW, outH, outD, outN] = value;
                 }
                 else if (type == Tensor.PoolType.Avg)
                 {
-                    double sum = 0;
+                    float sum = 0;
                     for (int poolY = 0; poolY < filterSize; ++poolY)
                     for (int poolX = 0; poolX < filterSize; ++poolX)
                         sum += t.TryGet(0, w + poolX, h + poolY, outD, outN);
@@ -261,13 +261,13 @@ namespace Neuro.Tensors
                     for (int poolH = 0; poolH < filterSize; ++poolH)
                     for (int poolW = 0; poolW < filterSize; ++poolW)
                     {
-                        double value = input.TryGet(Double.MinValue, w + poolW, h + poolH, outD, outN);
+                        float value = input.TryGet(Single.MinValue, w + poolW, h + poolH, outD, outN);
                         result.TrySet(value == output[outW, outH, outD, outN] ? outputGradient[outW, outH, outD, outN] : 0, w + poolW, h + poolH, outD, outN);
                     }
                 }
                 else if (type == Tensor.PoolType.Avg)
                 {
-                    double filterElementsNum = filterSize * filterSize;
+                    float filterElementsNum = filterSize * filterSize;
 
                     for (int poolH = 0; poolH < filterSize; ++poolH)
                     for (int poolW = 0; poolW < filterSize; ++poolW)

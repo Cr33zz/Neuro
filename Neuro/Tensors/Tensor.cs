@@ -20,20 +20,20 @@ namespace Neuro.Tensors
         public Tensor(Shape shape)
         {
             Shape = shape;
-            Values = new double[shape.Length];
+            Values = new float[shape.Length];
         }
 
-        public Tensor(double[] values, Shape shape)
+        public Tensor(float[] values, Shape shape)
         {
             Debug.Assert(values.Length == shape.Length, $"Invalid array size {values.Length}. Expected {shape.Length}.");
             Shape = shape;
-            Values = (double[])values.Clone();
+            Values = (float[])values.Clone();
         }
 
         public Tensor(Tensor t)
         {
             Shape = Shape.From(t.Shape.Dimensions);
-            Values = (double[])t.Values.Clone();
+            Values = (float[])t.Values.Clone();
         }
 
         public Tensor(string bmpFile, bool grayScale)
@@ -41,7 +41,7 @@ namespace Neuro.Tensors
             using (var bmp = new Bitmap(bmpFile))
             {
                 Shape = new Shape(bmp.Width, bmp.Height, grayScale ? 1 : 3);
-                Values = new double[Shape.Length];
+                Values = new float[Shape.Length];
 
                 for (int h = 0; h < bmp.Height; ++h)
                 {
@@ -49,12 +49,12 @@ namespace Neuro.Tensors
                     {
                         Color c = bmp.GetPixel(w, h);
                         if (grayScale)
-                            Set((c.R * 0.3 + c.G * 0.59 + c.B * 0.11) / 255.0, w, h);
+                            Set((c.R * 0.3f + c.G * 0.59f + c.B * 0.11f) / 255.0f, w, h);
                         else
                         {
-                            Set(c.R / 255.0, w, h, 0);
-                            Set(c.G / 255.0, w, h, 1);
-                            Set(c.B / 255.0, w, h, 2);
+                            Set(c.R / 255.0f, w, h, 0);
+                            Set(c.G / 255.0f, w, h, 1);
+                            Set(c.B / 255.0f, w, h, 2);
                         }
                     }
                 }
@@ -98,9 +98,9 @@ namespace Neuro.Tensors
 
         public int Length => Values.Length;
 
-        public double[] GetValues()
+        public float[] GetValues()
         {
-            return (double[])Values.Clone();
+            return (float[])Values.Clone();
         }
 
         public Bitmap ToBitmap()
@@ -119,21 +119,21 @@ namespace Neuro.Tensors
             return output;
         }
 
-        public void FillWithRand(int seed = -1, double min = -1, double max = 1)
+        public void FillWithRand(int seed = -1, float min = -1, float max = 1)
         {
             Random rng = seed > 0 ? new Random(seed) : Rng;
             
             for (int i = 0; i < Values.Length; ++i)
-                Values[i] = min + (max - min) * rng.NextDouble();
+                Values[i] = min + (max - min) * (float)rng.NextDouble();
         }
 
-        public void FillWithRange(double start = 0, double increment = 1)
+        public void FillWithRange(float start = 0, float increment = 1)
         {
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = start + i * increment;
         }
 
-        public void FillWithValue(double value)
+        public void FillWithValue(float value)
         {
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = value;
@@ -176,13 +176,13 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Mul(double v, Tensor result)
+        public virtual void Mul(float v, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] * v;
         }
 
-        public Tensor Mul(double v)
+        public Tensor Mul(float v)
         {
             Tensor result = new Tensor(Shape);
             Mul(v, result);
@@ -205,13 +205,13 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Div(double v, Tensor result)
+        public virtual void Div(float v, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] / v;
         }
 
-        public Tensor Div(double v)
+        public Tensor Div(float v)
         {
             Tensor result = new Tensor(Shape);
             Div(v, result);
@@ -233,13 +233,13 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Add(double v, Tensor result)
+        public virtual void Add(float v, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] + v;
         }
 
-        public Tensor Add(double v)
+        public Tensor Add(float v)
         {
             Tensor result = new Tensor(Shape);
             Add(v, result);
@@ -261,13 +261,13 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Sub(double v, Tensor result)
+        public virtual void Sub(float v, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] - v;
         }
 
-        public Tensor Sub(double v)
+        public Tensor Sub(float v)
         {
             Tensor result = new Tensor(Shape);
             Sub(v, result);
@@ -287,12 +287,12 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public void Clipped(double min, double max, Tensor result)
+        public void Clipped(float min, float max, Tensor result)
         {
             Map(x => Tools.Clip(x, min, max), result);
         }
 
-        public Tensor Clipped(double min, double max)
+        public Tensor Clipped(float min, float max)
         {
             Tensor result = new Tensor(Shape);
             Clipped(min, max, result);
@@ -310,26 +310,26 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public void Map(Func<double, double> func, Tensor result)
+        public void Map(Func<float, float> func, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = func(Values[i]);
         }
 
-        public Tensor Map(Func<double, double> func)
+        public Tensor Map(Func<float, float> func)
         {
             Tensor result = new Tensor(Shape);
             Map(func, result);
             return result;
         }
 
-        public void Map(Func<double, double, double> func, Tensor other, Tensor result)
+        public void Map(Func<float, float, float> func, Tensor other, Tensor result)
         {
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = func(Values[i], other.Values[i]);
         }
 
-        public Tensor Map(Func<double, double, double> func, Tensor other)
+        public Tensor Map(Func<float, float, float> func, Tensor other)
         {
             Tensor result = new Tensor(Shape);
             Map(func, other, result);
@@ -347,12 +347,12 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public double Sum(int batch = -1)
+        public float Sum(int batch = -1)
         {
             if (batch < 0)
                 return Values.Sum();
 
-            double sum = 0;
+            float sum = 0;
 
             for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
                 sum += Values[idx];
@@ -360,7 +360,7 @@ namespace Neuro.Tensors
             return sum;
         }
 
-        public double Max(int batch = -1)
+        public float Max(int batch = -1)
         {
             int maxIndex;
             return GetMaxData(batch, out maxIndex);
@@ -395,7 +395,7 @@ namespace Neuro.Tensors
 
         public void Normalized(Tensor result)
         {
-            double sum = Sum();
+            float sum = Sum();
             Map(x => x / sum, result);
         }
 
@@ -588,8 +588,8 @@ namespace Neuro.Tensors
         {
             if (type == PaddingType.Valid)
             {
-                outWidth = (int)Math.Floor((width - kernelWidth) / (double)stride + 1);
-                outHeight = (int)Math.Floor((height - kernelHeight) / (double)stride + 1);
+                outWidth = (int)Math.Floor((width - kernelWidth) / (float)stride + 1);
+                outHeight = (int)Math.Floor((height - kernelHeight) / (float)stride + 1);
                 paddingX = 0;
                 paddingY = 0;
             }
@@ -597,8 +597,8 @@ namespace Neuro.Tensors
             {
                 outWidth = width / stride;
                 outHeight = height / stride;
-                paddingX = (int)Math.Floor((double)kernelWidth / 2);
-                paddingY = (int)Math.Floor((double)kernelHeight / 2);
+                paddingX = (int)Math.Floor((float)kernelWidth / 2);
+                paddingY = (int)Math.Floor((float)kernelHeight / 2);
             }
             else //if (type == ConvType.Full)
             {
@@ -623,7 +623,7 @@ namespace Neuro.Tensors
         internal void Deserialize(XmlElement elem)
         {
             Shape = Shape.From(elem.GetAttribute("shape").Split(',').Select(w => int.Parse(w)).ToArray());
-            Values = elem.InnerText.Split(',').Select(w => double.Parse(w)).ToArray();
+            Values = elem.InnerText.Split(',').Select(w => float.Parse(w)).ToArray();
         }
 
         public void Serialize(BinaryWriter writer)
@@ -638,29 +638,29 @@ namespace Neuro.Tensors
         {
             var t = new Tensor(Shape.Deserialize(reader));
             int valuesCount = reader.ReadInt32();
-            t.Values = new double[valuesCount];
+            t.Values = new float[valuesCount];
             for (int i = 0; i < valuesCount; ++i)
-                t.Values[i] = reader.ReadDouble();
+                t.Values[i] = reader.ReadSingle();
             return t;
         }
 
-        public double GetFlat(int i)
+        public float GetFlat(int i)
         {
             return Values[i];
         }
 
-        public double Get(int w, int h = 0, int d = 0, int n = 0)
+        public float Get(int w, int h = 0, int d = 0, int n = 0)
         {
             return Values[Shape.GetIndex(w, h, d, n)];
         }
 
-        public double this[int w, int h = 0, int d = 0, int n = 0]
+        public float this[int w, int h = 0, int d = 0, int n = 0]
         {
             get { return Get(w, h, d, n); }
             set { Set(value, w, h, d, n); }
         }
 
-        public double TryGet(double def, int w, int h = 0, int d = 0, int n = 0)
+        public float TryGet(float def, int w, int h = 0, int d = 0, int n = 0)
         {
             if (h < 0 || h >= Height || w < 0 || w >= Width || d < 0 || d >= Depth)
                 return def;
@@ -668,17 +668,17 @@ namespace Neuro.Tensors
             return Get(w, h, d, n);
         }
 
-        public void SetFlat(double value, int i)
+        public void SetFlat(float value, int i)
         {
             Values[i] = value;
         }
 
-        public void Set(double value, int w, int h = 0, int d = 0, int n = 0)
+        public void Set(float value, int w, int h = 0, int d = 0, int n = 0)
         {
             Values[Shape.GetIndex(w, h, d, n)] = value;
         }
 
-        public void TrySet(double value, int w, int h = 0, int d = 0, int n = 0)
+        public void TrySet(float value, int w, int h = 0, int d = 0, int n = 0)
         {
             if (h < 0 || h >= Height || w < 0 || w >= Width || d < 0 || d >= Depth || n < 0 || n > BatchSize)
                 return;
@@ -718,7 +718,7 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public bool Equals(Tensor other, double epsilon = 0.0000001)
+        public bool Equals(Tensor other, float epsilon = 0.00001f)
         {
             if (other == null)
                 return false;
@@ -737,10 +737,10 @@ namespace Neuro.Tensors
             return true;
         }
 
-        private double GetMaxData(int batch, out int maxIndex)
+        private float GetMaxData(int batch, out int maxIndex)
         {
             maxIndex = -1;
-            double maxValue = double.MinValue;
+            float maxValue = float.MinValue;
 
             if (batch < 0)
             {
@@ -769,6 +769,6 @@ namespace Neuro.Tensors
         private static TensorOpCpu Op = new TensorOpMultiCpu();
         private static Random Rng = new Random();
 
-        internal double[] Values;
+        internal float[] Values;
     }
 }

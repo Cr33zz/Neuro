@@ -42,7 +42,7 @@ namespace Neuro
             }
         }
 
-        public void AddData(double x, double h, int seriesId)
+        public void AddData(float x, float h, int seriesId)
         {
             if (Chart.Series.IndexOf(seriesId.ToString()) == -1)
                 return;
@@ -63,7 +63,7 @@ namespace Neuro
         private Chart Chart = new Chart();
         private ChartArea ChartArea = new ChartArea();
         private Legend Legend = new Legend("leg");
-        private double DataMinX = double.MaxValue;
-        private double DataMaxX = double.MinValue;
+        private float DataMinX = float.MaxValue;
+        private float DataMaxX = float.MinValue;
     }
 }

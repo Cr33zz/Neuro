@@ -5,23 +5,23 @@ namespace Neuro.Initializers
 {
     public class Uniform : InitializerBase
     {
-        public Uniform(double min = -0.05, double max = 0.05)
+        public Uniform(float min = -0.05f, float max = 0.05f)
         {
             Min = min;
             Max = max;
         }
 
-        public static double NextDouble(double min, double max)
+        public static float NextSingle(float min, float max)
         {
-            return min + Tools.Rng.NextDouble() * (max - min);
+            return min + (float)Tools.Rng.NextDouble() * (max - min);
         }
 
         public override void Init(Tensor t, int fanIn, int fanOut)
         {
-            t.Map(x => NextDouble(Min, Max), t);
+            t.Map(x => NextSingle(Min, Max), t);
         }
 
-        private readonly double Min;
-        private readonly double Max;
+        private readonly float Min;
+        private readonly float Max;
     }
 }

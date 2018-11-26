@@ -21,7 +21,7 @@ namespace Neuro.Tests
         {
             NeuralNetwork net = CreateFitTestNet();
             
-            var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
+            var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
             var tData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
 
             var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tData.Count));
@@ -45,7 +45,7 @@ namespace Neuro.Tests
         {
             NeuralNetwork net = CreateFitTestNet();
 
-            var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
+            var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
             var tempData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
 
             var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tempData.Count));
@@ -70,7 +70,7 @@ namespace Neuro.Tests
         {
             var net = new NeuralNetwork("fit_test", 7);
             net.AddLayer(new Dense(3, 2, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
-            net.Optimize(new SGD(0.07), Loss.MeanSquareError);
+            net.Optimize(new SGD(0.07f), Loss.MeanSquareError);
             return net;
         }
 
@@ -144,10 +144,10 @@ namespace Neuro.Tests
             var net = new NeuralNetwork("dense_test", 7);
             net.AddLayer(new Dense(inputs, outputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
 
-            var expectedWeights = new Tensor(new[] { 1.1, 0.1, -1.3, 0.2, -0.9, 0.7 }, new Shape(3, 2));
+            var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
             var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedWeights, MatMult);
 
-            net.Optimize(new SGD(0.07), Loss.MeanSquareError);
+            net.Optimize(new SGD(0.07f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 0, Track.TrainError);
 
             var learnedParams = net.LastLayer.GetParameters();
@@ -168,14 +168,14 @@ namespace Neuro.Tests
             {
                 var input = new Tensor(net.Layer(0).InputShape);
                 input.FillWithRand(10 * i, -2, 2);
-                tData.Add(new Data() { Input = input, Output = input.Mul(1.7) });
+                tData.Add(new Data() { Input = input, Output = input.Mul(1.7f) });
             }
 
-            net.Optimize(new SGD(0.04), Loss.MeanSquareError);
+            net.Optimize(new SGD(0.04f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
 
             for (int i = 0; i < tData.Count; ++i)
-                Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input), 0.001));
+                Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input), 0.001f));
         }
 
         private void TestConvolutionLayer(Shape inputShape, int kernelSize, int kernelsNum, int stride, int samples, int batchSize, int epochs, TrainDataFunc convFunc)

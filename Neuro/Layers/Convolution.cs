@@ -14,7 +14,7 @@ namespace Neuro.Layers
 
         public Convolution(Shape inputShape, int filterSize, int filtersNum, int stride, ActivationFunc activation)
             : base(inputShape,
-                   new Shape((int)Math.Floor((double)(inputShape.Width - filterSize) / stride + 1), (int)Math.Floor((double)(inputShape.Height - filterSize) / stride + 1), filtersNum),
+                   new Shape((int)Math.Floor((float)(inputShape.Width - filterSize) / stride + 1), (int)Math.Floor((float)(inputShape.Height - filterSize) / stride + 1), filtersNum),
                    activation)
         {
             FilterSize = filterSize;

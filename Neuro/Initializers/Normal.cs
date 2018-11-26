@@ -5,17 +5,17 @@ namespace Neuro.Initializers
 {
     public class Normal : InitializerBase
     {
-        public Normal(double mean = 0, double variance = 1, double scale = 1)
+        public Normal(float mean = 0, float variance = 1, float scale = 1)
         {
             Mean = mean;
             Variance = variance;
             Scale = scale;
         }
 
-        public static double NextDouble(double mean, double stdDeviation, double scale)
+        public static float NextSingle(float mean, float stdDeviation, float scale)
         {
             //based upon https://github.com/numpy/numpy/blob/master/numpy/random/mtrand/randomkit.c
-            double variance = stdDeviation * stdDeviation;
+            float variance = stdDeviation * stdDeviation;
 
             if (HasValue)
             {
@@ -23,18 +23,18 @@ namespace Neuro.Initializers
                 return (variance * (Value) + mean) * scale;
             }
 
-            double x1, x2, r2;
+            float x1, x2, r2;
             do
             {
-                x1 = 2 * Tools.Rng.NextDouble() - 1;
-                x2 = 2 * Tools.Rng.NextDouble() - 1;
+                x1 = 2 * (float)Tools.Rng.NextDouble() - 1;
+                x2 = 2 * (float)Tools.Rng.NextDouble() - 1;
                 r2 = x1 * x1 + x2 * x2;
             }
 
             while (r2 >= 1.0 || r2 == 0.0);
 
             //Polar method, a more efficient version of the Box-Muller approach.
-            double f = Math.Sqrt(-2 * Math.Log(r2) / r2);
+            float f = (float)Math.Sqrt(-2 * Math.Log(r2) / r2);
 
             HasValue = true;
             Value = f * x1;
@@ -44,14 +44,14 @@ namespace Neuro.Initializers
 
         public override void Init(Tensor t, int fanIn, int fanOut)
         {
-            t.Map(x => NextDouble(Mean, Variance, Scale), t);
+            t.Map(x => NextSingle(Mean, Variance, Scale), t);
         }
 
-        private readonly double Mean;
-        private readonly double Variance;
-        private readonly double Scale;
+        private readonly float Mean;
+        private readonly float Variance;
+        private readonly float Scale;
 
         private static bool HasValue = false;
-        private static double Value;
+        private static float Value;
     }
 }

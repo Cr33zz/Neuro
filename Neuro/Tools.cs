@@ -10,7 +10,7 @@ namespace Neuro
 {
     public static class Tools
     {
-        public static readonly double _EPSILON = 10e-7;
+        public static readonly float _EPSILON = 10e-7f;
 
         public static Random Rng = new Random();
 
@@ -47,20 +47,20 @@ namespace Neuro
             }
         }
 
-        public static double Clip(double value, double min, double max)
+        public static float Clip(float value, float min, float max)
         {
             return value < min ? min : (value > max ? max : value);
         }
 
-        public static int Sign(double value)
+        public static int Sign(float value)
         {
             return value < 0 ? -1 : (value > 0 ? 1 : 0);
         }
 
-        public static List<double> LinSpace(double start, double stop, int num = 50, bool endPoint = true)
+        public static List<float> LinSpace(float start, float stop, int num = 50, bool endPoint = true)
         {
-            List<double> result = new List<double>();
-            double interval = (stop - start) / num;
+            List<float> result = new List<float>();
+            float interval = (stop - start) / num;
             for (int i = 0; i < num; ++i)
             {
                 result.Add(start);
@@ -76,7 +76,7 @@ namespace Neuro
         public static string GetProgressString(int iteration, int maxIterations, string extraStr = "", int barLength = 30)
         {
             int maxIterLen = maxIterations.ToString().Length;
-            double step = maxIterations / (double)barLength;
+            float step = maxIterations / (float)barLength;
             int currStep = (int)Math.Min(Math.Ceiling(iteration / step), barLength);
             return $"{iteration.ToString().PadLeft(maxIterLen)}/{maxIterations} [{new string('=', currStep - 1)}" + (iteration == maxIterations ? "=" : ">") + $"{new string('.', barLength - currStep)}]" + extraStr;
         }
@@ -123,8 +123,8 @@ namespace Neuro
                 int outputsNum = magic2 - 2039;
 
                 Bitmap bmp = null;
-                int bmpRows = (int)Math.Ceiling(Math.Sqrt((double)maxImages));
-                int bmpCols = (int)Math.Ceiling(Math.Sqrt((double)maxImages));
+                int bmpRows = (int)Math.Ceiling(Math.Sqrt((float)maxImages));
+                int bmpCols = (int)Math.Ceiling(Math.Sqrt((float)maxImages));
 
                 if (generateBmp)
                     bmp = new Bitmap(bmpCols * imgHeight, bmpRows * imgWidth);
@@ -138,7 +138,7 @@ namespace Neuro
                     for (int x = 0; x < imgHeight; ++x)
                     {
                         byte color = brImages.ReadByte();
-                        input[x, y] = (double)color / 255;
+                        input[x, y] = (float)color / 255;
                         bmp?.SetPixel((i % bmpCols) * imgWidth + x, (i / bmpCols) * imgHeight + y, Color.FromArgb(color, color, color));
                     }
 
@@ -209,11 +209,11 @@ namespace Neuro
                     Tensor output = new Tensor(new Shape(1, outputs));
 
                     for (int i = 0; i < input.Length; ++i)
-                        input[0, i] = double.Parse(tmp[i]);
+                        input[0, i] = float.Parse(tmp[i]);
 
                     for (int i = 0; i < (outputsOneHotEncoded ? 1 : outputs); ++i)
                     {
-                        double v = double.Parse(tmp[input.Length + i]);
+                        float v = float.Parse(tmp[input.Length + i]);
                         if (outputsOneHotEncoded)
                             output[0, (int)v] = 1;
                         else

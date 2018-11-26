@@ -212,7 +212,7 @@ namespace Neuro
 
                 List<Data> batchedTrainingData = trainingDataAlreadyBatched ? trainingData : Tools.MergeData(trainingData, batchSize);
 
-                double trainTotalError = 0;
+                float trainTotalError = 0;
                 int trainHits = 0;
 
                 trainTimer.Restart();
@@ -238,27 +238,27 @@ namespace Neuro
                 if (verbose > 0)
                     LogLine(output);
 
-                double trainError = trainTotalError / totalTrainingSamples;
+                float trainError = trainTotalError / totalTrainingSamples;
 
                 chartGen?.AddData(e, trainError, (int)Track.TrainError);
-                chartGen?.AddData(e, (double)trainHits / totalTrainingSamples, (int)Track.TrainAccuracy);
+                chartGen?.AddData(e, (float)trainHits / totalTrainingSamples, (int)Track.TrainAccuracy);
 
                 if (verbose > 0)
                 {
                     string s = $" - loss: {Math.Round(trainError, 6)}";
                     if (trackFlags.HasFlag(Track.TrainAccuracy))
-                        s += $" - acc: {Math.Round((double)trainHits / totalTrainingSamples * 100, 4)}%";
+                        s += $" - acc: {Math.Round((float)trainHits / totalTrainingSamples * 100, 4)}%";
                     s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");
 
                     LogLine(s);
                 }
 
-                double testTotalError = 0;
+                float testTotalError = 0;
 
                 if (validationData != null)
                 {
                     int validationSamples = validationData.Count * validationData[0].Input.BatchSize;
-                    double testHits = 0;
+                    float testHits = 0;
 
                     for (int i = 0; i < validationData.Count; ++i)
                     {
@@ -270,14 +270,14 @@ namespace Neuro
 
                         if (verbose == 2)
                         {
-                            string progress = " - validating: " + Math.Round(i / (double)validationData.Count * 100) + "%";
+                            string progress = " - validating: " + Math.Round(i / (float)validationData.Count * 100) + "%";
                             Console.Write(progress);
                             Console.Write(new string('\b', progress.Length));
                         }
                     }
 
                     chartGen?.AddData(e, testTotalError / (validationSamples * lastLayer.OutputShape.Length), (int)Track.TestError);
-                    chartGen?.AddData(e, (double)testHits / validationSamples, (int)Track.TestAccuracy);
+                    chartGen?.AddData(e, (float)testHits / validationSamples, (int)Track.TestAccuracy);
                 }
 
                 if (e % 20 == 0 || e == epochs)
@@ -288,7 +288,7 @@ namespace Neuro
         }
 
         // This is vectorized gradient descent
-        private void GradientDescentStep(Data trainingData, int samplesInTrainingData, AccuracyFunc accuracyFunc, ref double trainError, ref int trainHits)
+        private void GradientDescentStep(Data trainingData, int samplesInTrainingData, AccuracyFunc accuracyFunc, ref float trainError, ref int trainHits)
         {
             var lastLayer = Layers.Last();
 

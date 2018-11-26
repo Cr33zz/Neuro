@@ -14,8 +14,8 @@ namespace Neuro.Layers
 
         public Pooling(Shape inputShape, int filterSize, int stride = 1, Tensor.PoolType type = Tensor.PoolType.Max)
             : base(inputShape,
-                   new Shape((int)Math.Floor((double)(inputShape.Width - filterSize) / stride + 1),
-                             (int)Math.Floor((double)(inputShape.Height - filterSize) / stride + 1),
+                   new Shape((int)Math.Floor((float)(inputShape.Width - filterSize) / stride + 1),
+                             (int)Math.Floor((float)(inputShape.Height - filterSize) / stride + 1),
                              inputShape.Depth))
         {
             Type = type;

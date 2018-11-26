@@ -36,7 +36,7 @@ namespace Neuro
     {
         public override void Compute(Tensor input, Tensor result)
         {
-            input.Map(x => 1 / (1 + Math.Exp(-x)), result);
+            input.Map(x => 1 / (1 + (float)Math.Exp(-x)), result);
         }
 
         public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
@@ -49,7 +49,7 @@ namespace Neuro
     {
         public override void Compute(Tensor input, Tensor result)
         {
-            input.Map(x => 2 / (1 + Math.Exp(-2 * x)) - 1, result);
+            input.Map(x => 2 / (1 + (float)Math.Exp(-2 * x)) - 1, result);
         }
 
         public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
@@ -73,11 +73,11 @@ namespace Neuro
 
     public class ELU : ActivationFunc
     {
-        private readonly double ALPHA = 1;
+        private readonly float ALPHA = 1;
 
         public override void Compute(Tensor input, Tensor result)
         {
-            input.Map(x => x >= 0 ? x : ALPHA * (Math.Exp(x) - 1), result);
+            input.Map(x => x >= 0 ? x : ALPHA * ((float)Math.Exp(x) - 1), result);
         }
 
         public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
@@ -91,11 +91,11 @@ namespace Neuro
         public override void Compute(Tensor input, Tensor result)
         {
             Tensor shifted = input.Sub(input.Max());
-            Tensor exps = shifted.Map(x => Math.Exp(x));
+            Tensor exps = shifted.Map(x => (float)Math.Exp(x));
 
             for (int n = 0; n < input.BatchSize; ++n)
             {
-                double sum = exps.Sum(n);
+                float sum = exps.Sum(n);
 
                 for (int d = 0; d < input.Depth; ++d)
                 for (int h = 0; h < input.Height; ++h)

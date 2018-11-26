@@ -5,7 +5,7 @@ namespace Neuro.Initializers
 {
     public class Constant : InitializerBase
     {
-        public Constant(double value = 1)
+        public Constant(float value = 1)
         {
             Value = value;
         }
@@ -15,6 +15,6 @@ namespace Neuro.Initializers
             t.Map(x => Value, t);
         }
 
-        private readonly double Value;
+        private readonly float Value;
     }
 }
