@@ -100,24 +100,24 @@ namespace Neuro
 
             for (int l = Layers.Count - 1; l >= 0; --l)
             {
-                ++Layers[l].Optimizer.Iteration;
                 delta = Layers[l].BackProp(delta);
             }
         }
 
-        private void UpdateParameters(int trainingSamples)
+        public List<ParametersAndGradients> GetParametersAndGradients()
         {
-            for (int l = 0; l < Layers.Count; ++l)
-                Layers[l].UpdateParameters(trainingSamples);
-        }
+            var result = new List<ParametersAndGradients>();
 
+            for (int l = 0; l < Layers.Count; l++)
+                result.AddRange(Layers[l].GetParametersAndGradients());
+
+            return result;
+        }
+        
         public void Optimize(Optimizers.OptimizerBase optimizer, LossFunc loss)
         {
             Error = loss;
             Optimizer = optimizer;
-
-            for (int l = 0; l < Layers.Count; ++l)
-                Layers[l].Optimizer = optimizer.Clone();
         }
 
         public void Fit(Tensor input, Tensor output, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
@@ -302,7 +302,7 @@ namespace Neuro
             trainHits += accuracyFunc(trainingData.Output, lastLayer.Output);
             Error.Derivative(trainingData.Output, lastLayer.Output, loss);
             BackProp(loss);
-            UpdateParameters(samplesInTrainingData);
+            Optimizer.Step(GetParametersAndGradients(), samplesInTrainingData);
         }
 
         private void LogLine(string text)
@@ -366,5 +366,11 @@ namespace Neuro
         private int Seed;
         private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
         private List<string> LogLines = new List<string>();
+    }
+
+    public class ParametersAndGradients
+    {
+        public Tensor Parameters;
+        public Tensor Gradients;
     }
 }

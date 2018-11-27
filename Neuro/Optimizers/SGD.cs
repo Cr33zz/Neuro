@@ -1,22 +1,30 @@
 ﻿using Neuro.Tensors;
+using System.Collections.Generic;
 
 namespace Neuro.Optimizers
 {
     public class SGD : OptimizerBase
     {
-        public SGD(float lr = 0.02f)
+        public SGD(float lr = 0.01f)
         {
             LearningRate = lr;
         }
 
-        public override Tensor GetGradientStep(Tensor gradient)
+        protected override void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize)
         {
-            return gradient.Mul(LearningRate);
-        }
+            for (var i = 0; i < paramsAndGrads.Count; i++)
+            {
+                var parametersAndGradient = paramsAndGrads[i];
+                var parameters = parametersAndGradient.Parameters;
+                var gradients = parametersAndGradient.Gradients;
 
-        public override OptimizerBase Clone()
-        {
-            return new SGD(LearningRate);
+                var tempLearningRate = LearningRate/* / batchSize*/;
+
+                gradients.Mul(tempLearningRate, gradients);
+                parameters.Sub(gradients, parameters);
+
+                gradients.Zero();
+            }
         }
 
         public override string ToString()

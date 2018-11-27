@@ -2,6 +2,7 @@
 using System.Xml;
 using Neuro.Tensors;
 using System;
+using System.Collections.Generic;
 
 namespace Neuro.Layers
 {
@@ -12,7 +13,6 @@ namespace Neuro.Layers
         public Tensor Output { get; protected set; }
         public Shape InputShape { get; }
         public Shape OutputShape { get; }
-        public Optimizers.OptimizerBase Optimizer { get; set; }
         public ActivationFunc Activation { get; }
 
         public virtual int GetParamsNum() { return 0; }
@@ -88,20 +88,10 @@ namespace Neuro.Layers
             return InputGradient;
         }
 
-        public void UpdateParameters(int trainingSamples)
+        public virtual List<ParametersAndGradients> GetParametersAndGradients()
         {
-            if (trainingSamples > 0)
-                OnUpdateParameters(trainingSamples);
-            ResetParametersGradients();
+            return new List<ParametersAndGradients>();
         }
-
-        protected virtual void OnUpdateParameters(int trainingSamples) {}
-
-        protected virtual void ResetParametersGradients() {}
-
-        public virtual Tensor GetParameters() { return null; }
-
-        public virtual Tensor GetParametersGradient() { return null; }
 
         // Must be called after adding to layers in a network
         public virtual void Init() {}

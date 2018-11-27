@@ -3,6 +3,7 @@ using System.Xml;
 using Neuro.Initializers;
 using Neuro.Tensors;
 using System;
+using System.Collections.Generic;
 
 namespace Neuro.Layers
 {
@@ -72,40 +73,29 @@ namespace Neuro.Layers
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Dense() errors gradient:\n{InputGradient}\n");
 
-            var gradient = Optimizer != null ? Optimizer.GetGradientStep(outputGradient) : outputGradient;
-            WeightsGradient.Add(gradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
+            WeightsGradient.Add(outputGradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
             if (UseBias)
-                BiasGradient.Add(gradient.SumBatches(), BiasGradient);
+                BiasGradient.Add(outputGradient.SumBatches(), BiasGradient);
         }
 
-        protected override void OnUpdateParameters(int trainingSamples)
+        public override List<ParametersAndGradients> GetParametersAndGradients()
         {
-            WeightsGradient.Div(trainingSamples, WeightsGradient);
-            Weights.Sub(WeightsGradient, Weights);
+            var result = new List<ParametersAndGradients>();
+
+            result.Add(new ParametersAndGradients() { Parameters = Weights, Gradients = WeightsGradient });
+
             if (UseBias)
-            {
-                BiasGradient.Div(trainingSamples, BiasGradient);
-                Bias.Sub(BiasGradient, Bias);
-            }
+                result.Add(new ParametersAndGradients() { Parameters = Bias, Gradients = BiasGradient });
+
+            return result;
         }
-
-        protected override void ResetParametersGradients()
-        {
-            WeightsGradient.Zero();
-            if (UseBias)
-                BiasGradient.Zero();
-        }
-
-        public override Tensor GetParameters() { return Weights; }
-
-        public override Tensor GetParametersGradient() { return WeightsGradient; }
 
         public Tensor Weights;
         public Tensor Bias;
         public bool UseBias = true;
 
-        public Initializers.InitializerBase KernelInitializer = new GlorotUniform();
-        public Initializers.InitializerBase BiasInitializer = new Zeros();
+        public InitializerBase KernelInitializer = new GlorotUniform();
+        public InitializerBase BiasInitializer = new Zeros();
 
         private Tensor WeightsGradient;
         private Tensor BiasGradient;

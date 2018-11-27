@@ -61,20 +61,21 @@ namespace Neuro.Tests
 
             var result = new Tensor(output.Shape);
 
-            var parameters = layer.GetParameters();
-            var parametersGradients = layer.GetParametersGradient();
-            
-            for (var i = 0; i < parameters.Shape.Length; i++)
+            var paramsAndGrads = layer.GetParametersAndGradients();
+            var weights = paramsAndGrads[0].Parameters;
+            var weightsGrads = paramsAndGrads[0].Gradients;
+
+            for (var i = 0; i < weights.Shape.Length; i++)
             {
                 result.Zero();
 
-                float oldValue = parameters.GetFlat(i);
-                parameters.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
+                float oldValue = weights.GetFlat(i);
+                weights.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
                 var output1 = layer.FeedForward(input).Clone();
-                parameters.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
+                weights.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
                 var output2 = layer.FeedForward(input).Clone();
 
-                parameters.SetFlat(oldValue, i);
+                weights.SetFlat(oldValue, i);
 
                 output1.Sub(output2, result);
 
@@ -83,7 +84,7 @@ namespace Neuro.Tests
                     approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, parametersGradients.GetFlat(i), 0.02, $"At element {i}");
+                Assert.AreEqual(approxGradient, weightsGrads.GetFlat(i), 0.02, $"At element {i}");
             }
         }
 

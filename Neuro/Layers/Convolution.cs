@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Xml;
 using Neuro.Tensors;
+using System.Collections.Generic;
 
 namespace Neuro.Layers
 {
@@ -32,6 +33,7 @@ namespace Neuro.Layers
             var clone = new Convolution(InputShape, FilterSize, FiltersNum, Stride, Activation);
             clone.Kernels = Kernels.Clone();
             clone.Bias = Bias.Clone();
+            clone.UseBias = UseBias;
             return clone;
         }
 
@@ -47,7 +49,8 @@ namespace Neuro.Layers
         public override void Init()
         {
             KernelInitializer.Init(Kernels, InputShape.Length, OutputShape.Length);
-            BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
+            if (UseBias)
+                BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
         }
 
         public override int GetParamsNum() { return FilterSize * FilterSize * FiltersNum; }
@@ -55,7 +58,8 @@ namespace Neuro.Layers
         protected override void FeedForwardInternal()
         {
             Input.Conv2D(Kernels, Stride, Tensor.PaddingType.Valid, Output);
-            Output.Add(Bias, Output);
+            if (UseBias)
+                Output.Add(Bias, Output);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) output:\n{Output}\n");
@@ -63,34 +67,27 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            var gradient = Optimizer != null ? Optimizer.GetGradientStep(outputGradient) : outputGradient;
-
-            Tensor.Conv2DInputsGradient(gradient, Kernels, Stride, InputGradient);
-            Tensor.Conv2DKernelsGradient(Input, gradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
+            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, InputGradient);
+            Tensor.Conv2DKernelsGradient(Input, outputGradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
 
             if (NeuralNetwork.DebugMode)
                 Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) input gradient:\n{InputGradient}\n");
 
-            BiasGradient.Add(gradient.SumBatches());
+            if (UseBias)
+                BiasGradient.Add(outputGradient.SumBatches());
         }
 
-        protected override void OnUpdateParameters(int trainingSamples)
+        public override List<ParametersAndGradients> GetParametersAndGradients()
         {
-            KernelsGradient.Div(trainingSamples, KernelsGradient);
-            Kernels.Sub(KernelsGradient, Kernels);
-            BiasGradient.Div(trainingSamples, BiasGradient);
-            Bias.Sub(BiasGradient, Bias);
+            var result = new List<ParametersAndGradients>();
+
+            result.Add(new ParametersAndGradients() { Parameters = Kernels, Gradients = KernelsGradient });
+
+            if (UseBias)
+                result.Add(new ParametersAndGradients() { Parameters = Bias, Gradients = BiasGradient });
+
+            return result;
         }
-
-        protected override void ResetParametersGradients()
-        {
-            KernelsGradient.Zero();
-            BiasGradient.Zero();
-        }
-
-        public override Tensor GetParameters() { return Kernels; }
-
-        public override Tensor GetParametersGradient() { return KernelsGradient; }
 
         internal override void SerializeParameters(XmlElement elem)
         {
@@ -108,6 +105,7 @@ namespace Neuro.Layers
 
         public Tensor Kernels;
         public Tensor Bias;
+        public bool UseBias = true;
 
         public Tensor KernelsGradient;
         public Tensor BiasGradient;

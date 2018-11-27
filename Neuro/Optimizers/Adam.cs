@@ -1,5 +1,6 @@
 ﻿using System;
 using Neuro.Tensors;
+using System.Collections.Generic;
 
 namespace Neuro.Optimizers
 {
@@ -11,25 +12,36 @@ namespace Neuro.Optimizers
             LearningRate = lr;
         }
 
-        public override Tensor GetGradientStep(Tensor gradient)
+        protected override void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize)
         {
-            if (M == null)
+            if (MGradients.Count != paramsAndGrads.Count)
             {
-                M = new Tensor(gradient.Shape);
-                V = new Tensor(gradient.Shape);
+                for (var i = 0; i < paramsAndGrads.Count; i++)
+                {
+                    var gradients = paramsAndGrads[i].Gradients;
+
+                    MGradients.Add(new Tensor(gradients.Shape));
+                    VGradients.Add(new Tensor(gradients.Shape));
+                }
             }
 
-            var tempLearningRate = LearningRate * (float)Math.Sqrt(1.0 - Math.Pow(Beta2, Iteration)) / (1.0f - (float)Math.Pow(Beta1, Iteration));
+            for (var i = 0; i < paramsAndGrads.Count; i++)
+            {
+                var parametersAndGradient = paramsAndGrads[i];
+                var parameters = parametersAndGradient.Parameters;
+                var gradients = parametersAndGradient.Gradients;
+                var mGrad = MGradients[i];
+                var vGrad = VGradients[i];
 
-            M.Map((m, g) => m * Beta1 + (1 - Beta1) * g, gradient, M);
-            V.Map((v, g) => v * Beta2 + (1 - Beta2) * g * g, gradient, V);
+                var tempLearningRate = LearningRate * (float)Math.Sqrt(1.0 - Math.Pow(Beta2, Iteration)) / (1.0f - (float)Math.Pow(Beta1, Iteration))/* / batchSize*/;
+                
+                mGrad.Map((m, g) => m * Beta1 + (1 - Beta1) * g, gradients, mGrad);
+                vGrad.Map((v, g) => v * Beta2 + (1 - Beta2) * g * g, gradients, vGrad);
 
-            return M.Div(V.Map(x => (float)Math.Sqrt(x) + Epsilon)).Mul(tempLearningRate);
-        }
+                parameters.Sub(mGrad.Div(vGrad.Map(x => (float)Math.Sqrt(x) + Epsilon)).Mul(tempLearningRate), parameters);
 
-        public override OptimizerBase Clone()
-        {
-            return new Adam(LearningRate);
+                gradients.Zero();
+            }
         }
 
         public override string ToString()
@@ -43,7 +55,7 @@ namespace Neuro.Optimizers
         private readonly float Beta2 = 0.999f;
         private readonly float Epsilon = 1e-8f;
 
-        private Tensor M;
-        private Tensor V;
+        private List<Tensor> MGradients = new List<Tensor>();
+        private List<Tensor> VGradients = new List<Tensor>();
     }
 }

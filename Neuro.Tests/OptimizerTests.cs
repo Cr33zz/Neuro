@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Optimizers;
 using Neuro.Tensors;
+using System.Collections.Generic;
 
 namespace Neuro.Tests
 {
@@ -26,8 +27,7 @@ namespace Neuro.Tests
 
             for (int i = 0; i < 10000; ++i)
             {
-                var gradient = SquareFuncGradient(input);
-                input.Sub(optimizer.GetGradientStep(gradient), input);
+                optimizer.Step(new List<ParametersAndGradients>() { new ParametersAndGradients() { Parameters = input, Gradients = SquareFuncGradient(input) } }, 1);
             }
 
             var minimum = SquareFunc(input);

@@ -1,13 +1,20 @@
 ﻿using System;
 using Neuro.Tensors;
+using System.Collections.Generic;
 
 namespace Neuro.Optimizers
 {
     public abstract class OptimizerBase
     {
-        public abstract Tensor GetGradientStep(Tensor gradient);
-        public abstract OptimizerBase Clone();
+        public void Step(List<ParametersAndGradients> paramsAndGrads, int batchSize)
+        {
+            ++Iteration;
 
-        public float Iteration;
+            OnStep(paramsAndGrads, batchSize);
+        }
+
+        protected abstract void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize);
+
+        public float Iteration { get; protected set; }
     }
 }
