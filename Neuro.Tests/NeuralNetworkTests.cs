@@ -11,6 +11,12 @@ namespace Neuro.Tests
     public class NeuralNetworkTests
     {
         [TestMethod]
+        public void Dense_Network_BS1()
+        {
+            TestDenseNetwork(2, 50, 1, 50);
+        }
+
+        [TestMethod]
         public void Dense_Network_BS10()
         {
             TestDenseNetwork(2, 50, 10, 100);
@@ -78,12 +84,6 @@ namespace Neuro.Tests
             net.AddLayer(new Dense(3, 2, Activation.Linear) { KernelInitializer = new Initializers.Constant(1), UseBias = false });
             net.Optimize(new SGD(0.07f), Loss.MeanSquareError);
             return net;
-        }
-
-        [TestMethod]
-        public void Dense_Network_BS1()
-        {
-            TestDenseNetwork(2, 50, 1, 500);
         }
 
         [TestMethod]
@@ -165,8 +165,8 @@ namespace Neuro.Tests
         private void TestDenseNetwork(int inputs, int samples, int batchSize, int epochs)
         {
             var net = new NeuralNetwork("deep_dense_test", 7);
-            net.AddLayer(new Dense(inputs, 5, Activation.Sigmoid));
-            net.AddLayer(new Dense(net.LastLayer, 4, Activation.Sigmoid));
+            net.AddLayer(new Dense(inputs, 5, Activation.Linear));
+            net.AddLayer(new Dense(net.LastLayer, 4, Activation.Linear));
             net.AddLayer(new Dense(net.LastLayer, inputs, Activation.Linear));
 
             List<Data> tData = new List<Data>();
@@ -174,10 +174,10 @@ namespace Neuro.Tests
             {
                 var input = new Tensor(net.Layer(0).InputShape);
                 input.FillWithRand(10 * i, -2, 2);
-                tData.Add(new Data() { Input = input, Output = input.Add(1) });
+                tData.Add(new Data() { Input = input, Output = input.Mul(1.7f) });
             }
 
-            net.Optimize(new SGD(), Loss.MeanSquareError);
+            net.Optimize(new SGD(0.02f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
 
             for (int i = 0; i < tData.Count; ++i)
@@ -194,7 +194,7 @@ namespace Neuro.Tests
 
             var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedKernels, convFunc);
             
-            net.Optimize(new SGD(), Loss.MeanSquareError);
+            net.Optimize(new SGD(0.02f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 0, Track.Nothing);
 
             var paramsAndGrads = net.LastLayer.GetParametersAndGradients();

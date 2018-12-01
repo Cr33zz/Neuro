@@ -11,15 +11,14 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-            var inputs = new Tensor(new float[] { 1,1,2,2,3,3,4,4,5,5,6,6 }, new Shape(1, 2, 1, 6));
-            var outputs = new Tensor(new float[] { 2,2,3,3,4,4,5,5,6,6,7,7 }, new Shape(1, 2, 1, 6));
+            var inputs = new Tensor(new float[] { 1,1,2,2,3,3,4,4,5,5,6,6,2,3,4,5,6,7,8,9,0,1 }, new Shape(1, 2, 1, 11));
+            var outputs = new Tensor(new float[] { 2,2,3,3,4,4,5,5,6,6,7,7,3,4,5,6,7,8,9,10,1,2 }, new Shape(1, 2, 1, 11));
 
             var net = new NeuralNetwork("test");
             net.AddLayer(new Dense(2, 5, Activation.Sigmoid));
             net.AddLayer(new Dense(net.LastLayer, 4, Activation.Sigmoid));
             net.AddLayer(new Dense(net.LastLayer, 2, Activation.Linear));
-            net.Optimize(new Adam(0.01f), Loss.MeanSquareError);
-
+            
             var l0 = net.Layer(0) as Dense;
             l0.Weights = new Tensor(new[] {-0.5790837f ,  0.79525125f, -0.6933877f , -0.3692013f ,  0.1810553f,
                                             0.03039712f,  0.91264546f,  0.11529088f,  0.33134186f, -0.46221718f }, new Shape(l0.Weights.Height, l0.Weights.Width)).Transposed();
@@ -39,7 +38,10 @@ namespace Neuro.PerfTests
 
             Trace.WriteLine(net.Predict(inputs.GetBatch(0)));
 
-            net.Fit(inputs, outputs, 1, 10, 2, Track.Nothing, false);
+            //net.Optimize(new SGD(0.01f), Loss.MeanSquareError);
+            net.Optimize(new Adam(0.01f), Loss.MeanSquareError);
+
+            net.Fit(inputs, outputs, 1, 100, 2, Track.Nothing, false);
 
             /*var inShape = new Shape(20);
             var outShape = new Shape(20);
