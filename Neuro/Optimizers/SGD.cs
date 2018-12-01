@@ -18,7 +18,7 @@ namespace Neuro.Optimizers
                 var parameters = parametersAndGradient.Parameters;
                 var gradients = parametersAndGradient.Gradients;
 
-                var tempLearningRate = LearningRate/* / batchSize*/;
+                var tempLearningRate = LearningRate / batchSize;
 
                 gradients.Mul(tempLearningRate, gradients);
                 parameters.Sub(gradients, parameters);

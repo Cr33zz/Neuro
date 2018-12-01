@@ -248,7 +248,7 @@ namespace Neuro
 
                 if (verbose > 0)
                 {
-                    string s = $" - loss: {Math.Round(trainError, 6)}";
+                    string s = $" - loss: {Math.Round(trainError, 4)}";
                     if (trackFlags.HasFlag(Track.TrainAccuracy))
                         s += $" - acc: {Math.Round((float)trainHits / totalTrainingSamples * 100, 4)}%";
                     s += " - eta: " + trainTimer.Elapsed.ToString(@"mm\:ss\.ffff");

@@ -33,7 +33,9 @@ namespace Neuro.Optimizers
                 var mGrad = MGradients[i];
                 var vGrad = VGradients[i];
 
-                var tempLearningRate = LearningRate * (float)Math.Sqrt(1.0 - Math.Pow(Beta2, Iteration)) / (1.0f - (float)Math.Pow(Beta1, Iteration))/* / batchSize*/;
+                gradients.Div(batchSize, gradients);
+
+                var tempLearningRate = LearningRate * (float)Math.Sqrt(1.0 - Math.Pow(Beta2, Iteration)) / (1.0f - (float)Math.Pow(Beta1, Iteration));
                 
                 mGrad.Map((m, g) => m * Beta1 + (1 - Beta1) * g, gradients, mGrad);
                 vGrad.Map((v, g) => v * Beta2 + (1 - Beta2) * g * g, gradients, vGrad);
