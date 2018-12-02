@@ -48,6 +48,15 @@ namespace Neuro
                 Layers[i].CopyParametersTo(target.Layers[i]);
         }
 
+        // Tau specifies the percentage of copied parameters to be applied on a target network, when less than 1 target's network
+        // parameters will be updated as follows: this_parameters * tau + target_parameters * (1 - tau)
+        public void SoftCopyParametersTo(NeuralNetwork target, float tau)
+        {
+            if (tau > 1 || tau <= 0) throw new Exception("Tau has to be a value from range (0, 1>.");
+            for (int i = 0; i < Layers.Count; ++i)
+                Layers[i].CopyParametersTo(target.Layers[i], tau);
+        }
+
         public string Name;
 
         public string FilePrefix

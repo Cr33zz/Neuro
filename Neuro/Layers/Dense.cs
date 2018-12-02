@@ -36,13 +36,13 @@ namespace Neuro.Layers
             return clone;
         }
 
-        public override void CopyParametersTo(LayerBase target)
+        public override void CopyParametersTo(LayerBase target, float tau)
         {
-            base.CopyParametersTo(target);
+            base.CopyParametersTo(target, tau);
 
             var targetDense = target as Dense;
-            Weights.CopyTo(targetDense.Weights);
-            Bias.CopyTo(targetDense.Bias);
+            Weights.CopyTo(targetDense.Weights, tau);
+            Bias.CopyTo(targetDense.Bias, tau);
         }
 
         public override void Init()

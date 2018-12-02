@@ -22,7 +22,7 @@ namespace Neuro.Layers
 
         public abstract LayerBase Clone();
 
-        public virtual void CopyParametersTo(LayerBase target)
+        public virtual void CopyParametersTo(LayerBase target, float tau = float.NaN)
         {
             if (!InputShape.Equals(target.InputShape) || !OutputShape.Equals(target.OutputShape))
                 throw new Exception("Cannot copy parameters between incompatible layers.");

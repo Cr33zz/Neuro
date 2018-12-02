@@ -686,21 +686,27 @@ namespace Neuro.Tensors
             Set(value, w, h, d, n);
         }
 
-        public void CopyTo(Tensor result)
+        public void CopyTo(Tensor result, float tau = float.NaN)
         {
-            Debug.Assert(Shape.Length == result.Shape.Length);
-            Array.Copy(Values, result.Values, Length);
+            if (Shape.Length != result.Shape.Length) throw new Exception("Incompatible tensors.");
+
+            if (float.IsNaN(tau))
+                Array.Copy(Values, result.Values, Length);
+            else
+                Map((v1, v2) => v1 * tau + v2 * (1 - tau), result, result);
         }
 
         public void CopyBatchTo(int batchId, int targetBatchId, Tensor result)
         {
-            Debug.Assert(Shape.Width == result.Shape.Width && Shape.Height == result.Shape.Height && Shape.Depth == result.Shape.Depth);
+            if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height || Shape.Depth != result.Shape.Depth) throw new Exception("Incompatible tensors.");
+
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2, result.Values, targetBatchId * Shape.Dim0Dim1Dim2, Shape.Dim0Dim1Dim2);
         }
 
         public void CopyDepthTo(int depthId, int batchId, int targetDepthId, int targetBatchId, Tensor result)
         {
-            Debug.Assert(Shape.Width == result.Shape.Width && Shape.Height == result.Shape.Height);
+            if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height) throw new Exception("Incompatible tensors.");
+
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2 + depthId * Shape.Dim0Dim1, result.Values, targetBatchId * Shape.Dim0Dim1Dim2 + targetDepthId * Shape.Dim0Dim1, Shape.Dim0Dim1);
         }
 
