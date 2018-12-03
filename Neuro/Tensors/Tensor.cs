@@ -17,6 +17,11 @@ namespace Neuro.Tensors
             GPU
         }
 
+        static Tensor()
+        {
+            SetOpMode(OpMode.MultiCPU);
+        }
+
         public Tensor(Shape shape)
         {
             Shape = shape;
@@ -772,7 +777,7 @@ namespace Neuro.Tensors
 
         public Shape Shape { get; private set; }
 
-        private static TensorOpCpu Op = new TensorOpMultiCpu();
+        private static TensorOpCpu Op;
         private static Random Rng = new Random();
 
         internal float[] Values;
