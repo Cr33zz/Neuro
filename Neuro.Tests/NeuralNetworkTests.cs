@@ -145,6 +145,44 @@ namespace Neuro.Tests
             Assert.AreEqual(trainingBatches[0].Output.BatchSize, 10);
         }
 
+        [TestMethod]
+        public void CopyParameters()
+        {
+            var net = new NeuralNetwork("test");
+            net.AddLayer(new Dense(2, 3, Activation.Linear));
+            net.AddLayer(new Dense(3, 3, Activation.Linear));
+
+            var net2 = net.Clone();
+            for (int i = 0; i < net2.LayersCount; ++i)
+                net2.Layer(i).Init();
+
+            net.CopyParametersTo(net2);
+
+            var netParams = net2.GetParametersAndGradients();
+            var net2Params = net2.GetParametersAndGradients();
+
+            for (int i = 0; i < netParams.Count; ++i)
+                Assert.IsTrue(netParams[i].Parameters.Equals(net2Params[i].Parameters));
+        }
+
+        [TestMethod]
+        public void SoftCopyParameters()
+        {
+            var net = new NeuralNetwork("test");
+            net.AddLayer(new Dense(2, 3, Activation.Linear));
+            net.AddLayer(new Dense(3, 3, Activation.Linear));
+
+            var net2 = net.Clone();
+
+            net.SoftCopyParametersTo(net2, 0.1f);
+
+            var netParams = net2.GetParametersAndGradients();
+            var net2Params = net2.GetParametersAndGradients();
+
+            for (int i = 0; i < netParams.Count; ++i)
+                Assert.IsTrue(netParams[i].Parameters.Equals(net2Params[i].Parameters));
+        }
+
         private void TestDenseLayer(int inputs, int outputs, int samples, int batchSize, int epochs)
         {
             var net = new NeuralNetwork("dense_test", 7);
