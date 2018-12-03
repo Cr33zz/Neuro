@@ -165,8 +165,6 @@ namespace Neuro
         // Training method, when batch size is -1 the whole training set is used for single gradient descent step (in other words, batch size equals to training set size)
         public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
-            LogLines.Clear();
-
             bool trainingDataAlreadyBatched = trainingData[0].Input.BatchSize > 1;
 
             for (int i = 0; i < trainingData.Count; ++i)
@@ -245,10 +243,11 @@ namespace Neuro
 
                 trainTimer.Stop();
 
-                output = Tools.GetProgressString(totalTrainingSamples, totalTrainingSamples);
-
-                if (verbose > 0)
+                if (verbose == 2)
+                {
+                    output = Tools.GetProgressString(totalTrainingSamples, totalTrainingSamples);
                     LogLine(output);
+                }
 
                 float trainError = trainTotalError / totalTrainingSamples;
 
@@ -292,11 +291,12 @@ namespace Neuro
                     chartGen?.AddData(e, (float)testHits / validationSamples, (int)Track.TestAccuracy);
                 }
 
-                if (e % 20 == 0 || e == epochs)
+                if ((ChartSaveInterval > 0 && (e % ChartSaveInterval == 0)) || e == epochs)
                     chartGen?.Save();
             }
 
-            File.WriteAllLines($"{outFilename}_log.txt", LogLines);
+            if (verbose > 0)
+                File.WriteAllLines($"{outFilename}_log.txt", LogLines);
         }
 
         // This is vectorized gradient descent
@@ -368,6 +368,7 @@ namespace Neuro
             }
         }
 
+        public int ChartSaveInterval = 20;
         public static bool DebugMode = false;
         private List<Layers.LayerBase> Layers = new List<Layers.LayerBase>();
         private LossFunc Error = Loss.MeanSquareError;
