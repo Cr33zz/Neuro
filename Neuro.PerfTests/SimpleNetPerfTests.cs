@@ -11,7 +11,9 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-            var inputs = new Tensor(new float[] { 1,1,2,2,3,3,4,4,5,5,6,6,2,3,4,5,6,7,8,9,0,1 }, new Shape(1, 2, 1, 11));
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+
+            /*var inputs = new Tensor(new float[] { 1,1,2,2,3,3,4,4,5,5,6,6,2,3,4,5,6,7,8,9,0,1 }, new Shape(1, 2, 1, 11));
             var outputs = new Tensor(new float[] { 2,2,3,3,4,4,5,5,6,6,7,7,3,4,5,6,7,8,9,10,1,2 }, new Shape(1, 2, 1, 11));
 
             var net = new NeuralNetwork("test");
@@ -41,9 +43,9 @@ namespace Neuro.PerfTests
             //net.Optimize(new SGD(0.01f), Loss.MeanSquareError);
             net.Optimize(new Adam(0.01f), Loss.MeanSquareError);
 
-            net.Fit(inputs, outputs, 1, 100, 2, Track.Nothing, false);
+            net.Fit(inputs, outputs, 1, 100, 2, Track.Nothing, false);*/
 
-            /*var inShape = new Shape(20);
+            var inShape = new Shape(20);
             var outShape = new Shape(20);
 
             List<Data> trainingData = new List<Data>();
@@ -59,18 +61,18 @@ namespace Neuro.PerfTests
 
             var net = new NeuralNetwork("simple_net_perf_test");
             net.AddLayer(new Flatten(inShape));
-            net.AddLayer(new Dense(net.LastLayer, 24, Activation.ReLU));
-            net.AddLayer(new Dense(net.LastLayer, 24, Activation.ReLU));
+            net.AddLayer(new Dense(net.LastLayer, 128, Activation.ReLU));
+            net.AddLayer(new Dense(net.LastLayer, 64, Activation.ReLU));
             net.AddLayer(new Dense(net.LastLayer, outShape.Length, Activation.Linear));
             net.Optimize(new Adam(), Loss.MeanSquareError);
 
             var timer = new Stopwatch();
             timer.Start();
 
-            net.Fit(trainingData, 1, 100, null, 0, Track.Nothing);
+            net.Fit(trainingData, 25, 20, null, 1, Track.Nothing);
 
             timer.Stop();
-            Console.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");*/
+            Console.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");
 
             return;
         }
