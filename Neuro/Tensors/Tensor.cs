@@ -371,6 +371,14 @@ namespace Neuro.Tensors
             return GetMaxData(batch, out maxIndex);
         }
 
+        public Tensor MaxPerBatch()
+        {
+            var result = new Tensor(new Shape(1, 1, 1, Shape.BatchSize));
+            for (int n = 0; n < BatchSize; ++n)
+                result[0, 0, 0, n] = Max(n);
+            return result;
+        }
+
         public static Tensor Merge(List<Tensor> list, int axis)
         {
             if (list.Count == 0)
@@ -404,12 +412,20 @@ namespace Neuro.Tensors
             Map(x => x / sum, result);
         }
 
-        // ArgMax will return local index inside given batch if batch is non -1
+        // ArgMax will return local index inside given batch if batch is not -1
         public int ArgMax(int batch = -1)
         {
             int maxIndex;
             GetMaxData(batch, out maxIndex);
             return maxIndex;
+        }
+
+        public Tensor ArgMaxPerBatch()
+        {
+            var result = new Tensor(new Shape(1, 1, 1, Shape.BatchSize));
+            for (int n = 0; n < BatchSize; ++n)
+                result[0, 0, 0, n] = ArgMax(n);
+            return result;
         }
 
         public virtual Tensor Transposed()

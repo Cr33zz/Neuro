@@ -8,23 +8,29 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
 
-            Tensor t1 = new Tensor(new Shape(64, 128, 4, 2));
-            t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(128, 64, 4, 2));
-            t2.FillWithRand();
-
-            var timer = new Stopwatch();
-            timer.Start();
-
-            for (int i = 0; i < 100; ++i)
+            for (int i = 1; i < 10; ++i)
             {
-                t1.Mul(t2);
-            }
+                int batchSize = i * 1;
+                Tensor t1 = new Tensor(new Shape(32, 32, 1, batchSize));
+                t1.FillWithRand();
+                Tensor t2 = new Tensor(new Shape(32, 32, 1, batchSize));
+                t2.FillWithRand();
 
-            timer.Stop();
-            Console.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0,2)} seconds");
+                Tensor res = new Tensor(t2.Shape);
+
+                var timer = new Stopwatch();
+                timer.Start();
+
+                for (int n = 0; n < 20; ++n)
+                {
+                    t1.Mul(t2, res);
+                }
+
+                timer.Stop();
+                Trace.WriteLine($"Elements: {t1.Shape.Length} {Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");
+            }
 
             return;
         }
