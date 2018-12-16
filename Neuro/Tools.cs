@@ -165,9 +165,9 @@ namespace Neuro
             using (BinaryWriter bwLabels = new BinaryWriter(fsLabels))
             using (BinaryWriter bwImages = new BinaryWriter(fsImages))
             {
-                int imgHeight = data[0].Input.Height;
-                int imgWidth = data[0].Input.Width;
-                int outputsNum = data[0].Output.Length;
+                int imgHeight = data[0].Inputs.Height;
+                int imgWidth = data[0].Inputs.Width;
+                int outputsNum = data[0].Outputs.Length;
 
                 bwImages.WriteBigInt32(1337); // discard
                 bwImages.WriteBigInt32(data.Count);
@@ -181,11 +181,11 @@ namespace Neuro
                 {
                     for (int h = 0; h < imgHeight; ++h)
                     for (int x = 0; x < imgWidth; ++x)
-                        bwImages.Write((byte)(data[i].Input[h, x] * 255));
+                        bwImages.Write((byte)(data[i].Inputs[h, x] * 255));
 
                     for (int j = 0; j < outputsNum; ++j)
                     {
-                        if (data[i].Output[j] == 1)
+                        if (data[i].Outputs[j] == 1)
                         {
                             bwLabels.Write((byte)j);
                         }

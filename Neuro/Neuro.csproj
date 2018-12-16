@@ -68,12 +68,17 @@
     <Compile Include="Initializers\GlorotUniform.cs" />
     <Compile Include="Initializers\Constant.cs" />
     <Compile Include="Initializers\Zeros.cs" />
+    <Compile Include="Layers\Concat.cs" />
     <Compile Include="Layers\LayerBase.cs" />
     <Compile Include="Layers\Convolution.cs" />
     <Compile Include="Layers\Dense.cs" />
     <Compile Include="Layers\Flatten.cs" />
+    <Compile Include="Layers\Merge.cs" />
     <Compile Include="Layers\Pooling.cs" />
     <Compile Include="Loss.cs" />
+    <Compile Include="Models\Flow.cs" />
+    <Compile Include="Models\ModelBase.cs" />
+    <Compile Include="Models\Sequential.cs" />
     <Compile Include="NeuralNetwork.cs" />
     <Compile Include="Optimizers\Adam.cs" />
     <Compile Include="Optimizers\OptimizerBase.cs" />

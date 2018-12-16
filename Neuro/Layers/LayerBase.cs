@@ -3,55 +3,68 @@ using System.Xml;
 using Neuro.Tensors;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neuro.Layers
 {
     public abstract class LayerBase
     {
-        public Tensor Input { get; set; }
-        public Tensor InputGradient { get; set; }
+        public Shape[] InputShapes { get; protected set; }
+        public Tensor[] Inputs { get; set; }
+        public Tensor[] InputsGradient { get; set; }
         public Tensor Output { get; protected set; }
-        public Shape InputShape { get; }
         public Shape OutputShape { get; }
         public ActivationFunc Activation { get; }
+        public string Name { get; set; }
+        internal List<LayerBase> InputLayers = new List<LayerBase>();
+        internal List<LayerBase> OutputLayers = new List<LayerBase>();
 
         public virtual int GetParamsNum() { return 0; }
 
-        // For serialization purposes only
-        internal LayerBase() {}
+        protected LayerBase() {}
+
+        // The concept of layer is that it is a 'block box' that supports feed forward and backward propagation.
+        // Feed forward: input Tensor -> |logic| -> output Tensor
+        // Back propagation: error gradients (for its outputs) -> |learning| -> error gradients (for predecessing layer outputs) and internal parameters deltas
+        // These error gradients are always of the same size as respective outputs and are saying now much each output
+        // contributed to the final error)
+        protected LayerBase(LayerBase inputLayer, Shape outputShape, ActivationFunc activation = null)
+            : this(new [] {inputLayer.OutputShape}, outputShape, activation)
+        {
+            InputLayers.Add(inputLayer);
+            inputLayer.OutputLayers.Add(this);
+        }
+
+        protected LayerBase(LayerBase[] inputLayers, Shape outputShape, ActivationFunc activation = null)
+            : this(inputLayers.Select(l => l.OutputShape).ToArray(), outputShape, activation)
+        {
+            InputLayers.AddRange(inputLayers);
+            foreach (var inLayer in inputLayers)
+                inLayer.OutputLayers.Add(this);
+        }
+
+        protected LayerBase(Shape[] inputShapes, Shape outputShape, ActivationFunc activation = null)
+        {
+            InputShapes = inputShapes;
+            OutputShape = outputShape;
+            Activation = activation;
+        }
 
         public abstract LayerBase Clone();
 
         public virtual void CopyParametersTo(LayerBase target, float tau = float.NaN)
         {
-            if (!InputShape.Equals(target.InputShape) || !OutputShape.Equals(target.OutputShape))
+            if (!InputShapes.Equals(target.InputShapes) || !OutputShape.Equals(target.OutputShape))
                 throw new Exception("Cannot copy parameters between incompatible layers.");
         }
 
-        // The concept of layer is that it is a 'blockbox' that supports feed forward and backward propagation.
-        // Feed forward: input Tensor -> |logic| -> output Tensor
-        // Back propagation: error gradients (for its outputs) -> |learning| -> error gradients (for predecessing layer outputs) and internal parameters deltas
-        // These error gradients are always of the same size as respective outputs and are saying now much each output
-        // contributed to the final error)
-        protected LayerBase(LayerBase prevLayer, Shape outputShape, ActivationFunc activation = null)
-            : this(prevLayer.OutputShape, outputShape, activation)
+        public Tensor FeedForward(Tensor[] inputs)
         {
-        }
+            //Debug.Assert(input.Width == InputShape.Width && input.Height == InputShape.Height && input.Depth == InputShape.Depth);
 
-        protected LayerBase(Shape inputShape, Shape outputShape, ActivationFunc activation = null)
-        {
-            InputShape = inputShape;
-            OutputShape = outputShape;
-            Activation = activation;
-        }
+            Inputs = inputs;
 
-        public Tensor FeedForward(Tensor input)
-        {
-            Debug.Assert(input.Width == InputShape.Width && input.Height == InputShape.Height && input.Depth == InputShape.Depth);
-
-            Input = new Tensor(input);
-
-            var outShape = new Shape(OutputShape.Width, OutputShape.Height, OutputShape.Depth, input.BatchSize);
+            var outShape = new Shape(OutputShape.Width, OutputShape.Height, OutputShape.Depth, inputs[0].BatchSize);
             if (Output == null || !Output.Shape.Equals(outShape))
                 Output = new Tensor(outShape);
 
@@ -68,11 +81,18 @@ namespace Neuro.Layers
             return Output;
         }
 
-        public Tensor BackProp(Tensor outputGradient)
+        public Tensor[] BackProp(Tensor outputGradient)
         {
-            var deltaShape = new Shape(InputShape.Width, InputShape.Height, InputShape.Depth, outputGradient.BatchSize);
-            if (InputGradient == null || !InputGradient.Shape.Equals(deltaShape))
-                InputGradient = new Tensor(deltaShape);
+            if (InputsGradient == null)
+                InputsGradient = new Tensor[InputShapes.Length];
+
+            for (int i = 0; i < InputShapes.Length; ++i)
+            {
+                var inputShape = InputShapes[i];
+                var deltaShape = new Shape(inputShape.Width, inputShape.Height, inputShape.Depth, outputGradient.BatchSize);
+                if (InputsGradient[i] == null || !InputsGradient[i].Shape.Equals(deltaShape))
+                    InputsGradient[i] = new Tensor(deltaShape);
+            }
 
             // apply derivative of our activation function to the errors computed by previous layer
             if (Activation != null)
@@ -85,7 +105,7 @@ namespace Neuro.Layers
 
             BackPropInternal(outputGradient);
 
-            return InputGradient;
+            return InputsGradient;
         }
 
         public virtual List<ParametersAndGradients> GetParametersAndGradients()

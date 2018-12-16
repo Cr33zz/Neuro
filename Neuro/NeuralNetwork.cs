@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Xml;
+using Neuro.Layers;
 using Neuro.Tensors;
 
 namespace Neuro
@@ -36,26 +37,26 @@ namespace Neuro
         public NeuralNetwork Clone()
         {
             var clone = new NeuralNetwork(Name, Seed);
-            foreach (var layer in Layers)
-                clone.Layers.Add(layer.Clone());
-            clone.Optimize(Optimizer, Error);
+            clone.Model = Model.Clone();
+            clone.Optimizer = Optimizer;
+            clone.LossFuncs = LossFuncs;
             return clone;
         }
 
-        public void CopyParametersTo(NeuralNetwork target)
-        {
-            for (int i = 0; i < Layers.Count; ++i)
-                Layers[i].CopyParametersTo(target.Layers[i]);
-        }
+        //public void CopyParametersTo(NeuralNetwork target)
+        //{
+        //    for (int i = 0; i < Layers.Count; ++i)
+        //        Layers[i].CopyParametersTo(target.Layers[i]);
+        //}
 
-        // Tau specifies the percentage of copied parameters to be applied on a target network, when less than 1 target's network
-        // parameters will be updated as follows: this_parameters * tau + target_parameters * (1 - tau)
-        public void SoftCopyParametersTo(NeuralNetwork target, float tau)
-        {
-            if (tau > 1 || tau <= 0) throw new Exception("Tau has to be a value from range (0, 1>.");
-            for (int i = 0; i < Layers.Count; ++i)
-                Layers[i].CopyParametersTo(target.Layers[i], tau);
-        }
+        //// Tau specifies the percentage of copied parameters to be applied on a target network, when less than 1 target's network
+        //// parameters will be updated as follows: this_parameters * tau + target_parameters * (1 - tau)
+        //public void SoftCopyParametersTo(NeuralNetwork target, float tau)
+        //{
+        //    if (tau > 1 || tau <= 0) throw new Exception("Tau has to be a value from range (0, 1>.");
+        //    for (int i = 0; i < Layers.Count; ++i)
+        //        Layers[i].CopyParametersTo(target.Layers[i], tau);
+        //}
 
         public string Name;
 
@@ -64,99 +65,77 @@ namespace Neuro
             get { return Name.ToLower().Replace(" ", "_"); }
         }
 
-        public Layers.LayerBase Layer(int i)
+        public Tensor[] Predict(Tensor[] inputs)
         {
-            return Layers[i];
+            Model.FeedForward(inputs);
+            return Model.GetOutputs();
         }
 
-        public Layers.LayerBase LastLayer
+        private void FeedForward(Tensor[] inputs)
         {
-            get { return Layers.Last(); }
+            Model.FeedForward(inputs);
         }
 
-        public int LayersCount
+        // There is single entry in deltas for every output layer of this network
+        private void BackProp(Tensor[] deltas)
         {
-            get { return Layers.Count; }
-        }
-
-        public void AddLayer(Layers.LayerBase layer)
-        {
-            layer.Init();
-            Layers.Add(layer);
-        }
-
-        public Tensor Predict(Tensor input)
-        {
-            for (int l = 0; l < Layers.Count; l++)
-                Layers[l].FeedForward(l == 0 ? input : Layers[l - 1].Output);
-
-            return Layers.Last().Output.Clone();
-        }
-
-        private void FeedForward(Tensor input)
-        {
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Input:\n{input}\n");
-
-            for (int l = 0; l < Layers.Count; l++)
-                Layers[l].FeedForward(l == 0 ? input : Layers[l - 1].Output);
-        }
-
-        private void BackProp(Tensor delta)
-        {
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Errors gradient:\n{delta}\n");
-
-            for (int l = Layers.Count - 1; l >= 0; --l)
-            {
-                delta = Layers[l].BackProp(delta);
-            }
+            Model.BackProp(deltas);
         }
 
         public List<ParametersAndGradients> GetParametersAndGradients()
         {
-            var result = new List<ParametersAndGradients>();
-
-            for (int l = 0; l < Layers.Count; l++)
-                result.AddRange(Layers[l].GetParametersAndGradients());
-
-            return result;
+            return Model.GetParametersAndGradients();
         }
         
         public void Optimize(Optimizers.OptimizerBase optimizer, LossFunc loss)
         {
-            Error = loss;
             Optimizer = optimizer;
+            Model.Optimize();
+
+            LossFuncs = new LossFunc[Model.GetOutputLayersCount()];
+            for (int i = 0; i < LossFuncs.Length; ++i)
+                LossFuncs[i] = loss;
         }
 
-        public void Fit(Tensor input, Tensor output, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        public void Optimize(Optimizers.OptimizerBase optimizer, Dictionary<string, LossFunc> losses)
         {
-            if (input.BatchSize != output.BatchSize) throw new Exception($"Mismatched input and output batch size.");
+            Optimizer = optimizer;
+            Model.Optimize();
+
+            LossFuncs = new LossFunc[Model.GetOutputLayersCount()];
+            int i = 0;
+            foreach (var outLayer in Model.GetOutputLayers())
+                LossFuncs[i++] = losses[outLayer.Name];
+        }
+
+        public void Fit(Tensor[] inputs, Tensor[] outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        {
+            if (inputs[0].BatchSize != outputs[0].BatchSize) throw new Exception($"Mismatched input and output batch size.");
 
             List<Data> trainingData = new List<Data>();
 
-            if (batchSize > 0 && batchSize != input.BatchSize)
+            if (batchSize > 0 && batchSize != inputs[0].BatchSize)
             {
                 // we have to split input and output tensors into datas so they can be shuffled later on
-                for (int i = 0; i < input.BatchSize; ++i)
-                    trainingData.Add(new Data() { Input = input.GetBatch(i), Output = output.GetBatch(i) });
+                for (int i = 0; i < inputs[0].BatchSize; ++i)
+                    trainingData.Add(new Data() { Inputs = inputs.Select(x => x.GetBatch(i)).ToArray(), Outputs = outputs.Select(x => x.GetBatch(i)).ToArray() });
             }
             else
-                trainingData.Add(new Data() { Input = input, Output = output });
+                trainingData.Add(new Data() { Inputs = inputs, Outputs = outputs });
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
         }
 
-        public void Fit(List<Tensor> inputs, List<Tensor> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        public void Fit(List<Tensor[]> inputs, List<Tensor[]> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
             if (inputs.Count != outputs.Count) throw new Exception($"Mismatched number of inputs and outputs.");
 
             List<Data> trainingData = new List<Data>();
             for (int i = 0; i < inputs.Count; ++i)
             {
-                if (inputs[i].BatchSize != 1 && inputs.Count > 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
-                if (outputs[i].BatchSize != 1 && outputs.Count > 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
-                trainingData.Add(new Data() { Input = inputs[i], Output = outputs[i] });
+                if (inputs[i][0].BatchSize != 1 && inputs.Count > 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
+                if (outputs[i][0].BatchSize != 1 && outputs.Count > 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
+                trainingData.Add(new Data() { Inputs = inputs[i], Outputs = outputs[i] });
             }
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
@@ -165,22 +144,23 @@ namespace Neuro
         // Training method, when batch size is -1 the whole training set is used for single gradient descent step (in other words, batch size equals to training set size)
         public void Fit(List<Data> trainingData, int batchSize = -1, int epochs = 1, List<Data> validationData = null, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
-            bool trainingDataAlreadyBatched = trainingData[0].Input.BatchSize > 1;
+            int inputsBatchSize = trainingData[0].Inputs[0].BatchSize;
+            bool trainingDataAlreadyBatched = inputsBatchSize > 1;
 
             for (int i = 0; i < trainingData.Count; ++i)
             {
                 Data d = trainingData[i];
-                Debug.Assert(d.Input.BatchSize == d.Output.BatchSize, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
-                Debug.Assert(d.Input.BatchSize == trainingData[0].Input.BatchSize, "Training data set contains batches of different size!");
+                //Debug.Assert(d.Inputs.BatchSize == d.Outputs.BatchSize, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
+                //Debug.Assert(d.Inputs.BatchSize == trainingData[0].Inputs.BatchSize, "Training data set contains batches of different size!");
             }
 
             if (batchSize < 0)
-                batchSize = trainingDataAlreadyBatched ? trainingData[0].Input.BatchSize : trainingData.Count;
+                batchSize = trainingDataAlreadyBatched ? trainingData[0].Inputs[0].BatchSize : trainingData.Count;
 
             string outFilename = $"{FilePrefix}_training_data_{Optimizer.GetType().Name.ToLower()}_b{batchSize}{(Seed > 0 ? ("_seed" + Seed) : "")}_{Tensor.CurrentOpMode}";
             ChartGenerator chartGen = null;
             if (trackFlags != Track.Nothing)
-                chartGen = new ChartGenerator($"{outFilename}", $"{Name} [{Error.GetType().Name}, {Optimizer}, BatchSize={batchSize}]\nSeed={(Seed > 0 ? Seed.ToString() : "None")}, TensorMode={Tensor.CurrentOpMode}", "Epoch");
+                chartGen = new ChartGenerator($"{outFilename}", $"{Name}\nloss=[{string.Join(",", LossFuncs.Select(x => x.GetType().Name))}] optimizer={Optimizer} batch_size={batchSize}\nseed={(Seed > 0 ? Seed.ToString() : "None")} tensor_mode={Tensor.CurrentOpMode}", "Epoch");
 
             if (trackFlags.HasFlag(Track.TrainError))
                 chartGen.AddSeries((int)Track.TrainError, "Error on train data\n(left Y axis)", Color.DarkRed);
@@ -191,21 +171,21 @@ namespace Neuro
             if (trackFlags.HasFlag(Track.TestAccuracy))
                 chartGen.AddSeries((int)Track.TestAccuracy, "Accuracy on test\n(right Y axis)", Color.CornflowerBlue, true);
 
-            var lastLayer = Layers.Last();
-            int outputsNum = lastLayer.OutputShape.Length;
+            //var lastLayer = Layers.Last();
+            //int outputsNum = lastLayer.OutputShape.Length;
 
             int batchesNum = trainingDataAlreadyBatched ? trainingData.Count : (trainingData.Count / batchSize);
-            int totalTrainingSamples = trainingData.Count * trainingData[0].Input.BatchSize;
+            int totalTrainingSamples = trainingData.Count * inputsBatchSize;
 
             AccuracyFunc accuracyFunc = Tools.AccNone;
 
-            if (trackFlags.HasFlag(Track.TrainAccuracy) || trackFlags.HasFlag(Track.TestAccuracy))
-            {
-                if (outputsNum == 1)
-                    accuracyFunc = Tools.AccBinaryClassificationEquality;
-                else
-                    accuracyFunc = Tools.AccCategoricalClassificationEquality;
-            }
+            //if (trackFlags.HasFlag(Track.TrainAccuracy) || trackFlags.HasFlag(Track.TestAccuracy))
+            //{
+            //    if (outputsNum == 1)
+            //        accuracyFunc = Tools.AccBinaryClassificationEquality;
+            //    else
+            //        accuracyFunc = Tools.AccCategoricalClassificationEquality;
+            //}
 
             Stopwatch trainTimer = new Stopwatch();
 
@@ -230,7 +210,7 @@ namespace Neuro
                 for (int b = 0; b < batchedTrainingData.Count; ++b)
                 {
                     // this will be equal to batch size; however, the last batch size may be different if there is a reminder of training data by batch size division
-                    int samples = batchedTrainingData[b].Input.BatchSize;
+                    int samples = batchedTrainingData[b].Inputs[0].BatchSize;
                     GradientDescentStep(batchedTrainingData[b], samples, accuracyFunc, ref trainTotalError, ref trainHits);
 
                     if (verbose == 2)
@@ -268,26 +248,30 @@ namespace Neuro
 
                 if (validationData != null)
                 {
-                    int validationSamples = validationData.Count * validationData[0].Input.BatchSize;
+                    int validationSamples = validationData.Count * validationData[0].Inputs[0].BatchSize;
                     float testHits = 0;
 
-                    for (int i = 0; i < validationData.Count; ++i)
+                    for (int n = 0; n < validationData.Count; ++n)
                     {
-                        FeedForward(validationData[i].Input);
-                        Tensor loss = new Tensor(lastLayer.Output.Shape);
-                        Error.Compute(validationData[i].Output, lastLayer.Output, loss);
-                        testTotalError += loss.Sum() / outputsNum;
-                        testHits += accuracyFunc(validationData[i].Output, lastLayer.Output);
+                        FeedForward(validationData[n].Inputs);
+                        var outputs = Model.GetOutputs();
+                        Tensor[] losses = new Tensor[outputs.Length];
+                        for (int i = 0; i < outputs.Length; ++i)
+                        {
+                            LossFuncs[i].Compute(validationData[n].Outputs[i], outputs[i], losses[i]);
+                            testTotalError += losses[i].Sum() / outputs[i].BatchLength;
+                            testHits += accuracyFunc(validationData[n].Outputs[i], outputs[i]);
+                        }
 
                         if (verbose == 2)
                         {
-                            string progress = " - validating: " + Math.Round(i / (float)validationData.Count * 100) + "%";
+                            string progress = " - validating: " + Math.Round(n / (float)validationData.Count * 100) + "%";
                             Console.Write(progress);
                             Console.Write(new string('\b', progress.Length));
                         }
                     }
 
-                    chartGen?.AddData(e, testTotalError / (validationSamples * lastLayer.OutputShape.Length), (int)Track.TestError);
+                    chartGen?.AddData(e, testTotalError / validationSamples, (int)Track.TestError);
                     chartGen?.AddData(e, (float)testHits / validationSamples, (int)Track.TestAccuracy);
                 }
 
@@ -302,15 +286,17 @@ namespace Neuro
         // This is vectorized gradient descent
         private void GradientDescentStep(Data trainingData, int samplesInTrainingData, AccuracyFunc accuracyFunc, ref float trainError, ref int trainHits)
         {
-            var lastLayer = Layers.Last();
-
-            FeedForward(trainingData.Input);
-            Tensor loss = new Tensor(lastLayer.Output.Shape);
-            Error.Compute(trainingData.Output, lastLayer.Output, loss);
-            trainError += loss.Sum() / lastLayer.OutputShape.Length;
-            trainHits += accuracyFunc(trainingData.Output, lastLayer.Output);
-            Error.Derivative(trainingData.Output, lastLayer.Output, loss);
-            BackProp(loss);
+            FeedForward(trainingData.Inputs);
+            var outputs = Model.GetOutputs();
+            Tensor[] losses = new Tensor[outputs.Length];
+            for (int i = 0; i < outputs.Length; ++i)
+            {
+                LossFuncs[i].Compute(trainingData.Outputs[i], outputs[i], losses[i]);
+                trainError += losses[i].Sum() / outputs[i].BatchLength;
+                trainHits += accuracyFunc(trainingData.Outputs[i], outputs[i]);
+                LossFuncs[i].Derivative(trainingData.Outputs[i], outputs[i], losses[i]);
+            }
+            BackProp(losses);
             Optimizer.Step(GetParametersAndGradients(), samplesInTrainingData);
         }
 
@@ -322,57 +308,24 @@ namespace Neuro
 
         public string Summary()
         {
-            int totalParams = 0;
-            string output = "_________________________________________________________________\n";
-            output += "Layer Type                   Output Shape              Param #\n";
-            output += "=================================================================\n";
-
-            foreach (var layer in Layers)
-            {
-                totalParams += layer.GetParamsNum();
-                output += $"{layer.GetType().Name.PadRight(29)}"+ $"({layer.OutputShape.Width}, {layer.OutputShape.Height}, {layer.OutputShape.Depth})".PadRight(26) + $"{layer.GetParamsNum()}\n";
-                output += "_________________________________________________________________\n";
-            }
-
-            output += $"Total params: {totalParams}";
-
-            return output;
+            return Model.Summary();
         }
 
         public void SaveStateXml(string filename = "")
         {
-            XmlDocument doc = new XmlDocument();
-            XmlElement modelElem = doc.CreateElement("Sequential");
-
-            for (int l = 0; l < Layers.Count; l++)
-            {
-                XmlElement layerElem = doc.CreateElement(Layers[l].GetType().Name);
-                Layers[l].SerializeParameters(layerElem);
-                modelElem.AppendChild(layerElem);
-            }
-
-            doc.AppendChild(modelElem);
-            doc.Save(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
+            Model.SaveStateXml(filename);
         }
 
         public void LoadStateXml(string filename = "")
         {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
-            XmlElement modelElem = doc.FirstChild as XmlElement;
-
-            for (int l = 0; l < Layers.Count; l++)
-            {
-                XmlElement layerElem = modelElem.ChildNodes.Item(l) as XmlElement;
-                Layers[l].DeserializeParameters(layerElem);
-            }
+            Model.LoadStateXml(filename);
         }
 
         public int ChartSaveInterval = 20;
-        public static bool DebugMode = false;
-        private List<Layers.LayerBase> Layers = new List<Layers.LayerBase>();
-        private LossFunc Error = Loss.MeanSquareError;
+        public static bool DebugMode = false;        
+        private LossFunc[] LossFuncs;
         private Optimizers.OptimizerBase Optimizer;
+        public Models.ModelBase Model;
         private int Seed;
         private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
         private List<string> LogLines = new List<string>();

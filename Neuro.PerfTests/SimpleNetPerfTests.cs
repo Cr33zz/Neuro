@@ -3,7 +3,9 @@ using Neuro.Tensors;
 using Neuro.Optimizers;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
+using Neuro.Models;
 
 namespace Neuro.PerfTests
 {
@@ -11,7 +13,19 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
+
+            var net = new NeuralNetwork("test");            
+            var input1 = new Dense(2, 2, Activation.Sigmoid);
+            var upperStream1 = new Dense(input1, 2, Activation.Sigmoid);
+            var upperStream2 = new Dense(upperStream1, 2, Activation.Sigmoid) { Name = "upperStream2" };
+            var lowerStream1 = new Dense(input1, 2, Activation.Sigmoid) { Name = "lowerStream1" };
+            var merge = new Merge(new[] {upperStream2, lowerStream1}, Merge.Mode.Sum) { Name = "merge1" };
+
+            net.Model = new Flow(new[] { input1 }, new[] { merge });
+            net.Optimize(new SGD(), Loss.MeanSquareError);
+            //net.Optimize(new SGD(), new Dictionary<string, LossFunc>{ {"upperStream2", Loss.MeanSquareError}, { "lowerStream1", Loss.Huber1 } });
+
 
             /*var inputs = new Tensor(new float[] { 1,1,2,2,3,3,4,4,5,5,6,6,2,3,4,5,6,7,8,9,0,1 }, new Shape(1, 2, 1, 11));
             var outputs = new Tensor(new float[] { 2,2,3,3,4,4,5,5,6,6,7,7,3,4,5,6,7,8,9,10,1,2 }, new Shape(1, 2, 1, 11));
@@ -50,7 +64,7 @@ namespace Neuro.PerfTests
 
             List<Data> trainingData = new List<Data>();
 
-            for (int i = 0; i < 500; ++i)
+            for (int i = 0; i < 32; ++i)
             {
                 var input = new Tensor(inShape);
                 input.FillWithRand(3 * i);
@@ -69,10 +83,10 @@ namespace Neuro.PerfTests
             var timer = new Stopwatch();
             timer.Start();
 
-            net.Fit(trainingData, 25, 20, null, 1, Track.Nothing);
+            net.Fit(trainingData, -1, 500, null, 0, Track.Nothing);
 
             timer.Stop();
-            Console.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");
+            Trace.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");
 
             return;
         }

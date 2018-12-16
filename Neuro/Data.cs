@@ -5,7 +5,7 @@ namespace Neuro
 {
     public class Data
     {
-        public Tensor Input;
-        public Tensor Output;
+        public Tensor[] Inputs;
+        public Tensor[] Outputs;
     }
 }

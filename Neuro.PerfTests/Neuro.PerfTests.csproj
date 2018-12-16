@@ -34,7 +34,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Neuro.PerfTests.TensorPerfTests</StartupObject>
+    <StartupObject>Neuro.PerfTests.SimpleNetPerfTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Neuro, Version=1.0.6896.28855, Culture=neutral, processorArchitecture=AMD64">
