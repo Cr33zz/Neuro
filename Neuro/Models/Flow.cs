@@ -70,7 +70,7 @@ namespace Neuro.Models
             return OutputLayers.Count;
         }
 
-        public virtual void Optimize()
+        public override void Optimize()
         {
             List<LayerBase> visited = new List<LayerBase>();
 
@@ -106,7 +106,10 @@ namespace Neuro.Models
 
         public override ModelBase Clone()
         {
-            throw new NotImplementedException();
+            var clone = new Flow(InputLayers.ToArray(), OutputLayers.ToArray());
+            clone.Order = Order;
+            clone.ReversedOrder = ReversedOrder;
+            return clone;
         }
 
         public override IEnumerable<LayerBase> GetLayers()

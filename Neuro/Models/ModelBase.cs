@@ -15,8 +15,8 @@ namespace Neuro.Models
         public abstract IEnumerable<LayerBase> GetOutputLayers();
         public abstract int GetOutputLayersCount();
         public virtual string Summary() { return ""; }
-        public virtual void SaveStateXml(string filename = "") { }
-        public virtual void LoadStateXml(string filename = "") { }
+        public virtual void SaveStateXml(string filename) { }
+        public virtual void LoadStateXml(string filename) { }
 
         public LayerBase GetLayer(string name)
         {

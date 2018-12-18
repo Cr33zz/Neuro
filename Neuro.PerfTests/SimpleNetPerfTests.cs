@@ -14,14 +14,14 @@ namespace Neuro.PerfTests
         static void Main(string[] args)
         {
             Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
-
-            var net = new NeuralNetwork("test");            
+            
             var input1 = new Dense(2, 2, Activation.Sigmoid);
             var upperStream1 = new Dense(input1, 2, Activation.Sigmoid);
             var upperStream2 = new Dense(upperStream1, 2, Activation.Sigmoid) { Name = "upperStream2" };
             var lowerStream1 = new Dense(input1, 2, Activation.Sigmoid) { Name = "lowerStream1" };
             var merge = new Merge(new[] {upperStream2, lowerStream1}, Merge.Mode.Sum) { Name = "merge1" };
 
+            var net = new NeuralNetwork("test");
             net.Model = new Flow(new[] { input1 }, new[] { merge });
             net.Optimize(new SGD(), Loss.MeanSquareError);
             //net.Optimize(new SGD(), new Dictionary<string, LossFunc>{ {"upperStream2", Loss.MeanSquareError}, { "lowerStream1", Loss.Huber1 } });
@@ -59,7 +59,7 @@ namespace Neuro.PerfTests
 
             net.Fit(inputs, outputs, 1, 100, 2, Track.Nothing, false);*/
 
-            var inShape = new Shape(20);
+            /*var inShape = new Shape(20);
             var outShape = new Shape(20);
 
             List<Data> trainingData = new List<Data>();
@@ -70,20 +70,23 @@ namespace Neuro.PerfTests
                 input.FillWithRand(3 * i);
                 var output = new Tensor(outShape);
                 output.FillWithRand(3 * i);
-                trainingData.Add(new Data() { Input = input, Output = output });
+                trainingData.Add(new Data(input, output));
             }
+            
+            var model = new Sequential();
+            model.AddLayer(new Flatten(inShape));
+            model.AddLayer(new Dense(model.LastLayer, 128, Activation.ReLU));
+            model.AddLayer(new Dense(model.LastLayer, 64, Activation.ReLU));
+            model.AddLayer(new Dense(model.LastLayer, outShape.Length, Activation.Linear));
 
             var net = new NeuralNetwork("simple_net_perf_test");
-            net.AddLayer(new Flatten(inShape));
-            net.AddLayer(new Dense(net.LastLayer, 128, Activation.ReLU));
-            net.AddLayer(new Dense(net.LastLayer, 64, Activation.ReLU));
-            net.AddLayer(new Dense(net.LastLayer, outShape.Length, Activation.Linear));
-            net.Optimize(new Adam(), Loss.MeanSquareError);
+            net.Model = model;
+            net.Optimize(new Adam(), Loss.MeanSquareError);*/
 
             var timer = new Stopwatch();
             timer.Start();
 
-            net.Fit(trainingData, -1, 500, null, 0, Track.Nothing);
+            //net.Fit(trainingData, -1, 500, null, 0, Track.Nothing);
 
             timer.Stop();
             Trace.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");

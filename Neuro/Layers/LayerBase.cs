@@ -43,6 +43,11 @@ namespace Neuro.Layers
                 inLayer.OutputLayers.Add(this);
         }
 
+        protected LayerBase(Shape inputShape, Shape outputShape, ActivationFunc activation = null)
+            : this(new[] { inputShape }, outputShape, activation)
+        {
+        }
+
         protected LayerBase(Shape[] inputShapes, Shape outputShape, ActivationFunc activation = null)
         {
             InputShapes = inputShapes;

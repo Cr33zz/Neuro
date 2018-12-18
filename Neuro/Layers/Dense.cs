@@ -29,7 +29,7 @@ namespace Neuro.Layers
 
         public override LayerBase Clone()
         {
-            var clone = new Dense(InputShape.Length, OutputShape.Length, Activation);
+            var clone = new Dense(InputShapes[0].Length, OutputShape.Length, Activation);
             clone.Weights = Weights.Clone();
             clone.Bias = Bias.Clone();
             clone.UseBias = UseBias;
@@ -47,33 +47,27 @@ namespace Neuro.Layers
 
         public override void Init()
         {
-            KernelInitializer.Init(Weights, InputShape.Length, OutputShape.Length);
+            KernelInitializer.Init(Weights, InputShapes[0].Length, OutputShape.Length);
             if (UseBias)
-                BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
+                BiasInitializer.Init(Bias, InputShapes[0].Length, OutputShape.Length);
         }
 
         public override int GetParamsNum() { return Weights.Length; }
 
         protected override void FeedForwardInternal()
         {
-            Weights.Mul(Input, Output);
+            Weights.Mul(Inputs[0], Output);
             if (UseBias)
                 Output.Add(Bias, Output);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Dense() output:\n{Output}\n");
         }
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
             // for explanation watch https://www.youtube.com/watch?v=8H2ODPNxEgA&t=898s
             // each weight is responsible to the error in the next layer proportionally to its value
-            Weights.Transposed().Mul(outputGradient, InputGradient);
+            Weights.Transposed().Mul(outputGradient, InputsGradient[0]);
 
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Dense() errors gradient:\n{InputGradient}\n");
-
-            WeightsGradient.Add(outputGradient.Mul(Input.Transposed()).SumBatches(), WeightsGradient);
+            WeightsGradient.Add(outputGradient.Mul(Inputs[0].Transposed()).SumBatches(), WeightsGradient);
             if (UseBias)
                 BiasGradient.Add(outputGradient.SumBatches(), BiasGradient);
         }

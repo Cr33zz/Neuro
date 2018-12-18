@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Xml;
 using Neuro.Layers;
 using Neuro.Tensors;
 
@@ -49,6 +49,11 @@ namespace Neuro.Models
             return 1;
         }
 
+        public override IEnumerable<LayerBase> GetLayers()
+        {
+            return Layers;
+        }
+
         public override string Summary()
         {
             int totalParams = 0;
@@ -68,7 +73,7 @@ namespace Neuro.Models
             return output;
         }
 
-        public override void SaveStateXml(string filename = "")
+        public override void SaveStateXml(string filename)
         {
             XmlDocument doc = new XmlDocument();
             XmlElement modelElem = doc.CreateElement("Sequential");
@@ -81,13 +86,13 @@ namespace Neuro.Models
             }
 
             doc.AppendChild(modelElem);
-            doc.Save(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
+            doc.Save(filename);
         }
 
-        public override void LoadStateXml(string filename = "")
+        public override void LoadStateXml(string filename)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
+            doc.Load(filename);
             XmlElement modelElem = doc.FirstChild as XmlElement;
 
             for (int l = 0; l < Layers.Count; l++)

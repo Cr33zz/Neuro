@@ -17,24 +17,18 @@ namespace Neuro.Layers
 
         public override LayerBase Clone()
         {
-            return new Flatten(InputShape);
+            return new Flatten(InputShapes[0]);
         }
 
         protected override void FeedForwardInternal()
         {
             // output is already of proper shape thanks to LayerBase.FeedForward
-            Input.CopyTo(Output);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Flatten() output:\n{Output}\n");
+            Inputs[0].CopyTo(Output);
         }
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            InputGradient = outputGradient.Reshaped(Input.Shape);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Flatten() errors gradient:\n{InputGradient}\n");
+            InputsGradient[0] = outputGradient.Reshaped(Inputs[0].Shape);
         }
     }
 }

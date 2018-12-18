@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Xml;
-using Neuro.Layers;
+using System.IO;
 using Neuro.Tensors;
 
 namespace Neuro
@@ -108,20 +106,30 @@ namespace Neuro
                 LossFuncs[i++] = losses[outLayer.Name];
         }
 
-        public void Fit(Tensor[] inputs, Tensor[] outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        public void Fit(Tensor[] inputsBatch, Tensor[] outputsBatch, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
-            if (inputs[0].BatchSize != outputs[0].BatchSize) throw new Exception($"Mismatched input and output batch size.");
+            if (inputsBatch[0].BatchSize != outputsBatch[0].BatchSize) throw new Exception($"Mismatched input and output batch size.");
 
             List<Data> trainingData = new List<Data>();
 
-            if (batchSize > 0 && batchSize != inputs[0].BatchSize)
+            if (batchSize > 0 && batchSize != inputsBatch[0].BatchSize)
             {
                 // we have to split input and output tensors into datas so they can be shuffled later on
-                for (int i = 0; i < inputs[0].BatchSize; ++i)
-                    trainingData.Add(new Data() { Inputs = inputs.Select(x => x.GetBatch(i)).ToArray(), Outputs = outputs.Select(x => x.GetBatch(i)).ToArray() });
+                for (int j = 0; j < inputsBatch[0].BatchSize; ++j)
+                {
+                    var inputs = new Tensor[inputsBatch.Length];
+                    for (int i = 0; i < inputsBatch.Length; ++i)
+                        inputs[i] = inputsBatch[i].GetBatch(j);
+
+                    var outputs = new Tensor[outputsBatch.Length];
+                    for (int i = 0; i < outputsBatch.Length; ++i)
+                        inputs[i] = outputsBatch[i].GetBatch(j);
+
+                    trainingData.Add(new Data(inputs, outputs));
+                }
             }
             else
-                trainingData.Add(new Data() { Inputs = inputs, Outputs = outputs });
+                trainingData.Add(new Data(inputsBatch, outputsBatch));
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
         }
@@ -135,7 +143,7 @@ namespace Neuro
             {
                 if (inputs[i][0].BatchSize != 1 && inputs.Count > 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
                 if (outputs[i][0].BatchSize != 1 && outputs.Count > 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
-                trainingData.Add(new Data() { Inputs = inputs[i], Outputs = outputs[i] });
+                trainingData.Add(new Data(inputs[i], outputs[i]));
             }
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
@@ -313,12 +321,12 @@ namespace Neuro
 
         public void SaveStateXml(string filename = "")
         {
-            Model.SaveStateXml(filename);
+            Model.SaveStateXml(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
         }
 
         public void LoadStateXml(string filename = "")
         {
-            Model.LoadStateXml(filename);
+            Model.LoadStateXml(filename.Length == 0 ? $"{FilePrefix}.xml" : filename);
         }
 
         public int ChartSaveInterval = 20;

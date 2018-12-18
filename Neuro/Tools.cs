@@ -145,7 +145,7 @@ namespace Neuro
                     byte lbl = brLabels.ReadByte();
                     output[0, lbl] = 1;
 
-                    dataSet.Add(new Data() { Input = input, Output = output });
+                    dataSet.Add(new Data(input, output));
                 }
 
                 using (bmp)
@@ -165,9 +165,9 @@ namespace Neuro
             using (BinaryWriter bwLabels = new BinaryWriter(fsLabels))
             using (BinaryWriter bwImages = new BinaryWriter(fsImages))
             {
-                int imgHeight = data[0].Inputs.Height;
-                int imgWidth = data[0].Inputs.Width;
-                int outputsNum = data[0].Outputs.Length;
+                int imgHeight = data[0].Inputs[0].Height;
+                int imgWidth = data[0].Inputs[0].Width;
+                int outputsNum = data[0].Outputs[0].Length;
 
                 bwImages.WriteBigInt32(1337); // discard
                 bwImages.WriteBigInt32(data.Count);
@@ -181,11 +181,11 @@ namespace Neuro
                 {
                     for (int h = 0; h < imgHeight; ++h)
                     for (int x = 0; x < imgWidth; ++x)
-                        bwImages.Write((byte)(data[i].Inputs[h, x] * 255));
+                        bwImages.Write((byte)(data[i].Inputs[0][h, x] * 255));
 
                     for (int j = 0; j < outputsNum; ++j)
                     {
-                        if (data[i].Outputs[j] == 1)
+                        if (data[i].Outputs[0][j] == 1)
                         {
                             bwLabels.Write((byte)j);
                         }
@@ -220,7 +220,7 @@ namespace Neuro
                             output[0, i] = v;
                     }
 
-                    dataSet.Add(new Data() { Input = input, Output = output });
+                    dataSet.Add(new Data(input, output));
                 }
             }
 
@@ -235,11 +235,20 @@ namespace Neuro
             List<Data> mergedData = new List<Data>();
 
             int batchesNum = dataList.Count / batchSize;
+            int numberOfInputs = dataList[0].Inputs.Length;
+            int numberOfOutputs = dataList[0].Outputs.Length;
 
             for (int b = 0; b < batchesNum; ++b)
             {
-                mergedData.Add(new Data() { Input = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Input).ToList(), 3),
-                                            Output = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Output).ToList(), 3)});
+                var inputs = new Tensor[numberOfInputs];
+                for (int i = 0; i < numberOfInputs; ++i)
+                    inputs[i] = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList(), 3);
+
+                var outputs = new Tensor[numberOfOutputs];
+                for (int i = 0; i < numberOfOutputs; ++i)
+                    outputs[i] = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList(), 3);
+
+                mergedData.Add(new Data(inputs, outputs));
             }
 
             // add support for reminder of training data

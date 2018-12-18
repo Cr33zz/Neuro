@@ -30,7 +30,7 @@ namespace Neuro.Layers
 
         public override LayerBase Clone()
         {
-            var clone = new Convolution(InputShape, FilterSize, FiltersNum, Stride, Activation);
+            var clone = new Convolution(InputShapes[0], FilterSize, FiltersNum, Stride, Activation);
             clone.Kernels = Kernels.Clone();
             clone.Bias = Bias.Clone();
             clone.UseBias = UseBias;
@@ -48,30 +48,24 @@ namespace Neuro.Layers
 
         public override void Init()
         {
-            KernelInitializer.Init(Kernels, InputShape.Length, OutputShape.Length);
+            KernelInitializer.Init(Kernels, InputShapes[0].Length, OutputShape.Length);
             if (UseBias)
-                BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
+                BiasInitializer.Init(Bias, InputShapes[0].Length, OutputShape.Length);
         }
 
         public override int GetParamsNum() { return FilterSize * FilterSize * FiltersNum; }
 
         protected override void FeedForwardInternal()
         {
-            Input.Conv2D(Kernels, Stride, Tensor.PaddingType.Valid, Output);
+            Inputs[0].Conv2D(Kernels, Stride, Tensor.PaddingType.Valid, Output);
             if (UseBias)
                 Output.Add(Bias, Output);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) output:\n{Output}\n");
         }
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, InputGradient);
-            Tensor.Conv2DKernelsGradient(Input, outputGradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Conv(f={FilterSize},s={Stride},filters={Kernels.Length}) input gradient:\n{InputGradient}\n");
+            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, InputsGradient[0]);
+            Tensor.Conv2DKernelsGradient(Inputs[0], outputGradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
 
             if (UseBias)
                 BiasGradient.Add(outputGradient.SumBatches());

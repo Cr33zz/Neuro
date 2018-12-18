@@ -25,23 +25,17 @@ namespace Neuro.Layers
 
         public override LayerBase Clone()
         {
-            return new Pooling(InputShape, FilterSize, Stride, Type);
+            return new Pooling(InputShapes[0], FilterSize, Stride, Type);
         }
 
         protected override void FeedForwardInternal()
         {
-            Input.Pool(FilterSize, Stride, Type, Tensor.PaddingType.Valid, Output);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) output:\n{Output}\n");
+            Inputs[0].Pool(FilterSize, Stride, Type, Tensor.PaddingType.Valid, Output);
         }
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            Tensor.PoolGradient(Output, Input, outputGradient, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputGradient);
-
-            if (NeuralNetwork.DebugMode)
-                Trace.WriteLine($"Pool(t={Type},f={FilterSize},s={Stride}) errors gradient:\n{InputGradient}\n");
+            Tensor.PoolGradient(Output, Inputs[0], outputGradient, FilterSize, Stride, Type, Tensor.PaddingType.Valid, InputsGradient[0]);
         }
 
         private readonly Tensor.PoolType Type;
