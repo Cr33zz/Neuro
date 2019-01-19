@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neuro.Layers;
+using Neuro.Models;
 using Neuro.Optimizers;
 using Neuro.Tensors;
 
@@ -32,21 +33,22 @@ namespace Neuro.Tests
         public void Fit_Batched_Tensors()
         {
             NeuralNetwork net = CreateFitTestNet();
-            
-            var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
-            var tData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
+            Sequential seqModel = net.Model as Sequential;
 
-            var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tData.Count));
-            var outputs = new Tensor(new Shape(net.LastLayer.OutputShape.Width, net.LastLayer.OutputShape.Height, net.LastLayer.OutputShape.Depth, tData.Count));
+            var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
+            var tData = GenerateTrainingData(50, seqModel.LastLayer.InputShapes[0], expectedWeights, MatMult);
+
+            var inputs = new Tensor(new Shape(seqModel.Layer(0).InputShape.Width, seqModel.Layer(0).InputShape.Height, seqModel.Layer(0).InputShape.Depth, tData.Count));
+            var outputs = new Tensor(new Shape(seqModel.LastLayer.OutputShape.Width, seqModel.LastLayer.OutputShape.Height, seqModel.LastLayer.OutputShape.Depth, tData.Count));
             for (int i = 0; i < tData.Count; ++i)
             {
                 tData[i].Input.CopyBatchTo(0, i, inputs);
                 tData[i].Output.CopyBatchTo(0, i, outputs);
             }
 
-            net.Fit(inputs, outputs, -1, 300, 0, Track.Nothing);
+            net.FitBatched(inputs, outputs, 300, 0, Track.Nothing);
 
-            var paramsAndGrads = net.LastLayer.GetParametersAndGradients();
+            var paramsAndGrads = seqModel.LastLayer.GetParametersAndGradients();
 
             for (int i = 0; i < expectedWeights.Length; ++i)
                 Assert.AreEqual(paramsAndGrads[0].Parameters.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
@@ -56,23 +58,24 @@ namespace Neuro.Tests
         public void Fit_Batched_Data()
         {
             NeuralNetwork net = CreateFitTestNet();
+            Sequential seqModel = net.Model as Sequential;
 
             var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
-            var tempData = GenerateTrainingData(50, net.LastLayer.InputShape, expectedWeights, MatMult);
+            var tempData = GenerateTrainingData(50, seqModel.LastLayer.InputShapes[0], expectedWeights, MatMult);
 
-            var inputs = new Tensor(new Shape(net.Layer(0).InputShape.Width, net.Layer(0).InputShape.Height, net.Layer(0).InputShape.Depth, tempData.Count));
-            var outputs = new Tensor(new Shape(net.LastLayer.OutputShape.Width, net.LastLayer.OutputShape.Height, net.LastLayer.OutputShape.Depth, tempData.Count));
+            var inputs = new Tensor(new Shape(seqModel.Layer(0).InputShapes[0].Width, seqModel.Layer(0).InputShapes[0].Height, seqModel.Layer(0).InputShapes[0].Depth, tempData.Count));
+            var outputs = new Tensor(new Shape(seqModel.LastLayer.OutputShape.Width, seqModel.LastLayer.OutputShape.Height, seqModel.LastLayer.OutputShape.Depth, tempData.Count));
             for (int i = 0; i < tempData.Count; ++i)
             {
-                tempData[i].Input.CopyBatchTo(0, i, inputs);
-                tempData[i].Output.CopyBatchTo(0, i, outputs);
+                tempData[i].Inputs[0].CopyBatchTo(0, i, inputs);
+                tempData[i].Outputs[0].CopyBatchTo(0, i, outputs);
             }
 
-            var tData = new List<Data> { new Data() { Input = inputs, Output = outputs } };
+            var tData = new List<Data> { new Data(inputs, outputs) };
 
             net.Fit(tData, -1, 300, null, 0, Track.Nothing);
 
-            var paramsAndGrads = net.LastLayer.GetParametersAndGradients();
+            var paramsAndGrads = seqModel.LastLayer.GetParametersAndGradients();
 
             for (int i = 0; i < expectedWeights.Length; ++i)
                 Assert.AreEqual(paramsAndGrads[0].Parameters.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
@@ -81,7 +84,9 @@ namespace Neuro.Tests
         private NeuralNetwork CreateFitTestNet()
         {
             var net = new NeuralNetwork("fit_test", 7);
-            net.AddLayer(new Dense(3, 2, Activation.Linear) { KernelInitializer = new Initializers.Constant(1), UseBias = false });
+            var model = new Sequential();
+            model.AddLayer(new Dense(3, 2, Activation.Linear) { KernelInitializer = new Initializers.Constant(1), UseBias = false });
+            net.Model = model;
             net.Optimize(new SGD(0.07f), Loss.MeanSquareError);
             return net;
         }
@@ -149,12 +154,14 @@ namespace Neuro.Tests
         public void CopyParameters()
         {
             var net = new NeuralNetwork("test");
-            net.AddLayer(new Dense(2, 3, Activation.Linear));
-            net.AddLayer(new Dense(3, 3, Activation.Linear));
+            var model = new Sequential();
+            model.AddLayer(new Dense(2, 3, Activation.Linear));
+            model.AddLayer(new Dense(3, 3, Activation.Linear));
+            net.Model = model;
 
             var net2 = net.Clone();
-            for (int i = 0; i < net2.LayersCount; ++i)
-                net2.Layer(i).Init();
+            foreach (var l2 in net2.Model.GetLayers())
+                l2.Init();
 
             net.CopyParametersTo(net2);
 
@@ -169,8 +176,10 @@ namespace Neuro.Tests
         public void SoftCopyParameters()
         {
             var net = new NeuralNetwork("test");
-            net.AddLayer(new Dense(2, 3, Activation.Linear));
-            net.AddLayer(new Dense(3, 3, Activation.Linear));
+            var model = new Sequential();
+            model.AddLayer(new Dense(2, 3, Activation.Linear));
+            model.AddLayer(new Dense(3, 3, Activation.Linear));
+            net.Model = model;
 
             var net2 = net.Clone();
 
@@ -186,15 +195,17 @@ namespace Neuro.Tests
         private void TestDenseLayer(int inputs, int outputs, int samples, int batchSize, int epochs)
         {
             var net = new NeuralNetwork("dense_test", 7);
-            net.AddLayer(new Dense(inputs, outputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1), UseBias = false });
+            var model = new Sequential();
+            model.AddLayer(new Dense(inputs, outputs, Activation.Linear) { KernelInitializer = new Initializers.Constant(1), UseBias = false });
+            net.Model = model;
 
             var expectedWeights = new Tensor(new[] { 1.1f, 0.1f, -1.3f, 0.2f, -0.9f, 0.7f }, new Shape(3, 2));
-            var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedWeights, MatMult);
+            var tData = GenerateTrainingData(samples, model.LastLayer.InputShape, expectedWeights, MatMult);
 
             net.Optimize(new SGD(0.07f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
 
-            var paramsAndGrads = net.LastLayer.GetParametersAndGradients();
+            var paramsAndGrads = model.LastLayer.GetParametersAndGradients();
 
             for (int i = 0; i < expectedWeights.Length; ++i)
                 Assert.AreEqual(paramsAndGrads[0].Parameters.GetFlat(i), expectedWeights.GetFlat(i), 1e-2);
@@ -203,16 +214,19 @@ namespace Neuro.Tests
         private void TestDenseNetwork(int inputs, int samples, int batchSize, int epochs)
         {
             var net = new NeuralNetwork("deep_dense_test", 7);
-            net.AddLayer(new Dense(inputs, 5, Activation.Linear));
-            net.AddLayer(new Dense(net.LastLayer, 4, Activation.Linear));
-            net.AddLayer(new Dense(net.LastLayer, inputs, Activation.Linear));
+            var model = new Sequential();
+            model.AddLayer(new Dense(inputs, 5, Activation.Linear));
+            model.AddLayer(new Dense(model.LastLayer, 4, Activation.Linear));
+            model.AddLayer(new Dense(model.LastLayer, inputs, Activation.Linear));
+            net.Model = model;
+
 
             List<Data> tData = new List<Data>();
             for (int i = 0; i < samples; ++i)
             {
-                var input = new Tensor(net.Layer(0).InputShape);
+                var input = new Tensor(model.Layer(0).InputShape);
                 input.FillWithRand(10 * i, -2, 2);
-                tData.Add(new Data() { Input = input, Output = input.Mul(1.7f) });
+                tData.Add(new Data(input, input.Mul(1.7f)));
             }
 
             net.Optimize(new SGD(0.02f), Loss.MeanSquareError);
@@ -225,17 +239,19 @@ namespace Neuro.Tests
         private void TestConvolutionLayer(Shape inputShape, int kernelSize, int kernelsNum, int stride, int samples, int batchSize, int epochs, TrainDataFunc convFunc)
         {
             var net = new NeuralNetwork("convolution_test", 7);
-            net.AddLayer(new Convolution(inputShape, kernelSize, kernelsNum, stride, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
+            var model = new Sequential();
+            model.AddLayer(new Convolution(inputShape, kernelSize, kernelsNum, stride, Activation.Linear) { KernelInitializer = new Initializers.Constant(1) });
+            net.Model = model;
 
             var expectedKernels = new Tensor(new Shape(kernelSize, kernelSize, inputShape.Depth, kernelsNum));
             expectedKernels.FillWithRand(17);
 
-            var tData = GenerateTrainingData(samples, net.LastLayer.InputShape, expectedKernels, convFunc);
+            var tData = GenerateTrainingData(samples, model.LastLayer.InputShape, expectedKernels, convFunc);
             
             net.Optimize(new SGD(0.02f), Loss.MeanSquareError);
             net.Fit(tData, batchSize, epochs, null, 0, Track.Nothing);
 
-            var paramsAndGrads = net.LastLayer.GetParametersAndGradients();
+            var paramsAndGrads = model.LastLayer.GetParametersAndGradients();
 
             for (int i = 0; i < expectedKernels.Length; ++i)
                 Assert.AreEqual(paramsAndGrads[0].Parameters.GetFlat(i), expectedKernels.GetFlat(i), 1e-2);
@@ -272,7 +288,7 @@ namespace Neuro.Tests
             {
                 var input = new Tensor(inShape);
                 input.FillWithRand(3 * i);
-                trainingData.Add(new Data() { Input = input , Output = f(input, expectedParams) });
+                trainingData.Add(new Data(input , f(input, expectedParams)));
             }
 
             return trainingData;

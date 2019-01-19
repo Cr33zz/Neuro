@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define VALIDATION_ENABLED
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -41,20 +43,20 @@ namespace Neuro
             return clone;
         }
 
-        //public void CopyParametersTo(NeuralNetwork target)
-        //{
-        //    for (int i = 0; i < Layers.Count; ++i)
-        //        Layers[i].CopyParametersTo(target.Layers[i]);
-        //}
+        public void CopyParametersTo(NeuralNetwork target)
+        {
+            foreach (var layersPair in Model.GetLayers().Zip(target.Model.GetLayers(), (l1, l2) => new [] {l1, l2}))
+                layersPair[0].CopyParametersTo(layersPair[1]);
+        }
 
-        //// Tau specifies the percentage of copied parameters to be applied on a target network, when less than 1 target's network
-        //// parameters will be updated as follows: this_parameters * tau + target_parameters * (1 - tau)
-        //public void SoftCopyParametersTo(NeuralNetwork target, float tau)
-        //{
-        //    if (tau > 1 || tau <= 0) throw new Exception("Tau has to be a value from range (0, 1>.");
-        //    for (int i = 0; i < Layers.Count; ++i)
-        //        Layers[i].CopyParametersTo(target.Layers[i], tau);
-        //}
+        // Tau specifies the percentage of copied parameters to be applied on a target network, when less than 1 target's network
+        // parameters will be updated as follows: this_parameters * tau + target_parameters * (1 - tau)
+        public void SoftCopyParametersTo(NeuralNetwork target, float tau)
+        {
+            if (tau > 1 || tau <= 0) throw new Exception("Tau has to be a value from range (0, 1>.");
+            foreach (var layersPair in Model.GetLayers().Zip(target.Model.GetLayers(), (l1, l2) => new[] { l1, l2 }))
+                layersPair[0].CopyParametersTo(layersPair[1], tau);
+        }
 
         public string Name;
 
@@ -67,6 +69,12 @@ namespace Neuro
         {
             Model.FeedForward(inputs);
             return Model.GetOutputs();
+        }
+
+        public Tensor Predict(Tensor input)
+        {
+            Model.FeedForward(new[] { input });
+            return Model.GetOutputs()[0];
         }
 
         private void FeedForward(Tensor[] inputs)
@@ -106,47 +114,83 @@ namespace Neuro
                 LossFuncs[i++] = losses[outLayer.Name];
         }
 
-        public void Fit(Tensor[] inputsBatch, Tensor[] outputsBatch, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        // This function expects input and output tensors to be batched already. This batch will be maintained throughout all training epochs!
+        public void FitBatched(List<Tensor> inputs, List<Tensor> outputs, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
-            if (inputsBatch[0].BatchSize != outputsBatch[0].BatchSize) throw new Exception($"Mismatched input and output batch size.");
+            List<Data> trainingData = new List<Data>();
+            int batchSize = inputs[0].BatchSize;
+
+            Tensor[] inp = new Tensor[inputs.Count];
+            for (int i = 0; i < inputs.Count; ++i)
+            {
+#if VALIDATION_ENABLED
+                if (inputs[i].BatchSize != batchSize) throw new Exception($"Tensor for input {i} has invalid batch size {inputs[i].BatchSize} expected {batchSize}!");
+#endif
+                inp[i] = inputs[i];
+            }
+
+            Tensor[] outp = new Tensor[outputs.Count];
+            for (int i = 0; i < outputs.Count; ++i)
+            {
+#if VALIDATION_ENABLED
+                if (outputs[i].BatchSize != batchSize) throw new Exception($"Tensor for output {i} has invalid batch size {outputs[i].BatchSize} expected {batchSize}!");
+#endif
+                outp[i] = outputs[i];
+            }
+
+            trainingData.Add(new Data(inp, outp));
+
+            Fit(trainingData, inputs[0].BatchSize, epochs, null, verbose, trackFlags, shuffle);
+        }
+
+        // This function is a simplified version of FitBatched for networks with single input and single output
+        public void FitBatched(Tensor input, Tensor output, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        {
+            FitBatched(new List<Tensor> { input }, new List<Tensor> { output }, epochs, verbose, trackFlags, shuffle);
+        }
+
+        // This function expects list of tensors (with batch size 1) for every input and output.
+        public void Fit(List<Tensor[]> inputs, List<Tensor[]> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        {
+            int numberOfTensors = inputs[0].Length; // we treat first input tensors list as a baseline
+#if VALIDATION_ENABLED
+            for (int i = 0; i < inputs.Count; ++i)
+                if (inputs[i].Length != numberOfTensors) throw new Exception($"Invalid number of tensors for input {i} has {inputs[i].Length} expected {numberOfTensors}!");
+            for (int i = 0; i < outputs.Count; ++i)
+                if (outputs[i].Length != numberOfTensors) throw new Exception($"Invalid number of tensors for output {i} has {outputs[i].Length} expected {numberOfTensors}!");
+#endif
 
             List<Data> trainingData = new List<Data>();
-
-            if (batchSize > 0 && batchSize != inputsBatch[0].BatchSize)
+            for (int n = 0; n < numberOfTensors; ++n)
             {
-                // we have to split input and output tensors into datas so they can be shuffled later on
-                for (int j = 0; j < inputsBatch[0].BatchSize; ++j)
+                Tensor[] inp = new Tensor[inputs.Count];
+                for (int i = 0; i < inputs.Count; ++i)
                 {
-                    var inputs = new Tensor[inputsBatch.Length];
-                    for (int i = 0; i < inputsBatch.Length; ++i)
-                        inputs[i] = inputsBatch[i].GetBatch(j);
-
-                    var outputs = new Tensor[outputsBatch.Length];
-                    for (int i = 0; i < outputsBatch.Length; ++i)
-                        inputs[i] = outputsBatch[i].GetBatch(j);
-
-                    trainingData.Add(new Data(inputs, outputs));
+#if VALIDATION_ENABLED
+                    if (inputs[i][n].BatchSize != 1) throw new Exception($"Tensor at index {n} for input {i} has multiple batches in it, this is not supported!");
+#endif
+                    inp[i] = inputs[i][n];
                 }
+
+                Tensor[] outp = new Tensor[outputs.Count];
+                for (int i = 0; i < outputs.Count; ++i)
+                {
+#if VALIDATION_ENABLED
+                    if (outputs[i][n].BatchSize != 1) throw new Exception($"Tensor at index {n} for output {i} has multiple batches in it, this is not supported!");
+#endif
+                    outp[i] = outputs[i][n];
+                }
+
+                trainingData.Add(new Data(inp, outp));
             }
-            else
-                trainingData.Add(new Data(inputsBatch, outputsBatch));
 
             Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
         }
 
-        public void Fit(List<Tensor[]> inputs, List<Tensor[]> outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
+        // This function is a simplified version of Fit for networks with single input and single output
+        public void Fit(Tensor[] inputs, Tensor[] outputs, int batchSize = -1, int epochs = 1, int verbose = 1, Track trackFlags = Track.TrainError | Track.TestAccuracy, bool shuffle = true)
         {
-            if (inputs.Count != outputs.Count) throw new Exception($"Mismatched number of inputs and outputs.");
-
-            List<Data> trainingData = new List<Data>();
-            for (int i = 0; i < inputs.Count; ++i)
-            {
-                if (inputs[i][0].BatchSize != 1 && inputs.Count > 1) throw new Exception($"Input tensor at index {i} has multiple batches in it, this is not supported!");
-                if (outputs[i][0].BatchSize != 1 && outputs.Count > 1) throw new Exception($"Output tensor at index {i} has multiple batches in it, this is not supported!");
-                trainingData.Add(new Data(inputs[i], outputs[i]));
-            }
-
-            Fit(trainingData, batchSize, epochs, null, verbose, trackFlags, shuffle);
+            Fit(new List<Tensor[]> { inputs }, new List<Tensor[]> { outputs }, batchSize, epochs, verbose, trackFlags, shuffle);
         }
 
         // Training method, when batch size is -1 the whole training set is used for single gradient descent step (in other words, batch size equals to training set size)

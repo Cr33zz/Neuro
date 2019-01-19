@@ -10,8 +10,11 @@ namespace Neuro.Layers
     public abstract class LayerBase
     {
         public Shape[] InputShapes { get; protected set; }
+        public Shape InputShape { get {return InputShapes[0];} }
         public Tensor[] Inputs { get; set; }
+        public Tensor Input { get { return Inputs[0]; } }
         public Tensor[] InputsGradient { get; set; }
+        public Tensor InputGradient { get { return InputsGradient[0]; } }
         public Tensor Output { get; protected set; }
         public Shape OutputShape { get; }
         public ActivationFunc Activation { get; }
@@ -61,6 +64,11 @@ namespace Neuro.Layers
         {
             if (!InputShapes.Equals(target.InputShapes) || !OutputShape.Equals(target.OutputShape))
                 throw new Exception("Cannot copy parameters between incompatible layers.");
+        }
+
+        public Tensor FeedForward(Tensor input)
+        {
+            return FeedForward(new []{input});
         }
 
         public Tensor FeedForward(Tensor[] inputs)

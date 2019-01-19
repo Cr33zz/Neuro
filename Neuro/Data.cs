@@ -19,5 +19,8 @@ namespace Neuro
 
         public readonly Tensor[] Inputs;
         public readonly Tensor[] Outputs;
+
+        public Tensor Input { get { return Inputs[0]; }}
+        public Tensor Output { get { return Outputs[0]; } }
     }
 }

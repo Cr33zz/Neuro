@@ -14,15 +14,24 @@ namespace Neuro.PerfTests
         static void Main(string[] args)
         {
             Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
-            
+
             var input1 = new Dense(2, 2, Activation.Sigmoid);
             var upperStream1 = new Dense(input1, 2, Activation.Sigmoid);
-            var upperStream2 = new Dense(upperStream1, 2, Activation.Sigmoid) { Name = "upperStream2" };
             var lowerStream1 = new Dense(input1, 2, Activation.Sigmoid) { Name = "lowerStream1" };
-            var merge = new Merge(new[] {upperStream2, lowerStream1}, Merge.Mode.Sum) { Name = "merge1" };
 
             var net = new NeuralNetwork("test");
-            net.Model = new Flow(new[] { input1 }, new[] { merge });
+            net.Model = new Flow(new[] { input1 }, new[] { upperStream1, lowerStream1 });
+
+
+
+            //var input1 = new Dense(2, 2, Activation.Sigmoid);
+            //var upperStream1 = new Dense(input1, 2, Activation.Sigmoid);
+            //var upperStream2 = new Dense(upperStream1, 2, Activation.Sigmoid) { Name = "upperStream2" };
+            //var lowerStream1 = new Dense(input1, 2, Activation.Sigmoid) { Name = "lowerStream1" };
+            //var merge = new Merge(new[] {upperStream2, lowerStream1}, Merge.Mode.Sum) { Name = "merge1" };
+
+            //var net = new NeuralNetwork("test");
+            //net.Model = new Flow(new[] { input1 }, new[] { merge });
             net.Optimize(new SGD(), Loss.MeanSquareError);
             //net.Optimize(new SGD(), new Dictionary<string, LossFunc>{ {"upperStream2", Loss.MeanSquareError}, { "lowerStream1", Loss.Huber1 } });
 
