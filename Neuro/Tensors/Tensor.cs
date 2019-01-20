@@ -406,6 +406,34 @@ namespace Neuro.Tensors
             return output;
         }
 
+        // This operation will concatenate elements of all input tensors separately for each batch
+        public static void Concat(Tensor[] inputs, Tensor result)
+        {
+            for (int b = 0; b < result.BatchSize; ++b)
+            {
+                int elementsCopied = 0;
+                for (int i = 0; i < inputs.Length; ++i)
+                {
+                    Array.Copy(inputs[i].Values, b * inputs[i].BatchLength, result.Values, b * result.BatchLength + elementsCopied, inputs[i].BatchLength);
+                    elementsCopied += inputs[i].BatchLength;
+                }
+            }
+        }
+
+        // This is reverse Concat operation
+        public void Split(Tensor[] outputs)
+        {
+            for (int b = 0; b < BatchSize; ++b)
+            {
+                int elementsCopied = 0;
+                for (int i = 0; i < outputs.Length; ++i)
+                {
+                    Array.Copy(Values, b * BatchLength + elementsCopied, outputs[i].Values, b * outputs[i].BatchLength, outputs[i].BatchLength);
+                    elementsCopied += outputs[i].BatchLength;
+                }
+            }
+        }
+
         public void Normalized(Tensor result)
         {
             float sum = Sum();

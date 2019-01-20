@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using Neuro.Tensors;
 
 namespace Neuro.Tests
@@ -547,6 +549,43 @@ namespace Neuro.Tests
 
             for (int i = 0; i < t.Shape.Length; ++i)
                 Assert.AreEqual(result.GetFlat(i), t.GetFlat(i) * other.GetFlat(i), 1e-7);
+        }
+
+        [TestMethod]
+        public void Concat()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t1 = new Tensor(new Shape(2, 2, 1, 2)); t1.FillWithRange();
+            var t2 = new Tensor(new Shape(2, 2, 1, 2)); t2.FillWithRange(8);
+            var inputs = new[] {t1, t2};
+            var result = new Tensor(new Shape(1, inputs.Select(x => x.BatchLength).Sum(), 1, 2));
+
+            Tensor.Concat(inputs, result);
+
+            var correct = new Tensor(new float[] {0,1,2,3,8,9,10,11,4,5,6,7,12,13,14,15}, result.Shape);
+
+            Assert.IsTrue(result.Equals(correct));
+        }
+
+        [TestMethod]
+        public void Split()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t1 = new Tensor(new Shape(2, 2, 1, 2));
+            var t2 = new Tensor(new Shape(2, 2, 1, 2));
+            var inputs = new[] { t1, t2 };
+            var concated = new Tensor(new float[] { 0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15 }, new Shape(1, inputs.Select(x => x.BatchLength).Sum(), 1, 2));
+
+            concated.Split(inputs);
+
+            var correct1 = new Tensor(new Shape(2, 2, 1, 2)); correct1.FillWithRange();
+            var correct2 = new Tensor(new Shape(2, 2, 1, 2)); correct2.FillWithRange(8);
+            var correctInputs = new[] { correct1, correct2 };
+
+            for (int i = 0; i < inputs.Length; ++i)
+                Assert.IsTrue(inputs[i].Equals(correctInputs[i]));
         }
 
         [TestMethod]

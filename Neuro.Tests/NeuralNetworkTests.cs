@@ -230,7 +230,7 @@ namespace Neuro.Tests
             net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
 
             for (int i = 0; i < tData.Count; ++i)
-                Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input), 0.01f));
+                Assert.IsTrue(tData[i].Output.Equals(net.Predict(tData[i].Input)[0], 0.01f));
         }
 
         private void TestConvolutionLayer(Shape inputShape, int kernelSize, int kernelsNum, int stride, int samples, int batchSize, int epochs, TrainDataFunc convFunc)
@@ -252,6 +252,53 @@ namespace Neuro.Tests
 
             for (int i = 0; i < expectedKernels.Length; ++i)
                 Assert.AreEqual(paramsAndGrads[0].Parameters.GetFlat(i), expectedKernels.GetFlat(i), 1e-2);
+        }
+
+        [TestMethod]
+        public void Streams_1Input_2Outputs_SimpleSplit()
+        {
+            var input1 = new Dense(2, 2, Activation.Sigmoid) { Name = "input1" }; ;
+            var upperStream1 = new Dense(input1, 2, Activation.Linear) { Name = "upperStream1" }; ;
+            var lowerStream1 = new Dense(input1, 2, Activation.Linear) { Name = "lowerStream1" };
+
+            var net = new NeuralNetwork("test");
+            net.Model = new Flow(new[] { input1 }, new[] { upperStream1, lowerStream1 });
+
+            net.Optimize(new SGD(0.05f), Loss.MeanSquareError);
+
+            var input = new Tensor(new float[] { 0, 1 }, new Shape(1, 2));
+            var outputs = new[] { new Tensor(new float[] { 0, 1 }, new Shape(1, 2)),
+                                  new Tensor(new float[] { 1, 2 }, new Shape(1, 2)) };
+            var trainingData = new List<Data> { new Data(new[] { input }, outputs) };
+
+            net.Fit(trainingData, 1, 100, null, 0, Track.Nothing, false);
+
+            var prediction = net.Predict(input);
+            Assert.IsTrue(prediction[0].Equals(outputs[0], 0.01f));
+            Assert.IsTrue(prediction[1].Equals(outputs[1], 0.01f));
+        }
+
+        [TestMethod]
+        public void Streams_2Inputs_1Output_SimpleConcat()
+        {
+            LayerBase mainInput = new Dense(2, 2, Activation.Linear) { Name = "main_input" }; ;
+            LayerBase auxInput = new Input(new Shape(1, 2)) { Name = "aux_input" }; ;
+            LayerBase concat = new Concat(new []{ mainInput, auxInput }) { Name = "concat" };
+
+            var net = new NeuralNetwork("test");
+            net.Model = new Flow(new[] { mainInput, auxInput }, new[] { concat });
+
+            net.Optimize(new SGD(0.05f), Loss.MeanSquareError);
+
+            var inputs = new[] { new Tensor(new float[] { 0, 1 }, new Shape(1, 2)),
+                                 new Tensor(new float[] { 1, 2 }, new Shape(1, 2)) };
+            var output = new Tensor(new float[] { 1, 2, 1, 2 }, new Shape(1, 4));
+            var trainingData = new List<Data> { new Data(inputs, new []{output}) };
+
+            net.Fit(trainingData, 1, 100, null, 0, Track.Nothing, false);
+
+            var prediction = net.Predict(inputs);
+            Assert.IsTrue(prediction[0].Equals(output, 0.01f));
         }
 
         private delegate Tensor TrainDataFunc(Tensor input, Tensor expectedParams);

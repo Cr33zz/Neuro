@@ -1,6 +1,4 @@
-﻿#define VALIDATION_ENABLED
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -71,10 +69,10 @@ namespace Neuro
             return Model.GetOutputs();
         }
 
-        public Tensor Predict(Tensor input)
+        public Tensor[] Predict(Tensor input)
         {
             Model.FeedForward(new[] { input });
-            return Model.GetOutputs()[0];
+            return Model.GetOutputs();
         }
 
         private void FeedForward(Tensor[] inputs)
