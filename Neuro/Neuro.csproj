@@ -69,6 +69,7 @@
     <Compile Include="Initializers\Constant.cs" />
     <Compile Include="Initializers\Zeros.cs" />
     <Compile Include="Layers\Concat.cs" />
+    <Compile Include="Layers\Input.cs" />
     <Compile Include="Layers\LayerBase.cs" />
     <Compile Include="Layers\Convolution.cs" />
     <Compile Include="Layers\Dense.cs" />
