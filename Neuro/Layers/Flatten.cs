@@ -5,8 +5,8 @@ namespace Neuro.Layers
 {
     public class Flatten : LayerBase
     {
-        public Flatten(LayerBase prevLayer)
-            : base(prevLayer, new Shape(1, prevLayer.OutputShape.Length))
+        public Flatten(LayerBase inputLayer)
+            : base(inputLayer, new Shape(1, inputLayer.OutputShape.Length))
         {
         }
 

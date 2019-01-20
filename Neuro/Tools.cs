@@ -242,11 +242,11 @@ namespace Neuro
             {
                 var inputs = new Tensor[numberOfInputs];
                 for (int i = 0; i < numberOfInputs; ++i)
-                    inputs[i] = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList(), 3);
+                    inputs[i] = Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList());
 
                 var outputs = new Tensor[numberOfOutputs];
                 for (int i = 0; i < numberOfOutputs; ++i)
-                    outputs[i] = Tensor.Merge(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList(), 3);
+                    outputs[i] = Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList());
 
                 mergedData.Add(new Data(inputs, outputs));
             }

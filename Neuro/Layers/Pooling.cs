@@ -7,8 +7,8 @@ namespace Neuro.Layers
     // https://www.youtube.com/watch?v=8oOgPUO-TBY
     public class Pooling : LayerBase
     {
-        public Pooling(LayerBase prevLayer, int filterSize, int stride = 1, Tensor.PoolType type = Tensor.PoolType.Max)
-            : base(prevLayer, Pooling.GetOutShape(prevLayer.OutputShape, filterSize, filterSize, stride))
+        public Pooling(LayerBase inputLayer, int filterSize, int stride = 1, Tensor.PoolType type = Tensor.PoolType.Max)
+            : base(inputLayer, Pooling.GetOutShape(inputLayer.OutputShape, filterSize, filterSize, stride))
         {
             Type = type;
             FilterSize = filterSize;

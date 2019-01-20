@@ -8,8 +8,8 @@ namespace Neuro.Layers
 {
     public class Convolution : LayerBase
     {
-        public Convolution(LayerBase prevLayer, int filterSize, int filtersNum, int stride, ActivationFunc activation)
-            : base(prevLayer, GetOutShape(prevLayer.OutputShape, filterSize, filterSize, stride, filtersNum), activation)
+        public Convolution(LayerBase inputLayer, int filterSize, int filtersNum, int stride, ActivationFunc activation)
+            : base(inputLayer, GetOutShape(inputLayer.OutputShape, filterSize, filterSize, stride, filtersNum), activation)
         {
             FilterSize = filterSize;
             FiltersNum = filtersNum;

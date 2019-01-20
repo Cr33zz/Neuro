@@ -12,8 +12,8 @@ namespace Neuro.Layers
         // For serialization purposes only
         internal Dense() {}
 
-        public Dense(LayerBase prevLayer, int outputs, ActivationFunc activation)
-            : base(prevLayer, new Shape(1, outputs), activation)
+        public Dense(LayerBase inputLayer, int outputs, ActivationFunc activation)
+            : base(inputLayer, new Shape(1, outputs), activation)
         {
         }
 

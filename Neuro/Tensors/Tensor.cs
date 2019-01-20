@@ -379,27 +379,16 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public static Tensor Merge(List<Tensor> list, int axis)
+        public static Tensor MergeIntoBatch(List<Tensor> tensors)
         {
-            if (list.Count == 0)
+            if (tensors.Count == 0)
                 throw new Exception("List cannot be empty.");
-            if (axis < 0 || axis > 3)
-                throw new Exception("Invalid axis.");
-
-            Tensor output;
-                
-            if (axis == 3)
-                output = new Tensor(new Shape(list[0].Width, list[0].Height, list[0].Depth, list.Count));
-            else if (axis == 2)
-                output = new Tensor(new Shape(list[0].Width, list[0].Height, list.Count));
-            else if (axis == 1)
-                output = new Tensor(new Shape(list[0].Width, list.Count));
-            else
-                output = new Tensor(new Shape(list.Count));
-
-            for (int n = 0; n < list.Count; ++n)
+            
+            Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, tensors[0].Depth, tensors.Count));
+            
+            for (int n = 0; n < tensors.Count; ++n)
             {
-                Tensor t = list[n];
+                Tensor t = tensors[n];
                 Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
             }
 
@@ -432,6 +421,59 @@ namespace Neuro.Tensors
                     elementsCopied += outputs[i].BatchLength;
                 }
             }
+        }
+
+        public static void MergeMin(Tensor[] inputs, Tensor result)
+        {
+            inputs[0].CopyTo(result);
+            for (int i = 1; i < inputs.Length; ++i)
+            for (int j = 0; j < result.Length; ++j)
+                result.Values[j] = result.Values[j] > inputs[i].Values[j] ? inputs[i].Values[j] : result.Values[j];
+        }
+
+        public static void MergeMax(Tensor[] inputs, Tensor result)
+        {
+            inputs[0].CopyTo(result);
+            for (int i = 1; i < inputs.Length; ++i)
+            for (int j = 0; j < result.Length; ++j)
+                result.Values[j] = result.Values[j] < inputs[i].Values[j] ? inputs[i].Values[j] : result.Values[j];
+        }
+
+        public static void MergeSum(Tensor[] inputs, Tensor result)
+        {
+            result.Zero();
+            for (int i = 0; i < inputs.Length; ++i)
+            for (int j = 0; j < result.Length; ++j)
+                result.Values[j] += inputs[i].Values[j];
+        }
+
+        public static void MergeAvg(Tensor[] inputs, Tensor result)
+        {
+            MergeSum(inputs, result);
+            result.Div(inputs.Length, result);
+        }
+
+        public static void MergeMinMaxGradient(Tensor output, Tensor[] inputs, Tensor outputGradient, Tensor[] results)
+        {
+            for (int i = 0; i < inputs.Length; ++i)
+            {
+                results[i].Zero();
+                for (int j = 0; j < output.Length; ++j)
+                    results[i].Values[j] = inputs[i].Values[j] == output.Values[j] ? outputGradient.Values[j] : 0;
+            }
+        }
+
+        public static void MergeSumGradient(Tensor output, Tensor[] inputs, Tensor outputGradient, Tensor[] results)
+        {
+            for (int i = 0; i < inputs.Length; ++i)
+                outputGradient.CopyTo(results[i]);
+        }
+
+        public static void MergeAvgGradient(Tensor output, Tensor[] inputs, Tensor outputGradient, Tensor[] results)
+        {
+            MergeSumGradient(output, inputs, outputGradient, results);
+            for (int i = 0; i < results.Length; ++i)
+                results[i].Div(results.Length, results[i]);
         }
 
         public void Normalized(Tensor result)

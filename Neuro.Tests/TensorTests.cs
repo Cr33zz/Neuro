@@ -487,7 +487,7 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
-        public void Merge_Batch()
+        public void Merge_Into_Batch()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
 
@@ -500,30 +500,10 @@ namespace Neuro.Tests
                 tensors.Add(t);
             }
 
-            var result = Tensor.Merge(tensors, 3);
+            var result = Tensor.MergeIntoBatch(tensors);
 
             for (int i = 0; i < tensors.Count; ++i)
                 Assert.IsTrue(result.GetBatch(i).Equals(tensors[i]));
-        }
-
-        [TestMethod]
-        public void Merge_Depth()
-        {
-            Tensor.SetOpMode(Tensor.OpMode.CPU);
-
-            List<Tensor> tensors = new List<Tensor>();
-
-            for (int i = 0; i < 5; ++i)
-            {
-                var t = new Tensor(new Shape(2, 3));
-                t.FillWithRand();
-                tensors.Add(t);
-            }
-
-            var result = Tensor.Merge(tensors, 2);
-
-            for (int i = 0; i < tensors.Count; ++i)
-                Assert.IsTrue(result.GetDepth(i).Equals(tensors[i]));
         }
 
         [TestMethod]
