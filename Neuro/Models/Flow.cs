@@ -35,7 +35,7 @@ namespace Neuro.Models
         public override void BackProp(Tensor[] deltas)
         {
             for (int i = 0; i < OutputLayers.Count; ++i)
-                InputLayers[i].BackProp(deltas[i]);
+                OutputLayers[i].BackProp(deltas[i]);
 
             foreach (var layer in ReversedOrder)
             {
@@ -46,11 +46,14 @@ namespace Neuro.Models
                 Tensor avgDelta = new Tensor(layer.OutputShape);
                 for (int i = 0; i < layer.OutputLayers.Count; ++i)
                 {
-                    // we need to find this layer index in output layer's inputs to grab proper delta
+                    // we need to find this layer index in output layer's inputs to grab proper delta (it could be cached)
                     for (int j = 0; j < layer.OutputLayers[i].InputLayers.Count; ++j)
                     {
                         if (layer.OutputLayers[i].InputLayers[j] == layer)
+                        {
                             avgDelta.Add(layer.OutputLayers[i].InputsGradient[j], avgDelta);
+                            // not breaking at this point is allowing the same layer to be used multiple times as input into a single layer
+                        }
                     }
                 }
 

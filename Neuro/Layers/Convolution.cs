@@ -9,23 +9,20 @@ namespace Neuro.Layers
     public class Convolution : LayerBase
     {
         public Convolution(LayerBase prevLayer, int filterSize, int filtersNum, int stride, ActivationFunc activation)
-            : this(prevLayer.OutputShape, filterSize, filtersNum, stride, activation)
-        {
-        }
-
-        public Convolution(Shape inputShape, int filterSize, int filtersNum, int stride, ActivationFunc activation)
-            : base(inputShape,
-                   new Shape((int)Math.Floor((float)(inputShape.Width - filterSize) / stride + 1), (int)Math.Floor((float)(inputShape.Height - filterSize) / stride + 1), filtersNum),
-                   activation)
+            : base(prevLayer, GetOutShape(prevLayer.OutputShape, filterSize, filterSize, stride, filtersNum), activation)
         {
             FilterSize = filterSize;
             FiltersNum = filtersNum;
             Stride = stride;
+        }
 
-            Kernels = new Tensor(new Shape(FilterSize, FilterSize, inputShape.Depth, filtersNum));
-            Bias = new Tensor(new Shape(OutputShape.Width, OutputShape.Height, filtersNum));
-            KernelsGradient = new Tensor(Kernels.Shape);
-            BiasGradient = new Tensor(Bias.Shape);
+        // Use this constructor for input layer only!
+        public Convolution(Shape inputShape, int filterSize, int filtersNum, int stride, ActivationFunc activation)
+            : base(inputShape, GetOutShape(inputShape, filterSize, filterSize, stride, filtersNum), activation)
+        {
+            FilterSize = filterSize;
+            FiltersNum = filtersNum;
+            Stride = stride;
         }
 
         public override LayerBase Clone()
@@ -46,8 +43,13 @@ namespace Neuro.Layers
             Bias.CopyTo(targetConv.Bias, tau);
         }
 
-        public override void Init()
+        protected override void Init()
         {
+            Kernels = new Tensor(new Shape(FilterSize, FilterSize, InputShape.Depth, FiltersNum));
+            Bias = new Tensor(new Shape(OutputShape.Width, OutputShape.Height, FiltersNum));
+            KernelsGradient = new Tensor(Kernels.Shape);
+            BiasGradient = new Tensor(Bias.Shape);
+
             KernelInitializer.Init(Kernels, InputShapes[0].Length, OutputShape.Length);
             if (UseBias)
                 BiasInitializer.Init(Bias, InputShapes[0].Length, OutputShape.Length);
@@ -95,6 +97,11 @@ namespace Neuro.Layers
             base.DeserializeParameters(elem);
             Kernels.Deserialize(elem["Kernels"]);
             Bias.Deserialize(elem["Bias"]);
+        }
+
+        private static Shape GetOutShape(Shape inputShape, int filterWidth, int filterHeight, int stride, int filtersNum)
+        {
+            return new Shape((int)Math.Floor((float)(inputShape.Width - filterWidth) / stride + 1), (int)Math.Floor((float)(inputShape.Height - filterHeight) / stride + 1), filtersNum);
         }
 
         public Tensor Kernels;

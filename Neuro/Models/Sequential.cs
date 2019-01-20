@@ -119,7 +119,6 @@ namespace Neuro.Models
 
         public void AddLayer(LayerBase layer)
         {
-            layer.Init();
             Layers.Add(layer);
         }
 

@@ -13,18 +13,14 @@ namespace Neuro.Layers
         internal Dense() {}
 
         public Dense(LayerBase prevLayer, int outputs, ActivationFunc activation)
-            : this(prevLayer.OutputShape.Length, outputs, activation)
+            : base(prevLayer, new Shape(1, outputs), activation)
         {
         }
-        
+
+        // Use this constructor for input layer only!
         public Dense(int inputs, int outputs, ActivationFunc activation)
             : base(new Shape(1, inputs), new Shape(1, outputs), activation)
         {
-            Weights = new Tensor(new Shape(inputs, outputs));
-            Bias = new Tensor(OutputShape);
-
-            WeightsGradient = new Tensor(Weights.Shape);
-            BiasGradient = new Tensor(Bias.Shape);
         }
 
         public override LayerBase Clone()
@@ -45,11 +41,17 @@ namespace Neuro.Layers
             Bias.CopyTo(targetDense.Bias, tau);
         }
 
-        public override void Init()
+        protected override void Init()
         {
-            KernelInitializer.Init(Weights, InputShapes[0].Length, OutputShape.Length);
+            Weights = new Tensor(new Shape(InputShape.Length, OutputShape.Length));
+            Bias = new Tensor(OutputShape);
+
+            WeightsGradient = new Tensor(Weights.Shape);
+            BiasGradient = new Tensor(Bias.Shape);
+
+            KernelInitializer.Init(Weights, InputShape.Length, OutputShape.Length);
             if (UseBias)
-                BiasInitializer.Init(Bias, InputShapes[0].Length, OutputShape.Length);
+                BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
         }
 
         public override int GetParamsNum() { return Weights.Length; }

@@ -103,15 +103,21 @@ namespace Neuro
                 LossFuncs[i] = loss;
         }
 
-        public void Optimize(Optimizers.OptimizerBase optimizer, Dictionary<string, LossFunc> losses)
+        public void Optimize(Optimizers.OptimizerBase optimizer, Dictionary<string, LossFunc> lossDict)
         {
             Optimizer = optimizer;
             Model.Optimize();
 
+#if VALIDATION_ENABLED
+            if (lossDict.Count != Model.GetOutputLayersCount()) throw new Exception($"Mismatched number of loss functions ({lossDict.Count}) and output layers ({Model.GetOutputLayersCount()})!");
+#endif
+
             LossFuncs = new LossFunc[Model.GetOutputLayersCount()];
             int i = 0;
             foreach (var outLayer in Model.GetOutputLayers())
-                LossFuncs[i++] = losses[outLayer.Name];
+            {
+                LossFuncs[i++] = lossDict[outLayer.Name];
+            }
         }
 
         // This function expects input and output tensors to be batched already. This batch will be maintained throughout all training epochs!
@@ -199,12 +205,14 @@ namespace Neuro
             int inputsBatchSize = trainingData[0].Inputs[0].BatchSize;
             bool trainingDataAlreadyBatched = inputsBatchSize > 1;
 
-            for (int i = 0; i < trainingData.Count; ++i)
-            {
-                Data d = trainingData[i];
-                //Debug.Assert(d.Inputs.BatchSize == d.Outputs.BatchSize, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
-                //Debug.Assert(d.Inputs.BatchSize == trainingData[0].Inputs.BatchSize, "Training data set contains batches of different size!");
-            }
+#if VALIDATION_ENABLED
+            //for (int i = 0; i < trainingData.Count; ++i)
+            //{
+            //    Data d = trainingData[i];
+            //    Debug.Assert(d.Inputs.BatchSize == d.Outputs.BatchSize, $"Training data set contains mismatched number if input and output batches for data at index {i}!");
+            //    Debug.Assert(d.Inputs.BatchSize == trainingData[0].Inputs.BatchSize, "Training data set contains batches of different size!");
+            //}
+#endif
 
             if (batchSize < 0)
                 batchSize = trainingDataAlreadyBatched ? trainingData[0].Inputs[0].BatchSize : trainingData.Count;
@@ -343,6 +351,7 @@ namespace Neuro
             Tensor[] losses = new Tensor[outputs.Length];
             for (int i = 0; i < outputs.Length; ++i)
             {
+                losses[i] = new Tensor(outputs[i].Shape);
                 LossFuncs[i].Compute(trainingData.Outputs[i], outputs[i], losses[i]);
                 trainError += losses[i].Sum() / outputs[i].BatchLength;
                 trainHits += accuracyFunc(trainingData.Outputs[i], outputs[i]);

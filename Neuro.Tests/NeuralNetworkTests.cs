@@ -160,9 +160,6 @@ namespace Neuro.Tests
             net.Model = model;
 
             var net2 = net.Clone();
-            foreach (var l2 in net2.Model.GetLayers())
-                l2.Init();
-
             net.CopyParametersTo(net2);
 
             var netParams = net2.GetParametersAndGradients();

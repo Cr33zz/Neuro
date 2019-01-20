@@ -46,6 +46,7 @@ namespace Neuro.Layers
                 inLayer.OutputLayers.Add(this);
         }
 
+        // This constructor should only be used for input layer
         protected LayerBase(Shape inputShape, Shape outputShape, ActivationFunc activation = null)
             : this(new[] { inputShape }, outputShape, activation)
         {
@@ -73,11 +74,18 @@ namespace Neuro.Layers
 
         public Tensor FeedForward(Tensor[] inputs)
         {
+            if (!Initialized)
+            {
+                Init();
+                Initialized = true;
+            }
+
             //Debug.Assert(input.Width == InputShape.Width && input.Height == InputShape.Height && input.Depth == InputShape.Depth);
 
             Inputs = inputs;
 
             var outShape = new Shape(OutputShape.Width, OutputShape.Height, OutputShape.Depth, inputs[0].BatchSize);
+            // shape comparison is required for cases when last batch has different size
             if (Output == null || !Output.Shape.Equals(outShape))
                 Output = new Tensor(outShape);
 
@@ -126,8 +134,8 @@ namespace Neuro.Layers
             return new List<ParametersAndGradients>();
         }
 
-        // Must be called after adding to layers in a network
-        public virtual void Init() {}
+        protected virtual void Init() {}
+        private bool Initialized = false;
 
         //public delegate void ActivationFunc(Tensor input, bool deriv, Tensor result);
 

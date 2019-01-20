@@ -6,10 +6,11 @@ namespace Neuro.Layers
     public class Flatten : LayerBase
     {
         public Flatten(LayerBase prevLayer)
-            : this(prevLayer.OutputShape)
+            : base(prevLayer, new Shape(1, prevLayer.OutputShape.Length))
         {
         }
 
+        // Use this constructor for input layer only!
         public Flatten(Shape inputShape)
             : base(inputShape, new Shape(1, inputShape.Length))
         {
