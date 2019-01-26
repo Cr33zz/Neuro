@@ -16,7 +16,7 @@ namespace Neuro.Layers
             Stride = stride;
         }
 
-        // Use this constructor for input layer only!
+        // This constructor should only be used for input layer
         public Convolution(Shape inputShape, int filterSize, int filtersNum, int stride, ActivationFunc activation)
             : base(inputShape, GetOutShape(inputShape, filterSize, filterSize, stride, filtersNum), activation)
         {

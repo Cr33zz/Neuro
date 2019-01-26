@@ -10,7 +10,7 @@ namespace Neuro.Layers
         {
         }
 
-        // Use this constructor for input layer only!
+        // This constructor should only be used for input layer
         public Flatten(Shape inputShape)
             : base(inputShape, new Shape(1, inputShape.Length))
         {

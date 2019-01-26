@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Neuro.Tensors;
+﻿using Neuro.Tensors;
 
 namespace Neuro.Layers
 {
@@ -24,6 +18,7 @@ namespace Neuro.Layers
             MergeMode = mergeMode;
         }
 
+        // This constructor should only be used for input layer
         public Merge(Shape[] inputShapes, Mode mergeMode)
             : base(inputShapes, inputShapes[0])
         {
