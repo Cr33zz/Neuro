@@ -41,6 +41,12 @@ namespace Neuro
             return clone;
         }
 
+        public void ForceInitLayers()
+        {
+            foreach (var layer in Model.GetLayers())
+                layer.ForceInit();
+        }
+
         public void CopyParametersTo(NeuralNetwork target)
         {
             foreach (var layersPair in Model.GetLayers().Zip(target.Model.GetLayers(), (l1, l2) => new [] {l1, l2}))

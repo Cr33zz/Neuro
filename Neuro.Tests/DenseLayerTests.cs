@@ -33,6 +33,7 @@ namespace Neuro.Tests
         private LayerBase CreateLayer()
         {
             var layer = new Dense(10, 5, null);
+            layer.ForceInit();
             layer.Weights.FillWithRand();
             return layer;
         }

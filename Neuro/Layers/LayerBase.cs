@@ -85,6 +85,12 @@ namespace Neuro.Layers
                 throw new Exception("Cannot copy parameters between incompatible layers.");
         }
 
+        public void ForceInit()
+        {
+            Init();
+            Initialized = true;
+        }
+
         public Tensor FeedForward(Tensor input)
         {
             return FeedForward(new []{input});
@@ -93,10 +99,7 @@ namespace Neuro.Layers
         public Tensor FeedForward(Tensor[] inputs)
         {
             if (!Initialized)
-            {
-                Init();
-                Initialized = true;
-            }
+                ForceInit();
 
             //Debug.Assert(input.Width == InputShape.Width && input.Height == InputShape.Height && input.Depth == InputShape.Depth);
 

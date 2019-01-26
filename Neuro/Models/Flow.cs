@@ -57,7 +57,7 @@ namespace Neuro.Models
                         if (layer.OutputLayers[i].InputLayers[j] == layer)
                         {
                             avgDelta.Add(layer.OutputLayers[i].InputsGradient[j], avgDelta);
-                            // not breaking at this point is allowing the same layer to be used multiple times as input into a single layer
+                            break;
                         }
                     }
                 }

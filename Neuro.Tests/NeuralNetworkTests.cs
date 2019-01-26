@@ -158,6 +158,7 @@ namespace Neuro.Tests
             model.AddLayer(new Dense(2, 3, Activation.Linear));
             model.AddLayer(new Dense(3, 3, Activation.Linear));
             net.Model = model;
+            net.ForceInitLayers();
 
             var net2 = net.Clone();
             net.CopyParametersTo(net2);
@@ -177,6 +178,7 @@ namespace Neuro.Tests
             model.AddLayer(new Dense(2, 3, Activation.Linear));
             model.AddLayer(new Dense(3, 3, Activation.Linear));
             net.Model = model;
+            net.ForceInitLayers();
 
             var net2 = net.Clone();
 
