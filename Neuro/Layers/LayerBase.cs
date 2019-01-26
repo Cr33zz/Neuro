@@ -16,15 +16,11 @@ namespace Neuro.Layers
         public Tensor[] InputsGradient { get; set; }
         public Tensor InputGradient { get { return InputsGradient[0]; } }
         public Tensor Output { get; protected set; }
-        public Shape OutputShape { get; }
-        public ActivationFunc Activation { get; }
+        public Shape OutputShape { get; private set; }
+        public ActivationFunc Activation { get; private set; }
         public string Name { get; set; }
         internal List<LayerBase> InputLayers = new List<LayerBase>();
         internal List<LayerBase> OutputLayers = new List<LayerBase>();
-
-        public virtual int GetParamsNum() { return 0; }
-
-        protected LayerBase() {}
 
         // The concept of layer is that it is a 'block box' that supports feed forward and backward propagation.
         // Feed forward: input Tensor -> |logic| -> output Tensor
@@ -52,6 +48,7 @@ namespace Neuro.Layers
         {
         }
 
+        // This constructor should only be used for input layer
         protected LayerBase(Shape[] inputShapes, Shape outputShape, ActivationFunc activation = null)
         {
             InputShapes = inputShapes;
@@ -59,7 +56,28 @@ namespace Neuro.Layers
             Activation = activation;
         }
 
-        public abstract LayerBase Clone();
+        // This constructor exists only for cloning purposes
+        protected LayerBase()
+        {
+        }
+
+        protected abstract LayerBase GetCloneInstance();
+
+        public LayerBase Clone()
+        {
+            var clone = GetCloneInstance();
+            clone.OnClone(this);
+            return clone;
+        }
+
+        protected virtual void OnClone(LayerBase source)
+        {
+            InputShapes = source.InputShapes;
+            OutputShape = source.OutputShape;
+            Activation = source.Activation;
+            Name = source.Name;
+            Initialized = source.Initialized;
+        }
 
         public virtual void CopyParametersTo(LayerBase target, float tau = float.NaN)
         {
@@ -129,12 +147,20 @@ namespace Neuro.Layers
             return InputsGradient;
         }
 
+        public virtual int GetParamsNum()
+        {
+            return 0;
+        }
+
         public virtual List<ParametersAndGradients> GetParametersAndGradients()
         {
             return new List<ParametersAndGradients>();
         }
 
-        protected virtual void Init() {}
+        protected virtual void Init()
+        {
+        }
+
         private bool Initialized = false;
 
         //public delegate void ActivationFunc(Tensor input, bool deriv, Tensor result);

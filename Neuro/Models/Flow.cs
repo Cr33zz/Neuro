@@ -13,6 +13,11 @@ namespace Neuro.Models
             OutputLayers = outputLayers.ToList();
         }
 
+        // For cloning purposes
+        private Flow()
+        {
+        }
+
         public override void FeedForward(Tensor[] inputs)
         {
             for (int i = 0; i < InputLayers.Count; ++i)
@@ -106,13 +111,51 @@ namespace Neuro.Models
             foreach (var outLayer in layer.OutputLayers)
                 ProcessLayer(outLayer, ref visited);
         }
-
+        
         public override ModelBase Clone()
         {
-            var clone = new Flow(InputLayers.ToArray(), OutputLayers.ToArray());
-            clone.Order = Order;
-            clone.ReversedOrder = ReversedOrder;
-            return clone;
+            // clone is not a frequently used functionality so I'm not too concerned about its performance
+
+            // make clones first and store then in dictionary
+            var clones = new Dictionary<string, LayerBase>();
+            foreach (var layer in Order)
+            {
+                var clone = layer.Clone();
+                clones[clone.Name] = clone;
+            }
+
+            // then connect them in the same manner as in original network and clone order
+            var flowClone = new Flow();
+
+            foreach (var layer in Order)
+            {
+                var layerClone = clones[layer.Name];
+                foreach (var inLayer in layer.InputLayers)
+                {
+                    var inLayerClone = clones[inLayer.Name];
+                    layerClone.InputLayers.Add(inLayerClone);
+                    inLayerClone.OutputLayers.Add(layerClone);
+                }
+
+                flowClone.Order.Add(layerClone);
+            }
+
+            flowClone.ReversedOrder = new List<LayerBase>(flowClone.Order);
+            flowClone.ReversedOrder.Reverse();
+
+            foreach (var layer in InputLayers)
+            {
+                var layerClone = clones[layer.Name];
+                flowClone.InputLayers.Add(layerClone);
+            }
+
+            foreach (var layer in OutputLayers)
+            {
+                var layerClone = clones[layer.Name];
+                flowClone.OutputLayers.Add(layerClone);
+            }
+
+            return flowClone;
         }
 
         public override IEnumerable<LayerBase> GetLayers()
@@ -127,10 +170,11 @@ namespace Neuro.Models
                 outputs[i] = OutputLayers[i].Output;
             return outputs;
         }
+
         private List<LayerBase> InputLayers = new List<LayerBase>();
         private List<LayerBase> OutputLayers = new List<LayerBase>();
 
         private List<LayerBase> Order = new List<LayerBase>();
-        private List<LayerBase> ReversedOrder = new List<LayerBase>();
+        private List<LayerBase> ReversedOrder;
     }
 }

@@ -9,9 +9,6 @@ namespace Neuro.Layers
 {
     public class Dense : LayerBase
     {
-        // For serialization purposes only
-        internal Dense() {}
-
         public Dense(LayerBase inputLayer, int outputs, ActivationFunc activation)
             : base(inputLayer, new Shape(1, outputs), activation)
         {
@@ -23,13 +20,24 @@ namespace Neuro.Layers
         {
         }
 
-        public override LayerBase Clone()
+        // This constructor exists only for cloning purposes
+        protected Dense()
         {
-            var clone = new Dense(InputShapes[0].Length, OutputShape.Length, Activation);
-            clone.Weights = Weights.Clone();
-            clone.Bias = Bias.Clone();
-            clone.UseBias = UseBias;
-            return clone;
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Dense();
+        }
+
+        protected override void OnClone(LayerBase source)
+        {
+            base.OnClone(source);
+
+            var sourceDense = source as Dense;
+            Weights = sourceDense.Weights?.Clone();
+            Bias = sourceDense.Bias?.Clone();
+            UseBias = sourceDense.UseBias;
         }
 
         public override void CopyParametersTo(LayerBase target, float tau)
@@ -66,7 +74,7 @@ namespace Neuro.Layers
         protected override void BackPropInternal(Tensor outputGradient)
         {
             // for explanation watch https://www.youtube.com/watch?v=8H2ODPNxEgA&t=898s
-            // each weight is responsible to the error in the next layer proportionally to its value
+            // each input is responsible for the output error proportionally to weights it is multiplied by
             Weights.Transposed().Mul(outputGradient, InputsGradient[0]);
 
             WeightsGradient.Add(outputGradient.Mul(Inputs[0].Transposed()).SumBatches(), WeightsGradient);

@@ -26,9 +26,12 @@ namespace Neuro.PerfTests
 
             var input = new Tensor(new float[]{0, 1}, new Shape(1, 2));
             var outputs = new [] {new Tensor(new float[] { 0, 1 }, new Shape(1, 2)), new Tensor(new float[] { 1, 2 }, new Shape(1, 2)) };
-            var trainingData = new List<Data> {new Data(new[] {input}, outputs)};
+            var trainingData = new List<Data> {new Data(new[] {input}, outputs)};            
 
-            net.Fit(trainingData, 1, 60, null, 2, Track.Nothing, false);
+            var netClone = net.Clone();
+
+            netClone.Fit(trainingData, 1, 60, null, 2, Track.Nothing, false);
+
 
             //var input1 = new Dense(2, 2, Activation.Sigmoid);
             //var upperStream1 = new Dense(input1, 2, Activation.Sigmoid);

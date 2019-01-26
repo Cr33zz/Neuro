@@ -25,13 +25,23 @@ namespace Neuro.Layers
             Stride = stride;
         }
 
-        public override LayerBase Clone()
+        protected Convolution()
         {
-            var clone = new Convolution(InputShapes[0], FilterSize, FiltersNum, Stride, Activation);
-            clone.Kernels = Kernels.Clone();
-            clone.Bias = Bias.Clone();
-            clone.UseBias = UseBias;
-            return clone;
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Convolution();
+        }
+
+        protected override void OnClone(LayerBase source)
+        {
+            base.OnClone(source);
+
+            var sourceConv = source as Convolution;
+            Kernels = sourceConv.Kernels.Clone();
+            Bias = sourceConv.Bias.Clone();
+            UseBias = sourceConv.UseBias;
         }
 
         public override void CopyParametersTo(LayerBase target, float tau)

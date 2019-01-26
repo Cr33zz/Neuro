@@ -11,9 +11,13 @@ namespace Neuro.Layers
         {
         }
 
-        public override LayerBase Clone()
+        protected Input()
         {
-            return new Input(InputShape);
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Input();
         }
 
         protected override void FeedForwardInternal()

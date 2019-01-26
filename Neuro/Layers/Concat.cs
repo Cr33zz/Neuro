@@ -11,9 +11,13 @@ namespace Neuro.Layers
         {
         }
 
-        public override LayerBase Clone()
+        protected Concat()
         {
-            throw new NotImplementedException();
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Concat();
         }
 
         protected override void FeedForwardInternal()

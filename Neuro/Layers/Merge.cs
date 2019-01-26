@@ -30,9 +30,21 @@ namespace Neuro.Layers
             MergeMode = mergeMode;
         }
 
-        public override LayerBase Clone()
+        protected Merge()
         {
-            return new Merge(InputShapes, MergeMode);
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Merge();
+        }
+
+        protected override void OnClone(LayerBase source)
+        {
+            base.OnClone(source);
+
+            var sourceMerge = source as Merge;
+            MergeMode = sourceMerge.MergeMode;
         }
 
         protected override void FeedForwardInternal()
@@ -71,6 +83,6 @@ namespace Neuro.Layers
             }
         }
 
-        public readonly Mode MergeMode;
+        public Mode MergeMode { get; private set; }
     }
 }

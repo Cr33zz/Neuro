@@ -16,9 +16,13 @@ namespace Neuro.Layers
         {
         }
 
-        public override LayerBase Clone()
+        protected Flatten()
         {
-            return new Flatten(InputShapes[0]);
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Flatten();
         }
 
         protected override void FeedForwardInternal()

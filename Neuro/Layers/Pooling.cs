@@ -24,9 +24,23 @@ namespace Neuro.Layers
             Stride = stride;
         }
 
-        public override LayerBase Clone()
+        protected Pooling()
         {
-            return new Pooling(InputShapes[0], FilterSize, Stride, Type);
+        }
+
+        protected override LayerBase GetCloneInstance()
+        {
+            return new Pooling();
+        }
+
+        protected override void OnClone(LayerBase source)
+        {
+            base.OnClone(source);
+
+            var sourcePool = source as Pooling;
+            Type = sourcePool.Type;
+            FilterSize = sourcePool.FilterSize;
+            Stride = sourcePool.Stride;
         }
 
         protected override void FeedForwardInternal()
@@ -46,8 +60,8 @@ namespace Neuro.Layers
                              inputShape.Depth);
         }
 
-        private readonly Tensor.PoolType Type;
-        private readonly int FilterSize;
-        private readonly int Stride;
+        private Tensor.PoolType Type;
+        private int FilterSize;
+        private int Stride;
     }
 }
