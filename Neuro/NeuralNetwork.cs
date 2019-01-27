@@ -236,20 +236,23 @@ namespace Neuro
                 chartGen.AddSeries((int)Track.TestAccuracy, "Accuracy on test\n(right Y axis)", Color.CornflowerBlue, true);
 
             //var lastLayer = Layers.Last();
-            //int outputsNum = lastLayer.OutputShape.Length;
+            int outputLayersCount = Model.GetOutputLayersCount();
 
             int batchesNum = trainingDataAlreadyBatched ? trainingData.Count : (trainingData.Count / batchSize);
             int totalTrainingSamples = trainingData.Count * inputsBatchSize;
 
-            AccuracyFunc accuracyFunc = Tools.AccNone;
+            if (AccuracyFuncs == null && (trackFlags.HasFlag(Track.TrainAccuracy) || trackFlags.HasFlag(Track.TestAccuracy)))
+            {
+                AccuracyFuncs = new AccuracyFunc[outputLayersCount];
 
-            //if (trackFlags.HasFlag(Track.TrainAccuracy) || trackFlags.HasFlag(Track.TestAccuracy))
-            //{
-            //    if (outputsNum == 1)
-            //        accuracyFunc = Tools.AccBinaryClassificationEquality;
-            //    else
-            //        accuracyFunc = Tools.AccCategoricalClassificationEquality;
-            //}
+                for (int i = 0; i < outputLayersCount; ++i)
+                {
+                    if (Model.GetOutputLayers().ElementAt(i).OutputShape.Length == 1)
+                        AccuracyFuncs[i] = Tools.AccBinaryClassificationEquality;
+                    else
+                        AccuracyFuncs[i] = Tools.AccCategoricalClassificationEquality;
+                }
+            }
 
             Stopwatch trainTimer = new Stopwatch();
 
@@ -275,7 +278,7 @@ namespace Neuro
                 {
                     // this will be equal to batch size; however, the last batch size may be different if there is a reminder of training data by batch size division
                     int samples = batchedTrainingData[b].Inputs[0].BatchSize;
-                    GradientDescentStep(batchedTrainingData[b], samples, accuracyFunc, ref trainTotalError, ref trainHits);
+                    GradientDescentStep(batchedTrainingData[b], samples, ref trainTotalError, ref trainHits);
 
                     if (verbose == 2)
                     {
@@ -296,7 +299,7 @@ namespace Neuro
                 float trainError = trainTotalError / totalTrainingSamples;
 
                 chartGen?.AddData(e, trainError, (int)Track.TrainError);
-                chartGen?.AddData(e, (float)trainHits / totalTrainingSamples, (int)Track.TrainAccuracy);
+                chartGen?.AddData(e, (float)trainHits / totalTrainingSamples / outputLayersCount, (int)Track.TrainAccuracy);
 
                 if (verbose > 0)
                 {
@@ -320,11 +323,11 @@ namespace Neuro
                         FeedForward(validationData[n].Inputs);
                         var outputs = Model.GetOutputs();
                         Tensor[] losses = new Tensor[outputs.Length];
-                        for (int i = 0; i < outputs.Length; ++i)
+                        for (int i = 0; i < outputLayersCount; ++i)
                         {
                             LossFuncs[i].Compute(validationData[n].Outputs[i], outputs[i], losses[i]);
                             testTotalError += losses[i].Sum() / outputs[i].BatchLength;
-                            testHits += accuracyFunc(validationData[n].Outputs[i], outputs[i]);
+                            testHits += AccuracyFuncs[i](validationData[n].Outputs[i], outputs[i]);
                         }
 
                         if (verbose == 2)
@@ -336,7 +339,7 @@ namespace Neuro
                     }
 
                     chartGen?.AddData(e, testTotalError / validationSamples, (int)Track.TestError);
-                    chartGen?.AddData(e, (float)testHits / validationSamples, (int)Track.TestAccuracy);
+                    chartGen?.AddData(e, (float)testHits / validationSamples / outputLayersCount, (int)Track.TestAccuracy);
                 }
 
                 if ((ChartSaveInterval > 0 && (e % ChartSaveInterval == 0)) || e == epochs)
@@ -348,7 +351,7 @@ namespace Neuro
         }
 
         // This is vectorized gradient descent
-        private void GradientDescentStep(Data trainingData, int samplesInTrainingData, AccuracyFunc accuracyFunc, ref float trainError, ref int trainHits)
+        private void GradientDescentStep(Data trainingData, int samplesInTrainingData, ref float trainError, ref int trainHits)
         {
             FeedForward(trainingData.Inputs);
             var outputs = Model.GetOutputs();
@@ -358,7 +361,7 @@ namespace Neuro
                 losses[i] = new Tensor(outputs[i].Shape);
                 LossFuncs[i].Compute(trainingData.Outputs[i], outputs[i], losses[i]);
                 trainError += losses[i].Sum() / outputs[i].BatchLength;
-                trainHits += accuracyFunc(trainingData.Outputs[i], outputs[i]);
+                trainHits += AccuracyFuncs != null ? AccuracyFuncs[i](trainingData.Outputs[i], outputs[i]) : 0;
                 LossFuncs[i].Derivative(trainingData.Outputs[i], outputs[i], losses[i]);
             }
             BackProp(losses);
@@ -393,6 +396,7 @@ namespace Neuro
         public Models.ModelBase Model;
         private int Seed;
         private delegate int AccuracyFunc(Tensor targetOutput, Tensor output);
+        private AccuracyFunc[] AccuracyFuncs;
         private List<string> LogLines = new List<string>();
     }
 
