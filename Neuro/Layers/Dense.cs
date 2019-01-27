@@ -9,13 +9,13 @@ namespace Neuro.Layers
 {
     public class Dense : LayerBase
     {
-        public Dense(LayerBase inputLayer, int outputs, ActivationFunc activation)
+        public Dense(LayerBase inputLayer, int outputs, ActivationFunc activation = null)
             : base(inputLayer, new Shape(1, outputs), activation)
         {
         }
 
         // Use this constructor for input layer only!
-        public Dense(int inputs, int outputs, ActivationFunc activation)
+        public Dense(int inputs, int outputs, ActivationFunc activation = null)
             : base(new Shape(1, inputs), new Shape(1, outputs), activation)
         {
         }

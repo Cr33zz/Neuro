@@ -12,15 +12,15 @@ namespace Neuro.Layers
             Min
         }
 
-        public Merge(LayerBase[] inputLayers, Mode mergeMode)
-            : base(inputLayers, inputLayers[0].OutputShape)
+        public Merge(LayerBase[] inputLayers, Mode mergeMode, ActivationFunc activation = null)
+            : base(inputLayers, inputLayers[0].OutputShape, activation)
         {
             MergeMode = mergeMode;
         }
 
         // This constructor should only be used for input layer
-        public Merge(Shape[] inputShapes, Mode mergeMode)
-            : base(inputShapes, inputShapes[0])
+        public Merge(Shape[] inputShapes, Mode mergeMode, ActivationFunc activation = null)
+            : base(inputShapes, inputShapes[0], activation)
         {
             MergeMode = mergeMode;
         }

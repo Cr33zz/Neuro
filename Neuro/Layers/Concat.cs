@@ -6,7 +6,7 @@ namespace Neuro.Layers
 {
     public class Concat : LayerBase
     {
-        public Concat(LayerBase[] inputLayers)
+        public Concat(LayerBase[] inputLayers, ActivationFunc activation = null)
             : base(inputLayers, new Shape(1, inputLayers.Select(x => x.OutputShape.Length).Sum()))
         {
         }
