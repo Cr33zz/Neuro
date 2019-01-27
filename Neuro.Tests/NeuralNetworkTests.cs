@@ -285,7 +285,7 @@ namespace Neuro.Tests
         {
             LayerBase mainInput = new Dense(2, 2, Activation.Linear) { Name = "main_input" };
             LayerBase auxInput = new Input(new Shape(1, 2)) { Name = "aux_input" };
-            LayerBase concat = new Concat(new []{ mainInput, auxInput }) { Name = "concat" };
+            LayerBase concat = new Concatenate(new []{ mainInput, auxInput }) { Name = "concat" };
 
             var net = new NeuralNetwork("test");
             net.Model = new Flow(new[] { mainInput, auxInput }, new[] { concat });

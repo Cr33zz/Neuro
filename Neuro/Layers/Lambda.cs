@@ -6,12 +6,12 @@ namespace Neuro.Layers
     public class Lambda : LayerBase
     {
         // Implement your custom algorithm for generating output from inputs
-        public delegate int LambdaFunc(Tensor[] inputs, Tensor output);
+        public delegate void LambdaFunc(Tensor[] inputs, Tensor output);
 
         // In this function you need to say how each input was responsible for output error (gradient)
         // For example: if you simply sum all inputs to produce output (each input has weight 1) then each input is equally responsible for error
         // and gradient for each input should be the same as output gradient; in case of average weight for each input would be 1/number_of_inputs.
-        public delegate int LambdaBackpropFunc(Tensor outputGradient, Tensor[] inputsGradient);
+        public delegate void LambdaBackpropFunc(Tensor outputGradient, Tensor[] inputsGradient);
 
         public Lambda(LayerBase[] inputLayers, Shape outputShape, LambdaFunc processInputsFunc, LambdaBackpropFunc backPropOutputGradientFunc, ActivationFunc activation = null)
             : base(inputLayers, outputShape, activation)

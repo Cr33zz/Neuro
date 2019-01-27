@@ -4,20 +4,20 @@ using Neuro.Tensors;
 
 namespace Neuro.Layers
 {
-    public class Concat : LayerBase
+    public class Concatenate : LayerBase
     {
-        public Concat(LayerBase[] inputLayers, ActivationFunc activation = null)
+        public Concatenate(LayerBase[] inputLayers, ActivationFunc activation = null)
             : base(inputLayers, new Shape(1, inputLayers.Select(x => x.OutputShape.Length).Sum()))
         {
         }
 
-        protected Concat()
+        protected Concatenate()
         {
         }
 
         protected override LayerBase GetCloneInstance()
         {
-            return new Concat();
+            return new Concatenate();
         }
 
         protected override void FeedForwardInternal()
