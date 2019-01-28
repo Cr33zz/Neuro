@@ -58,13 +58,13 @@ namespace Neuro.Models
         {
             int totalParams = 0;
             string output = "_________________________________________________________________\n";
-            output += "Layer Type                   Output Shape              Param #\n";
+            output += "Layer                        Output Shape              Param #\n";
             output += "=================================================================\n";
 
             foreach (var layer in Layers)
             {
                 totalParams += layer.GetParamsNum();
-                output += $"{layer.GetType().Name.PadRight(29)}" + $"({layer.OutputShape.Width}, {layer.OutputShape.Height}, {layer.OutputShape.Depth})".PadRight(26) + $"{layer.GetParamsNum()}\n";
+                output += $"{(layer.Name + " (" + layer.GetType().Name + ")").PadRight(29)}" + $"({layer.OutputShape.Width}, {layer.OutputShape.Height}, {layer.OutputShape.Depth})".PadRight(26) + $"{layer.GetParamsNum()}\n";
                 output += "_________________________________________________________________\n";
             }
 

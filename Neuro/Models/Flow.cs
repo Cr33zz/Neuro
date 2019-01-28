@@ -163,6 +163,27 @@ namespace Neuro.Models
             return Order;
         }
 
+        public override string Summary()
+        {
+            int totalParams = 0;
+            string output = "____________________________________________________________________________________________________\n";
+            output += "Layer                        Output Shape              Param #     Connected to\n";
+            output += "====================================================================================================\n";
+
+            foreach (var layer in Order)
+            {
+                totalParams += layer.GetParamsNum();
+                output += $"{(layer.Name + " (" + layer.GetType().Name + ")").PadRight(29)}" + $"({layer.OutputShape.Width}, {layer.OutputShape.Height}, {layer.OutputShape.Depth})".PadRight(26) + $"{layer.GetParamsNum()}".PadRight(13) + (layer.InputLayers.Count > 0 ? layer.InputLayers[0].Name : "") + "\n";
+                for (int i = 1; i < layer.InputLayers.Count; ++i)
+                    output += layer.InputLayers[i].Name.PadLeft(68 + layer.InputLayers[i].Name.Length) + "\n";
+                output += "____________________________________________________________________________________________________\n";
+            }
+
+            output += $"Total params: {totalParams}";
+
+            return output;
+        }
+
         public override Tensor[] GetOutputs()
         {
             Tensor[] outputs = new Tensor[OutputLayers.Count];

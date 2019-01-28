@@ -62,7 +62,7 @@ namespace Neuro.Layers
                 BiasInitializer.Init(Bias, InputShape.Length, OutputShape.Length);
         }
 
-        public override int GetParamsNum() { return Weights.Length; }
+        public override int GetParamsNum() { return InputShape.Length * OutputShape.Length; }
 
         protected override void FeedForwardInternal()
         {

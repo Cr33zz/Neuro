@@ -54,6 +54,7 @@ namespace Neuro.Layers
             InputShapes = inputShapes;
             OutputShape = outputShape;
             Activation = activation;
+            Name = GenerateName();
         }
 
         // This constructor exists only for cloning purposes
@@ -178,5 +179,14 @@ namespace Neuro.Layers
 
         internal virtual void SerializeParameters(XmlElement elem) {}
         internal virtual void DeserializeParameters(XmlElement elem) {}
+
+        private string GenerateName()
+        {
+            if (!LayersCountPerType.ContainsKey(GetType()))
+                LayersCountPerType.Add(GetType(), 0);
+            return $"{GetType().Name.ToLower()}_{++LayersCountPerType[GetType()]}";
+        }
+
+        private static Dictionary<Type, int> LayersCountPerType = new Dictionary<Type, int>();
     }
 }
