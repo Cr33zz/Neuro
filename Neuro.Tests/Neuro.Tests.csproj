@@ -87,6 +87,7 @@
     <Compile Include="OptimizerTests.cs" />
     <Compile Include="TensorTests.cs" />
     <Compile Include="NeuralNetworkTests.cs" />
+    <Compile Include="MergeLayerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
