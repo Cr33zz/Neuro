@@ -14,9 +14,15 @@ namespace Neuro.Tests
         public static void VerifyInputGradient(LayerBase layer, int batchSize = 1)
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
-            var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batchSize));
-            input.FillWithRand(7);
-            var output = layer.FeedForward(input);
+            var inputs = new Tensor[layer.InputShapes.Length];
+            for (int i = 0; i < inputs.Length; ++i)
+            {
+                var input = new Tensor(new Shape(layer.InputShape.Width, layer.InputShape.Height,layer.InputShape.Depth, batchSize));
+                input.FillWithRand(7 + i);
+                inputs[i] = input;
+            }
+
+            var output = layer.FeedForward(inputs);
             var outputGradient = new Tensor(output.Shape);
             outputGradient.FillWithValue(1);
 
@@ -24,27 +30,31 @@ namespace Neuro.Tests
 
             var result = new Tensor(output.Shape);
 
-            for (var i = 0; i < input.Shape.Length; ++i)
+            for (int n = 0; n < inputs.Length; ++n)
             {
-                result.Zero();
+                var input = inputs[n];
+                for (int i = 0; i < input.Shape.Length; ++i)
+                {
+                    result.Zero();
 
-                var oldValue = input.GetFlat(i);
+                    var oldValue = input.GetFlat(i);
 
-                input.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
-                var output1 = layer.FeedForward(input).Clone();
-                input.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
-                var output2 = layer.FeedForward(input).Clone();
+                    input.SetFlat(oldValue - DERIVATIVE_EPSILON, i);
+                    var output1 = layer.FeedForward(inputs).Clone();
+                    input.SetFlat(oldValue + DERIVATIVE_EPSILON, i);
+                    var output2 = layer.FeedForward(inputs).Clone();
 
-                input.SetFlat(oldValue, i);
+                    input.SetFlat(oldValue, i);
 
-                output2.Sub(output1, result);
+                    output2.Sub(output1, result);
 
-                var approxGrad = new float[output.Shape.Length];
-                for (var j = 0; j < output.Shape.Length; j++)
-                    approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
+                    var approxGrad = new float[output.Shape.Length];
+                    for (var j = 0; j < output.Shape.Length; j++)
+                        approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
 
-                var approxGradient = approxGrad.Sum();
-                Assert.AreEqual(approxGradient, layer.InputGradient.GetFlat(i), 0.02, $"At element {i}");
+                    var approxGradient = approxGrad.Sum();
+                    Assert.AreEqual(approxGradient, layer.InputsGradient[n].GetFlat(i), 0.02, $"At element {i}");
+                }
             }
         }
 
