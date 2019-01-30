@@ -10,49 +10,49 @@ namespace Neuro.Tests
         [TestMethod]
         public void Sum_InputGradient_1Batch()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Sum));
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Sum)));
         }
 
         [TestMethod]
         public void Sum_InputGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Sum), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Sum), 3));
         }
 
         [TestMethod]
         public void Avg_InputGradient_1Batch()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Avg));
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Avg)));
         }
 
         [TestMethod]
         public void Avg_InputGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Avg), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Avg), 3));
         }
 
         [TestMethod]
         public void Min_InputGradient_1Batch()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Min));
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Min)));
         }
 
         [TestMethod]
         public void Min_InputGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Min), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Min), 3));
         }
 
         [TestMethod]
         public void Max_InputGradient_1Batch()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Max));
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Max)));
         }
 
         [TestMethod]
         public void Max_InputGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(Merge.Mode.Max), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(Merge.Mode.Max), 3));
         }
 
         private LayerBase CreateLayer(Merge.Mode mode)

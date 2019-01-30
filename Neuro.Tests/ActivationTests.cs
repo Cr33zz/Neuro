@@ -9,61 +9,61 @@ namespace Neuro.Tests
         [TestMethod]
         public void Linear_Derivative_1Batch()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Linear);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Linear));
         }
 
         [TestMethod]
         public void Linear_Derivative_3Batches()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Linear, 3);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Linear, 3));
         }
 
         [TestMethod]
         public void Sigmoid_Derivative_1Batch()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Sigmoid);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Sigmoid));
         }
 
         [TestMethod]
         public void Sigmoid_Derivative_3Batches()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Sigmoid, 3);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Sigmoid, 3));
         }
 
         [TestMethod]
         public void ReLU_Derivative_1Batch()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.ReLU);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.ReLU));
         }
 
         [TestMethod]
         public void ReLU_Derivative_3Batches()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.ReLU, 3);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.ReLU, 3));
         }
 
         [TestMethod]
         public void Tanh_Derivative_1Batch()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Tanh);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Tanh));
         }
 
         [TestMethod]
         public void Tanh_Derivative_3Batches()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.Tanh, 3);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.Tanh, 3));
         }
 
         [TestMethod]
         public void ELU_Derivative_1Batch()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.ELU);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.ELU));
         }
 
         [TestMethod]
         public void ELU_Derivative_3Batches()
         {
-            Tools.VerifyActivationFuncDerivative(Activation.ELU, 3);
+            Assert.IsTrue(TestTools.VerifyActivationFuncDerivative(Activation.ELU, 3));
         }
 
         [TestMethod]

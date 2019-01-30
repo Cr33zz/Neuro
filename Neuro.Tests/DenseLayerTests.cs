@@ -9,25 +9,25 @@ namespace Neuro.Tests
         [TestMethod]
         public void InputGradient_1Batch()
         {
-            Tools.VerifyInputGradient(CreateLayer());
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer()));
         }
 
         [TestMethod]
         public void InputGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(), 3));
         }
 
         [TestMethod]
         public void ParametersGradient_1Batch()
         {
-            Tools.VerifyParametersGradient(CreateLayer());
+            Assert.IsTrue(TestTools.VerifyParametersGradient(CreateLayer()));
         }
 
         [TestMethod]
         public void ParametersGradient_3Batches()
         {
-            Tools.VerifyInputGradient(CreateLayer(), 3);
+            Assert.IsTrue(TestTools.VerifyInputGradient(CreateLayer(), 3));
         }
 
         private LayerBase CreateLayer()

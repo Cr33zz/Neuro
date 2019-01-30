@@ -94,6 +94,7 @@
     <Compile Include="Tensors\TensorOpCpu.cs" />
     <Compile Include="Tensors\TensorOpGpu.cs" />
     <Compile Include="Tensors\TensorOpMultiCpu.cs" />
+    <Compile Include="TestTools.cs" />
     <Compile Include="Tools.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
