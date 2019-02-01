@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Neuro.Layers;
 using Neuro.Tensors;
@@ -48,12 +49,18 @@ namespace Neuro
                     output2.Sub(output1, result);
 
                     var approxGrad = new float[output.Shape.Length];
-                    for (var j = 0; j < output.Shape.Length; j++)
+                    float approxGradient = 0;
+                    for (int j = 0; j < output.Shape.Length; j++)
+                    {
                         approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
+                        approxGradient += approxGrad[j];
+                    }
 
-                    var approxGradient = approxGrad.Sum();
                     if (Math.Abs(approxGradient - layer.InputsGradient[n].GetFlat(i)) > 0.02)
+                    {
+                        Debug.Assert(false, $"Input gradient validation failed at element {i} of input {n}, expected {approxGradient} actual {layer.InputsGradient[n].GetFlat(i)}!");
                         return false;
+                    }
                 }
             }
 
@@ -71,9 +78,13 @@ namespace Neuro
 
             layer.BackProp(outputGradient);
 
+            var paramsAndGrads = layer.GetParametersAndGradients();
+
+            if (paramsAndGrads.Count == 0)
+                return true;
+
             var result = new Tensor(output.Shape);
 
-            var paramsAndGrads = layer.GetParametersAndGradients();
             var parameters = paramsAndGrads[0].Parameters;
             var gradients = paramsAndGrads[0].Gradients;
 
@@ -92,12 +103,15 @@ namespace Neuro
                 output1.Sub(output2, result);
 
                 var approxGrad = new float[output.Shape.Length];
-                for (var j = 0; j < output.Shape.Length; j++)
+                for (int j = 0; j < output.Shape.Length; j++)
                     approxGrad[j] = result.GetFlat(j) / (2.0f * DERIVATIVE_EPSILON);
 
                 var approxGradient = approxGrad.Sum();
                 if (Math.Abs(approxGradient - gradients.GetFlat(i)) > 0.02)
+                {
+                    Debug.Assert(false, $"Parameter gradient validation failed at parameter {i}, expected {approxGradient} actual {gradients.GetFlat(i)}!");
                     return false;
+                }
             }
 
             return true;

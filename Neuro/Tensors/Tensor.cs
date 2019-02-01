@@ -365,6 +365,42 @@ namespace Neuro.Tensors
             return sum;
         }
 
+        public Tensor SumPerBatch()
+        {
+            Tensor result = new Tensor(new Shape(1, 1, 1, Shape.BatchSize));
+
+            for (int n = 0; n < BatchSize; ++n)
+                result.Values[n] = Sum(n);
+
+            return result;
+        }
+
+
+        public Tensor AvgBatches()
+        {
+            Tensor result = SumBatches();
+
+            for (int n = 0; n < BatchLength; ++n)
+                result.Values[n] /= BatchSize;
+
+            return result;
+        }
+
+        public float Avg(int batch = -1)
+        {
+            return Sum(batch) / (batch < 0 ? Length : BatchLength);
+        }
+
+        public Tensor AvgPerBatch()
+        {
+            Tensor result = SumPerBatch();
+
+            for (int n = 0; n < BatchSize; ++n)
+                result.Values[n] /= BatchLength;
+
+            return result;
+        }
+
         public float Max(int batch = -1)
         {
             int maxIndex;
@@ -510,7 +546,7 @@ namespace Neuro.Tensors
             return result;
         }
 
-        // Generates a new matrix with given dimensions and populate it with this matrix values in index order. 
+        // Generates a new tensor with given dimensions and populate it with this tensor's values in index order. 
         // One of dimensions can be -1, in that case it will be calculated based on remaining dimensions.
         public Tensor Reshaped(Shape shape)
         {
@@ -520,6 +556,18 @@ namespace Neuro.Tensors
         public void Reshape(Shape shape)
         {
             Shape = Shape.Reshaped(new[] { shape.Width, shape.Height, shape.Depth, shape.BatchSize });
+        }
+
+        // Create new tensor with different batch length and use current tensors values to fill the new tensor.
+        // Number of batches will be the same as in source tensor.
+        public Tensor Resized(int width, int height = 1, int depth = 1)
+        {
+            int newBatchLength = width * height * depth;
+            var result = new Tensor(new Shape(width, height, depth, Shape.BatchSize));
+            for (int n = 0; n < BatchSize; ++n)
+            for (int i = 0, idx = n * newBatchLength; i < newBatchLength; ++i, ++idx)
+                result.Values[idx] = Values[n * BatchLength + i % BatchLength];
+            return result;
         }
 
         public Tensor FlattenHoriz()

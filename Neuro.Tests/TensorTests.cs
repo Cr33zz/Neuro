@@ -452,6 +452,52 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Avg_Per_Batch()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 3)); t.FillWithRange(1);
+            var averages = new float[] { 2.5f, 6.5f, 10.5f };
+
+            for (int i = 0; i < t.BatchSize; ++i)
+                Assert.AreEqual(t.Avg(i), averages[i], 1e-7);
+        }
+
+        [TestMethod]
+        public void Avg()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 3)); t.FillWithRange(1);
+
+            Assert.AreEqual(t.Avg(), 6.5, 1e-7);
+        }
+
+        [TestMethod]
+        public void AvgBatches()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 2, 1, 4)); t.FillWithRange(1);
+            var result = t.AvgBatches();
+            var correct = new Tensor(new float[] { 7, 8, 9, 10 }, new Shape(2, 2, 1, 1));
+
+            Assert.IsTrue(result.Equals(correct));
+        }
+
+        [TestMethod]
+        public void Resized()
+        {
+            var t = new Tensor(new float[] { 1, 2, 3, 4 }, new Shape(2, 1, 1, 2));
+            var result = t.Resized(1, 3);
+
+            var correct = new Tensor(new float[] { 1, 2, 1, 3, 4, 3 }, new Shape(1, 3, 1, 2));
+
+            Assert.IsTrue(result.Equals(correct));
+        }
+        
+
+        [TestMethod]
         public void ArgMax()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);
