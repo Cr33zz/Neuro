@@ -20,7 +20,7 @@ for (int i = 0; i < 100; ++i)
     tData.Add(new Data() { Input = input, Output = input.Mul(1.7f) });
 }
 
-net.Fit(tData, batchSize, epochs, null, 2, Track.TrainError);
+net.Fit(tData, 10, 50, null, 2, Track.TrainError);
 ```
 
 Sample flow network (streams)
@@ -40,5 +40,5 @@ var inputs = new[] { new Tensor(new float[] { 0, 1 }, new Shape(1, 2)),
 var output = new Tensor(new float[] { 1, 2, 1, 2 }, new Shape(1, 4));
 var trainingData = new List<Data> { new Data(inputs, new []{output}) };
 
-net.Fit(trainingData, 1, 100, null, 0, Track.Nothing, false);
+net.Fit(trainingData, 1, 50, null, 0, Track.Nothing, false);
 ```
