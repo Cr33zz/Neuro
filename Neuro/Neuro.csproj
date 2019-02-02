@@ -63,7 +63,14 @@
   <ItemGroup>
     <Compile Include="Activations.cs" />
     <Compile Include="ChartGenerator.cs" />
+    <Compile Include="ComputationalGraph\Operations\Add.cs" />
+    <Compile Include="ComputationalGraph\Session.cs" />
     <Compile Include="Data.cs" />
+    <Compile Include="ComputationalGraph\Graph.cs" />
+    <Compile Include="ComputationalGraph\NodeBase.cs" />
+    <Compile Include="ComputationalGraph\Operation.cs" />
+    <Compile Include="ComputationalGraph\Placeholder.cs" />
+    <Compile Include="ComputationalGraph\Variable.cs" />
     <Compile Include="Initializers\GlorotNormal.cs" />
     <Compile Include="Initializers\GlorotUniform.cs" />
     <Compile Include="Initializers\Constant.cs" />

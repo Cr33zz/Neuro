@@ -35,6 +35,12 @@ namespace Neuro.Tensors
             Values = (float[])values.Clone();
         }
 
+        public Tensor(float[] values)
+        {
+            Shape = new Shape(values.Length);
+            Values = (float[])values.Clone();
+        }
+
         public Tensor(Tensor t)
         {
             Shape = Shape.From(t.Shape.Dimensions);
@@ -697,10 +703,14 @@ namespace Neuro.Tensors
             string s = "";
             for (int n = 0; n < BatchSize; ++n)
             {
-                s += "{\n  ";
+                if (BatchSize > 1)
+                    s += "{\n  ";
+
                 for (int d = 0; d < Depth; ++d)
                 {
-                    s += "{\n    ";
+                    if (Depth > 1)
+                        s += "{\n    ";
+
                     for (int h = 0; h < Height; ++h)
                     {
                         s += "{ ";
@@ -710,9 +720,13 @@ namespace Neuro.Tensors
                         }
                         s += " }" + (h == Height - 1 ? "\n  " : ",\n    ");
                     }
-                    s += "}" + (d == Depth - 1 ? "\n" : ",\n  ");
+
+                    if (Depth > 1)
+                        s += "}" + (d == Depth - 1 ? "\n" : ",\n  ");
                 }
-                s += "}" + (n < BatchSize - 1 ? "\n" : "");
+
+                if (BatchSize > 1)
+                    s += "}" + (n < BatchSize - 1 ? "\n" : "");
             }
 
             return s;
