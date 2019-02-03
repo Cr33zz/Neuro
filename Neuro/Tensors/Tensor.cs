@@ -130,24 +130,26 @@ namespace Neuro.Tensors
             return output;
         }
 
-        public void FillWithRand(int seed = -1, float min = -1, float max = 1)
+        public Tensor FillWithRand(int seed = -1, float min = -1, float max = 1)
         {
-            Random rng = seed > 0 ? new Random(seed) : Rng;
-            
+            Random rng = seed > 0 ? new Random(seed) : Rng;            
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = min + (max - min) * (float)rng.NextDouble();
+            return this;
         }
 
-        public void FillWithRange(float start = 0, float increment = 1)
+        public Tensor FillWithRange(float start = 0, float increment = 1)
         {
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = start + i * increment;
+            return this;
         }
 
-        public void FillWithValue(float value)
+        public Tensor FillWithValue(float value)
         {
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = value;
+            return this;
         }
 
         public void Zero()

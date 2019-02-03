@@ -20,7 +20,8 @@ namespace Neuro.ComputationalGraph
             return inputs[0].Add(inputs[1]);
         }
 
-        internal NodeBase[] InputNodes;
+        public abstract Tensor[] ComputeGradient(Tensor grad);
+
         protected Tensor[] Inputs;
     }
 }

@@ -7,6 +7,7 @@ namespace Neuro.ComputationalGraph
     {
         public string Name { get; protected set; }
         internal List<NodeBase> Consumers = new List<NodeBase>();
+        internal NodeBase[] InputNodes;
         internal Tensor Output;
     }
 }
