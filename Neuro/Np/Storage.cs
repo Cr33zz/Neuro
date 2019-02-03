@@ -83,14 +83,13 @@ namespace Neuro
             public float GetData(params int[] indexes)
             {
                 float element;
+
                 if (indexes.Length == Shape.NDim)
                     element = Values[Shape.GetIndexInShape(indexes)];
                 else if (Shape.Dimensions.Last() == 1)
                     element = Values[Shape.GetIndexInShape(indexes)];
                 else if (indexes.Length == 1)
-                {
                     element = Values[indexes[0]];
-                }
                 else
                     throw new Exception("indexes must be equal to number of dimension.");
                 return element;

@@ -2,10 +2,7 @@
 {
     public partial class np
     {
-        public static Array zeros(params int[] dims)
-        {
-            return new Array(new Shape(dims));
-        }
+        public static Array zeros(params int[] dims) => new Array(new Shape(dims));
 
         public static Array ones(params int[] dims)
         {
