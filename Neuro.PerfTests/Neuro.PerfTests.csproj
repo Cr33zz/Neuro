@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Neuro.PerfTests</RootNamespace>
     <AssemblyName>Neuro.PerfTests</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -34,7 +34,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Neuro.PerfTests.ComputationalGraphTest</StartupObject>
+    <StartupObject>Neuro.PerfTests.NpArrayPerfTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Neuro, Version=1.0.6896.28855, Culture=neutral, processorArchitecture=AMD64">
@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ComputationalGraphTest.cs" />
+    <Compile Include="NpArrayPerfTests.cs" />
     <Compile Include="SimpleNetPerfTests.cs" />
     <Compile Include="TensorPerfTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
