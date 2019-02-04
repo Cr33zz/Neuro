@@ -40,7 +40,7 @@ namespace Neuro
                 int idx = 0;
                 for (int i = 0; i < select.Length; i++)
                 {
-                    idx += DimOffset[i] * select[i];
+                    idx += DimOffset[i] * (select[i] < 0 ? Dimensions[i] + select[i] : select[i]);
                 }
 
                 return idx;

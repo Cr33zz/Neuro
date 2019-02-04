@@ -13,21 +13,21 @@ namespace Neuro
             {
                 Values = new float[1];
                 Shape = new Shape(1);
-                TensorLayout = 1;
+                TensorLayout = 2;
             }
 
             public Storage(System.Array values)
             {
-                Allocate(values, 1);
+                Allocate(values, 2);
                 SetData(ToFloatArray(values));
             }
 
             public Storage(Shape shape)
             {
-                Allocate(shape, 1);
+                Allocate(shape, 2);
             }
 
-            public void Allocate(Shape shape, int tensorOrder = 1)
+            public void Allocate(Shape shape, int tensorOrder = 2)
             {
                 Shape = shape;
                 Shape.ChangeTensorLayout(tensorOrder);
@@ -35,7 +35,7 @@ namespace Neuro
                 TensorLayout = tensorOrder;
             }
 
-            public void Allocate(System.Array values, int tensorOrder = 1)
+            public void Allocate(System.Array values, int tensorOrder = 2)
             {
                 int[] dims = new int[values.Rank];
                 for (int i = 0; i < dims.Length; ++i)
@@ -69,17 +69,6 @@ namespace Neuro
                 return (float[])Values.Clone();
             }
 
-            public T[] GetData<T>()
-            {
-                return (Values as T[]);
-            }
-            
-            public T[] CloneData<T>()
-            {
-                var clone = CloneData();
-                return (clone as T[]);
-            }
-            
             public float GetData(params int[] indexes)
             {
                 float element;
