@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Globalization;
+using System.Linq;
 
 namespace Neuro
 {
@@ -8,11 +10,32 @@ namespace Neuro
         {
             public override string ToString()
             {
-                return ToStringRecursive(this, new int[]{}, " ", 75);
+                return ToStringRecursive(this, new int[]{}, " ", 75, new Dragon4FloatFormatter(Data()));
             }
 
-			//private void ToStringRecursive(string str, int[] indices,hanging_indentint axisIndex, int valuePad)
-			private static string ToStringRecursive(Array a, int[] index, string hanging_indent, int curr_width)
+            private class Dragon4FloatFormatter
+            {
+	            public Dragon4FloatFormatter(float[] a)
+	            {
+		            for (int i = 0; i < a.Length; ++i)
+		            {
+			            string[] s = a[i].ToString("0.0######", CultureInfo.InvariantCulture).Split('.');
+			            PadLeft = Math.Max(PadLeft, s[0].Length);
+			            PadRight = Math.Max(PadRight, s[1].Length);
+					}
+	            }
+
+	            public string FormatValue(float v)
+	            {
+					string[] s = v.ToString("0.0######", CultureInfo.InvariantCulture).Split('.');
+					return s[0].PadLeft(PadLeft) + '.' + s[1].PadRight(PadRight);
+	            }
+
+	            private int PadLeft;
+	            private int PadRight;
+            }
+
+			private static string ToStringRecursive(Array a, int[] index, string hanging_indent, int curr_width, Dragon4FloatFormatter formatter)
 			{
 				string separator = " ";
 
@@ -20,7 +43,7 @@ namespace Neuro
 				int axes_left = a.NDim - axis;
 
 				if (axes_left == 0)
-					return a[index].ToString();
+					return formatter.FormatValue(a[index]);
 
 				// when recursing, add a space to align with the [ added, and reduce the
 				// length of the line by 1
@@ -46,19 +69,19 @@ namespace Neuro
 
 					for (int i = 0; i < leading_items; ++i)
 					{
-						word = ToStringRecursive(a, index.Concat(new[] {i}).ToArray(), next_hanging_indent, next_width);
+						word = ToStringRecursive(a, index.Concat(new[] {i}).ToArray(), next_hanging_indent, next_width, formatter);
 						(s, line) = ExtendLine(s, line, word, elem_width, hanging_indent);
 						line += separator;
 					}
 
 					for (int i = trailing_items; i > 1; --i)
 					{
-						word = ToStringRecursive(a, index.Concat(new[] {-i}).ToArray(), next_hanging_indent, next_width);
+						word = ToStringRecursive(a, index.Concat(new[] {-i}).ToArray(), next_hanging_indent, next_width, formatter);
 						(s, line) = ExtendLine(s, line, word, elem_width, hanging_indent);
 						line += separator;
 					}
 
-					word = ToStringRecursive(a, index.Concat(new[] {-1}).ToArray(), next_hanging_indent, next_width);
+					word = ToStringRecursive(a, index.Concat(new[] {-1}).ToArray(), next_hanging_indent, next_width, formatter);
 					(s, line) = ExtendLine(s, line, word, elem_width, hanging_indent);
 
 					s += line;
@@ -73,17 +96,17 @@ namespace Neuro
 
 					for (int i = 0; i < leading_items; ++i)
 					{
-						nested = ToStringRecursive(a, index.Concat(new[] { i }).ToArray(), next_hanging_indent, next_width);
+						nested = ToStringRecursive(a, index.Concat(new[] { i }).ToArray(), next_hanging_indent, next_width, formatter);
 						s += hanging_indent + nested + line_sep;
 					}
 
 					for (int i = trailing_items; i > 1; --i)
 					{
-						nested = ToStringRecursive(a, index.Concat(new[] { -i }).ToArray(), next_hanging_indent, next_width);
+						nested = ToStringRecursive(a, index.Concat(new[] { -i }).ToArray(), next_hanging_indent, next_width, formatter);
 						s += hanging_indent + nested + line_sep;
 					}
 
-					nested = ToStringRecursive(a, index.Concat(new[] { -1 }).ToArray(), next_hanging_indent, next_width);
+					nested = ToStringRecursive(a, index.Concat(new[] { -1 }).ToArray(), next_hanging_indent, next_width, formatter);
 
 					s += hanging_indent + nested;
 				}
