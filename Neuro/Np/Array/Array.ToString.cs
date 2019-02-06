@@ -19,16 +19,16 @@ namespace Neuro
 	            {
 		            for (int i = 0; i < a.Length; ++i)
 		            {
-			            string[] s = a[i].ToString("0.0######", CultureInfo.InvariantCulture).Split('.');
+			            string[] s = a[i].ToString("0.######", CultureInfo.InvariantCulture).Split('.');
 			            PadLeft = Math.Max(PadLeft, s[0].Length);
-			            PadRight = Math.Max(PadRight, s[1].Length);
+			            PadRight = Math.Max(PadRight, s.Length > 1 ? s[1].Length : 0);
 					}
 	            }
 
 	            public string FormatValue(float v)
 	            {
-					string[] s = v.ToString("0.0######", CultureInfo.InvariantCulture).Split('.');
-					return s[0].PadLeft(PadLeft) + '.' + s[1].PadRight(PadRight);
+					string[] s = v.ToString("0.######", CultureInfo.InvariantCulture).Split('.');
+					return s[0].PadLeft(PadLeft) + '.' + (s.Length > 1 ? s[1] : "").PadRight(PadRight);
 	            }
 
 	            private int PadLeft;
