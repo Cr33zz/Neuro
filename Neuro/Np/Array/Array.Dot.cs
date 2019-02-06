@@ -1,75 +1,112 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
+//based on PyArray_MatrixProduct2 from https://raw.githubusercontent.com/numpy/numpy/master/numpy/core/src/multiarray/multiarraymodule.c
 namespace Neuro
 {
 	public partial class np
 	{
 		public partial class Array
 		{
-			public Array dot(Array nd2)
+			public Array dot(Array a2)
 			{
-				var pufferShape = nd2.Storage.Shape;
+				Array ap1 = this;
+				Array ap2 = a2;
+				float[] ap1Buf = ap1.Data();
+				float[] ap2Buf = ap2.Data();
 
-				// in case must do a reshape
-				var oldStorage1 = Storage;
-				var oldStorage2 = nd2.Storage;
-
-				if ((NDim == 1) && (nd2.NDim == 1))
+				int nd, axis, matchDim;
+				int is1, is2;
+				int[] dimensions = new int[NPY_MAXDIMS];
+				
+				if (ap1.NDim == 0 || a2.NDim == 0)
 				{
-					if (Shape[0] != nd2.Shape[0])
-						throw new IncorrectShapeException();
-					else
+					return ap1 * ap2;
+				}
+				int l = ap1.Dims[NDim - 1];
+				if (a2.NDim > 1)
+				{
+					matchDim = a2.NDim - 2;
+				}
+				else
+				{
+					matchDim = 0;
+				}
+				if (ap2.Dims[matchDim] != l)
+				{
+					throw new Exception("dot: dimensions alignment error");
+				}
+				nd = NDim + a2.NDim - 2;
+				if (nd > NPY_MAXDIMS)
+				{
+					throw new Exception("dot: too many dimensions in result");
+				}
+				int j = 0;
+				for (int i = 0; i < NDim - 1; i++)
+				{
+					dimensions[j++] = ap1.Dims[i];
+				}
+				for (int i = 0; i < a2.NDim - 2; i++)
+				{
+					dimensions[j++] = ap2.Dims[i];
+				}
+				if (a2.NDim > 1)
+				{
+					dimensions[j++] = ap2.Dims[a2.NDim - 1];
+				}
+
+				is1 = ap1.Strides[NDim - 1];
+				is2 = ap2.Strides[matchDim];
+				/* Choose which subtype to return */
+				int[] outputDims = new int[nd];
+				for (int i = 0; i < nd; ++i)
+					outputDims[i] = dimensions[i];
+
+				Array result = new Array(outputDims);
+				float[] outbuf = result.Data();				
+				int op = 0;
+				axis = NDim - 1;
+				Iter it1 = ap1.IterAllButAxis(axis);
+				Iter it2 = ap2.IterAllButAxis(matchDim);
+
+				while (it1.index < it1.size)
+				{
+					while (it2.index < it2.size)
 					{
-						Storage = new Storage();
-						Storage.Allocate(new Shape(1, oldStorage1.GetData().Length));
-						Storage.SetData(oldStorage1.GetData());
-
-						nd2.Storage = new Storage();
-						nd2.Storage.Allocate(new Shape(oldStorage2.GetData().Length));
-						nd2.Storage.SetData(oldStorage2.GetData());
+						FloatDot(ap1Buf,it1.dataptr, is1, ap2Buf, it2.dataptr, is2, outbuf, op, l);
+						op += 1;
+						it2.Next();
 					}
-				}
-				else if (Shape[1] != nd2.Shape[0])
-					throw new IncorrectShapeException();
-
-				if ((NDim == 2) && (nd2.NDim == 1))
-				{
-					var pufferList = pufferShape.Dimensions.ToList();
-					pufferList.Add(1);
-					nd2.Storage.Reshape(pufferList.ToArray());
+					it1.Next();
+					it2.Reset();
 				}
 
-				int iterator = Shape[1];
-				int dim0 = Shape[0];
-				int dim1 = nd2.Shape[1];
+				return result;
+			}
 
-				var prod = new Array(new Shape(dim0, dim1));
+			private delegate void FloatDotFunc(float[] a, int idxa, int stridea, float[] b, int idxb, int strideb, float[] res, int idxres, int n);
+			private static FloatDotFunc FloatDot = SimpleFloatDot;
 
-				float[] nd1Array = Storage.GetData();
-				float[] result = prod.Storage.GetData();
-				float[] nd2Array = nd2.Storage.GetData();
+			private static void SimpleFloatDot(float[] a, int idxa, int stridea, float[] b, int idxb, int strideb, float[] res, int idxres, int n)
+			{
+				float prod = 0;
+				for (int i = 0; i < n; ++i)
+					prod += a[idxa + stridea * i] * b[idxb + strideb * i];
+				res[idxres] = prod;
+			}
 
-				for (int idx = 0; idx < prod.Size; idx++)
-				{
-					int puffer1 = idx % dim0;
-					int puffer2 = idx / dim0;
-					int puffer3 = puffer2 * iterator;
-					for (int kdx = 0; kdx < iterator; kdx++)
-						result[idx] += nd2Array[puffer3 + kdx] * nd1Array[dim0 * kdx + puffer1];
-				}
+			//https://www.csie.ntu.edu.tw/~azarc/sna/numpy-1.3.0/numpy/core/blasdot/_dotblas.c
+			private static void BlasFloatDot(float[] a, int idxa, int stridea, float[] b, int idxb, int strideb, float[] res, int idxres, int n)
+			{
+				//int na = stridea;
+				//int nb = strideb;
 
-				if ((NDim == 1) & (nd2.NDim == 1))
-				{
-					Storage.Reshape(Storage.GetData().Length);
-					nd2.Storage.Reshape(nd2.Storage.GetData().Length);
-					prod.Storage.Reshape(1);
-				}
-
-				Storage = oldStorage1;
-				nd2.Storage = oldStorage2;
-
-				return prod;
+				//if ((na >= 0) && (nb >= 0))
+				//	cblas_sdot((int)n, (float*)a, na, (float*)b, nb);
+				//else
+				//	SimpleFloatDot(a, idxa, stridea, b, idxb, strideb, res, idxres, n);
+				throw new NotImplementedException();
 			}
 		}
 	}

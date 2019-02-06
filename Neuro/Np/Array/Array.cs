@@ -6,9 +6,10 @@ namespace Neuro
     {
         public partial class Array : ICloneable
         {
-            public Array()
+            public Array(float val = 0)
             {
                 Storage = new Storage();
+				Storage.SetData(val, 0);
             }
 
             public Array(System.Array values)
@@ -55,6 +56,8 @@ namespace Neuro
             }
 
             public int[] Shape => Storage.Shape.Dimensions;
+            public int[] Dims => Storage.Shape.Dimensions;
+            public int[] Strides => Storage.Shape.DimOffset;
             public Shape GetShape() => Storage.Shape;
             public int NDim => Storage.Shape.NDim;
             public int Size => Storage.Shape.Size;

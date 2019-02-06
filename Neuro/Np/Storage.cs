@@ -12,7 +12,7 @@ namespace Neuro
             public Storage()
             {
                 Values = new float[1];
-                Shape = new Shape(1);
+                Shape = new Shape();
                 TensorLayout = 2;
             }
 
@@ -75,8 +75,10 @@ namespace Neuro
 
                 if (indexes.Length == Shape.NDim)
                     element = Values[Shape.GetIndexInShape(indexes)];
-                else if (Shape.Dimensions.Last() == 1)
-                    element = Values[Shape.GetIndexInShape(indexes)];
+                else if (Shape.Dimensions.Length == 0)
+	                element = Values[0];
+				else if (Shape.Dimensions.Last() == 1)
+					element = Values[Shape.GetIndexInShape(indexes)];
                 else if (indexes.Length == 1)
                     element = Values[indexes[0]];
                 else

@@ -18,8 +18,13 @@
             return new Array(values);
         }
 
-        // Returns a reshaped copy of a.
-        public static Array reshape(Array a, params int[] dims)
+		public static Array array(float val)
+		{
+			return new Array(val);
+		}
+
+		// Returns a reshaped copy of a.
+		public static Array reshape(Array a, params int[] dims)
         {
             var result = (Array)a.Clone();
             return result.Reshape(dims);

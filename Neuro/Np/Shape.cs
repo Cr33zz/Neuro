@@ -37,7 +37,11 @@ namespace Neuro
 
             public int GetIndexInShape(params int[] select)
             {
-                int idx = 0;
+				if (NDim == 0)
+					return 0;
+
+				int idx = 0;
+
                 for (int i = 0; i < select.Length; i++)
                 {
                     idx += DimOffset[i] * (select[i] < 0 ? Dimensions[i] + select[i] : select[i]);
@@ -91,9 +95,8 @@ namespace Neuro
             {
                 Dimensions = dims;
                 DimOffset = new int[Dimensions.Length];
-                TensorLayout = 1;
-
-                Size = 1;
+                TensorLayout = 2;
+				Size = 1;
 
                 foreach (int dimSize in dims)
                     Size *= dimSize;

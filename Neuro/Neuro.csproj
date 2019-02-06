@@ -66,6 +66,7 @@
     <Compile Include="Np\Array\Array.Division.cs" />
     <Compile Include="Np\Array\Array.Dot.cs" />
     <Compile Include="Np\Array\Array.Exceptions.cs" />
+    <Compile Include="Np\Array\Array.Iterator.cs" />
     <Compile Include="Np\Array\Array.Max.cs" />
     <Compile Include="Np\Array\Array.Mean.cs" />
     <Compile Include="Np\Array\Array.Multiplication.cs" />
