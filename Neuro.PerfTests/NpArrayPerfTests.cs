@@ -8,23 +8,10 @@ namespace Neuro.PerfTests
         static void Main(string[] args)
         {
             //var x = np.array(new float[] {1, 2, 3, 4});            
-            var x = new np.Array(new[,,,]{{{{1.45,2,1},
-                              {3,4,1}},
-                              {{1,7,1},
-                              {3,49.6,1}},
-                              {{1,2,1},
-                              {3,4,1}},
-                              {{1,7,1},
-                              {3,249.5,1}}},
-                              {{{1,2,1},
-                              {3,4,1}},
-                              {{1,7,1},
-                              {3,49,1}},
-                              {{1,2,1},
-                              {3,4,1}},
-                              {{1,7,1},
-                              {3.6667,49,1}}}});
-            Trace.WriteLine(x);
+            var x = new np.Array(new[,,]{{{1,2},{3,4}},{ { 5, 6 }, { 7, 8 } } });
+            var y = np.array(new[,] {{1, 0}, {0, 1}});
+
+            Trace.WriteLine(x.dot(y));
         }
     }
 }

@@ -61,7 +61,7 @@ namespace Neuro
             public float[] Data() => Storage.GetData();
             public float[] CloneData() => Storage.CloneData();
 
-            private Storage Storage;
+            public Storage Storage { get; private set; }
         }
     }
 }
