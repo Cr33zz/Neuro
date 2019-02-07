@@ -12,7 +12,7 @@ namespace Neuro
             {
 	            Array ap = this;
 	            int n;
-				int[] permutation = new int[NPY_MAXDIMS], reverse_permutation = new int[NPY_MAXDIMS];
+				int[] permutation = new int[NPY_MAXDIMS];
 
 				if (permute.Length == 0)
 				{
@@ -24,34 +24,32 @@ namespace Neuro
 				}
 				else
 				{
-					throw new NotImplementedException();
-					//int axes;
-					//n = permute.Length;
-					//axes = permute->ptr;
-					//if (n != ap.NDim)
-					//{
-					//	throw new Exception("axes don't match array");
-					//}
-					//for (int i = 0; i < n; i++)
-					//{
-					//	reverse_permutation[i] = -1;
-					//}
-					//for (int i = 0; i < n; i++)
-					//{
-					//	int axis = axes[i];
-					//	if (check_and_adjust_axis(&axis, PyArray_NDIM(ap)) < 0)
-					//	{
-					//		return NULL;
-					//	}
-					//	if (reverse_permutation[axis] != -1)
-					//	{
-					//		PyErr_SetString(PyExc_ValueError,
-					//						"repeated axis in transpose");
-					//		return NULL;
-					//	}
-					//	reverse_permutation[axis] = i;
-					//	permutation[i] = axis;
-					//}
+					int[] reverse_permutation = new int[NPY_MAXDIMS];
+
+					n = permute.Length;
+					var axes = permute;
+					if (n != ap.NDim)
+					{
+						throw new Exception("axes don't match array");
+					}
+					for (int i = 0; i < n; i++)
+					{
+						reverse_permutation[i] = -1;
+					}
+					for (int i = 0; i < n; i++)
+					{
+						int axis = axes[i];
+						if (check_and_adjust_axis(ref axis, ap.NDim) < 0)
+						{
+							return null;
+						}
+
+						if (reverse_permutation[axis] != -1)
+							throw new Exception("repeated axis in transpose");
+
+						reverse_permutation[axis] = i;
+						permutation[i] = axis;
+					}
 				}
 
 				var ret = (Array)ap.Clone();

@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activations.cs" />
+    <Compile Include="Np\Array\Array.Common.cs" />
     <Compile Include="Np\Array\Array.cs" />
     <Compile Include="Np\Array\Array.Division.cs" />
     <Compile Include="Np\Array\Array.Dot.cs" />
