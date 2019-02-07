@@ -10,7 +10,7 @@ namespace Neuro
         {
             public override string ToString()
             {
-                return ToStringRecursive(this, new int[]{}, " ", 75, new Dragon4FloatFormatter(Data()));
+	            return ToStringRecursive(this, new int[]{}, " ", 75, new Dragon4FloatFormatter(Data()));
             }
 
             private class Dragon4FloatFormatter
@@ -51,7 +51,7 @@ namespace Neuro
 				int next_width = curr_width - 1;
 
 
-				int a_len = a.Shape[axis];
+				int a_len = a.Dims[axis];
 				int leading_items = 0;
 				int trailing_items = a_len;
 

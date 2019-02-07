@@ -10,10 +10,10 @@ namespace Neuro
             {
                 int scalarNo = a1.NDim == 0 ? 1 : (a2.NDim == 0 ? 2 : 0);
 
-                if (scalarNo == 0 && a1.Shape != a2.Shape)
+                if (scalarNo == 0 && a1.Dims != a2.Dims)
                     throw new IncorrectShapeException();
 
-                Array result = scalarNo == 1 ? new Array(a2.Shape) : new Array(a1.Shape);
+                Array result = scalarNo == 1 ? new Array(a2.Dims) : new Array(a1.Dims);
 
                 return (scalarNo, result, result.Storage.GetData(), a1.Storage.GetData(), a2.Storage.GetData());
             }

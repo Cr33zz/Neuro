@@ -159,15 +159,13 @@ namespace Neuro
 							if (coordinates[__npy_i] < dims_m1[__npy_i])
 							{
 								coordinates[__npy_i]++;
-								dataptr +=
-								strides[__npy_i];
+								dataptr += strides[__npy_i];
 								break;
 							}
 							else
 							{
 								coordinates[__npy_i] = 0;
-								dataptr -=
-								backstrides[__npy_i];
+								dataptr -= backstrides[__npy_i];
 							}
 						}
 					}
@@ -181,8 +179,7 @@ namespace Neuro
 					{
 						if (destination[__npy_i] < 0)
 						{
-							destination[__npy_i] +=
-							dims_m1[__npy_i] + 1;
+							destination[__npy_i] += dims_m1[__npy_i] + 1;
 						}
 						dataptr += destination[__npy_i] * strides[__npy_i];
 						coordinates[__npy_i] = destination[__npy_i];

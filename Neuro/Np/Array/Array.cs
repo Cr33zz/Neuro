@@ -44,8 +44,7 @@ namespace Neuro
             public object Clone()
             {
                 var clone = new Array();
-                clone.Storage.Allocate(Storage.Shape, Storage.TensorLayout);
-                clone.Storage.SetData(Storage.CloneData());
+                clone.Storage = (Storage)Storage.Clone();
                 return clone;
             }
 
@@ -55,9 +54,9 @@ namespace Neuro
                 set { Storage.SetData(value, select); }
             }
 
-            public int[] Shape => Storage.Shape.Dimensions;
+            //public int[] Shape => Storage.Shape.Dimensions;
             public int[] Dims => Storage.Shape.Dimensions;
-            public int[] Strides => Storage.Shape.DimOffset;
+            public int[] Strides => Storage.Shape.Strides;
             public Shape GetShape() => Storage.Shape;
             public int NDim => Storage.Shape.NDim;
             public int Size => Storage.Shape.Size;

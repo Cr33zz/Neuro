@@ -19,10 +19,8 @@ namespace Neuro
             }
 
             public int[] Dimensions { get; private set; }
-            public int[] DimOffset { get; private set; }
+            public int[] Strides { get; private set; }
             public int Size { get; private set; }
-            // Row (0) or column (1) wise order
-            public int TensorLayout { get; private set; }
             public int NDim => Dimensions.Length;
 
             public (int, int) BiShape => Dimensions.Length == 2 ? (Dimensions[0], Dimensions[1]) : (0, 0);
@@ -44,7 +42,7 @@ namespace Neuro
 
                 for (int i = 0; i < select.Length; i++)
                 {
-                    idx += DimOffset[i] * (select[i] < 0 ? Dimensions[i] + select[i] : select[i]);
+                    idx += Strides[i] * (select[i] < 0 ? Dimensions[i] + select[i] : select[i]);
                 }
 
                 return idx;
@@ -53,80 +51,41 @@ namespace Neuro
             public int[] GetDimIndexOutShape(int select)
             {
                 int[] dimIndexes = null;
-                if (this.DimOffset.Length == 1)
-                    dimIndexes = new[] {select};
-                else if (TensorLayout == 1)
+                if (Strides.Length == 1)
                 {
-                    int counter = select;
-                    dimIndexes = new int[DimOffset.Length];
-
-                    for (int idx = DimOffset.Length - 1; idx > -1; idx--)
-                    {
-                        dimIndexes[idx] = counter / DimOffset[idx];
-                        counter -= dimIndexes[idx] * DimOffset[idx];
-                    }
+	                dimIndexes = new[] {select};
                 }
                 else
                 {
                     int counter = select;
-                    dimIndexes = new int[DimOffset.Length];
+                    dimIndexes = new int[Strides.Length];
 
-                    for (int idx = 0; idx < DimOffset.Length; idx++)
+                    for (int idx = 0; idx < Strides.Length; idx++)
                     {
-                        dimIndexes[idx] = counter / DimOffset[idx];
-                        counter -= dimIndexes[idx] * DimOffset[idx];
+                        dimIndexes[idx] = counter / Strides[idx];
+                        counter -= dimIndexes[idx] * Strides[idx];
                     }
                 }
 
                 return dimIndexes;
             }
 
-            public void ChangeTensorLayout(int layout)
-            {
-                DimOffset = new int[Dimensions.Length];
-
-                layout = (layout == 0) ? 1 : layout;
-
-                TensorLayout = layout;
-                SetDimOffset();
-            }
-
             public void ReShape(params int[] dims)
             {
                 Dimensions = dims;
-                DimOffset = new int[Dimensions.Length];
-                TensorLayout = 2;
 				Size = 1;
 
                 foreach (int dimSize in dims)
                     Size *= dimSize;
 
-                SetDimOffset();
-            }
-
-            protected void SetDimOffset()
-            {
-                if (Dimensions.Length == 0)
-                {
-
-                }
-                else
-                {
-                    if (TensorLayout == 1)
-                    {
-                        DimOffset[0] = 1;
-
-                        for (int idx = 1; idx < DimOffset.Length; idx++)
-                            DimOffset[idx] = DimOffset[idx - 1] * Dimensions[idx - 1];
-                    }
-                    else if (TensorLayout == 2)
-                    {
-                        DimOffset[DimOffset.Length - 1] = 1;
-                        for (int idx = DimOffset.Length - 1; idx >= 1; idx--)
-                            DimOffset[idx - 1] = DimOffset[idx] * Dimensions[idx];
-                    }
-                }
-            }
+				Strides = new int[Dimensions.Length];
+				if (Dimensions.Length > 0)
+				{
+					Strides[Strides.Length - 1] = 1;
+					for (int idx = Strides.Length - 1; idx >= 1; idx--)
+						Strides[idx - 1] = Strides[idx] * Dimensions[idx];
+				}
+			}
 
             public static bool operator ==(Shape a, Shape b)
             {

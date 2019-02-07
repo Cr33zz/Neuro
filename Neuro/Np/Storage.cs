@@ -13,50 +13,32 @@ namespace Neuro
             {
                 Values = new float[1];
                 Shape = new Shape();
-                TensorLayout = 2;
             }
 
             public Storage(System.Array values)
             {
-                Allocate(values, 2);
+                Allocate(values);
                 SetData(ToFloatArray(values));
             }
 
             public Storage(Shape shape)
             {
-                Allocate(shape, 2);
+                Allocate(shape);
             }
 
-            public void Allocate(Shape shape, int tensorOrder = 2)
+            public void Allocate(Shape shape)
             {
                 Shape = shape;
-                Shape.ChangeTensorLayout(tensorOrder);
                 Values = new float[Shape.Size];
-                TensorLayout = tensorOrder;
             }
 
-            public void Allocate(System.Array values, int tensorOrder = 2)
+            public void Allocate(System.Array values)
             {
                 int[] dims = new int[values.Rank];
                 for (int i = 0; i < dims.Length; ++i)
                     dims[i] = values.GetLength(i);
 
-                Allocate(new Shape(dims), tensorOrder);
-            }
-
-            public Storage GetColumWiseStorage()
-            {
-                if (TensorLayout != 2)
-                    ChangeRowToColumnLayout();
-
-                return this;
-            }
-            public Storage GetRowWiseStorage()
-            {
-                if (TensorLayout != 1)
-                    ChangeColumnToRowLayout();
-
-                return this;
+                Allocate(new Shape(dims));
             }
 
             public float[] GetData()
@@ -96,86 +78,17 @@ namespace Neuro
                 Values[Shape.GetIndexInShape(indexes)] = value;
             }
             
-            public void SetNewShape(params int[] dimensions)
-            {
-                Shape = new Shape(dimensions);
-            }
-
             public void Reshape(params int[] dimensions)
             {
-                if (TensorLayout == 2)
-                {
-                    Shape = new Shape(dimensions);
-                }
-                else
-                {
-                    ChangeTensorLayout(2);
-                    Shape = new Shape(dimensions);
-                    Shape.ChangeTensorLayout(2);
-                    ChangeTensorLayout(1);
-                }
+                Shape = new Shape(dimensions);                
             }
 
             public object Clone()
             {
                 var clone = new Storage();
-                clone.Allocate(new Shape(Shape.Dimensions), TensorLayout);
+                clone.Allocate(new Shape(Shape.Dimensions));
                 clone.SetData((float[])Values.Clone());
                 return clone;
-            }
-
-            public void ChangeTensorLayout(int layout)
-            {
-                if (layout != TensorLayout)
-                    if (TensorLayout == 1)
-                        ChangeRowToColumnLayout();
-                    else
-                        ChangeColumnToRowLayout();
-            }
-
-            protected void ChangeRowToColumnLayout()
-            {
-                if (Shape.NDim == 1)
-                {
-
-                }
-                else
-                {
-                    var puffer = new float[Values.Length];
-
-                    var pufferShape = new Shape(Shape.Dimensions);
-                    pufferShape.ChangeTensorLayout(2);
-
-                    for (int idx = 0; idx < Values.Length; idx++)
-                        puffer[pufferShape.GetIndexInShape(Shape.GetDimIndexOutShape(idx))] = Values[idx];
-
-                    Values = puffer;
-                }
-
-                Shape.ChangeTensorLayout(2);
-                TensorLayout = 2;
-            }
-            protected void ChangeColumnToRowLayout()
-            {
-                if (Shape.NDim == 1)
-                {
-
-                }
-                else
-                {
-                    var puffer = new float[Values.Length];
-
-                    var pufferShape = new Shape(Shape.Dimensions);
-                    pufferShape.ChangeTensorLayout(1);
-
-                    for (int idx = 0; idx < Values.Length; idx++)
-                        puffer[pufferShape.GetIndexInShape(Shape.GetDimIndexOutShape(idx))] = Values[idx];
-
-                    Values = puffer;
-                }
-
-                Shape.ChangeTensorLayout(1);
-                TensorLayout = 1;
             }
 
             public static float[] ToFloatArray(System.Array array)
@@ -205,7 +118,6 @@ namespace Neuro
             }
 
             public Shape Shape { get; private set; }
-            public int TensorLayout { get; private set; }
             private float[] Values;
         }
     }
