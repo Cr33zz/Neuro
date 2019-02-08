@@ -9,7 +9,7 @@ namespace Neuro
 	{
 		public partial class Array
 		{
-			public Array dot(Array a2)
+			public Array Dot(Array a2)
 			{
 				Array ap1 = this;
 				Array ap2 = a2;

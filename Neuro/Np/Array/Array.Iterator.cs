@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-//based on https://github.com/numpy/numpy/blob/master/numpy/core/src/multiarray/iterators.c and 
+﻿//based on https://github.com/numpy/numpy/blob/master/numpy/core/src/multiarray/iterators.c and 
 //https://github.com/numpy/numpy/blob/master/numpy/core/include/numpy/ndarraytypes.h
 namespace Neuro
 {
@@ -12,19 +6,12 @@ namespace Neuro
 	{
 		public partial class Array
 		{
-			private const int NPY_MAXDIMS = 16; // 32 in NumPy
-
-			public Iter IterNew()
-			{
-				return new Iter(this);
-			}
-
 			// Get Iterator that iterates over all but one axis (don't use this with GoTo1D).
 			// The axis will be over-written if negative with the axis having the smallest stride.
 			public Iter IterAllButAxis(int axis)
 			{
 				Array arr = this;
-				var it = IterNew();
+				var it = new Iter(this);
 
 				if (arr.NDim == 0)
 				{
@@ -171,19 +158,19 @@ namespace Neuro
 					}
 				}
 
-				public void GoTo(params int[] destination)
+				public void GoTo(params int[] dest)
 				{
 					index = 0;
 					dataptr = 0;
 					for (int __npy_i = nd_m1; __npy_i >= 0; __npy_i--)
 					{
-						if (destination[__npy_i] < 0)
+						if (dest[__npy_i] < 0)
 						{
-							destination[__npy_i] += dims_m1[__npy_i] + 1;
+							dest[__npy_i] += dims_m1[__npy_i] + 1;
 						}
-						dataptr += destination[__npy_i] * strides[__npy_i];
-						coordinates[__npy_i] = destination[__npy_i];
-						index += destination[__npy_i] * (__npy_i == nd_m1 ? 1 : dims_m1[__npy_i + 1] + 1);
+						dataptr += dest[__npy_i] * strides[__npy_i];
+						coordinates[__npy_i] = dest[__npy_i];
+						index += dest[__npy_i] * (__npy_i == nd_m1 ? 1 : dims_m1[__npy_i + 1] + 1);
 					}
 				}
 

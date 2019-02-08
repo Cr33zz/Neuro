@@ -17,7 +17,8 @@ namespace Neuro.PerfTests
             var v = np.array(2);
 
 			//Trace.WriteLine(x.dot(v));
-			Trace.WriteLine(x.T);
+			//Trace.WriteLine(x.T);
+			Trace.WriteLine(x + y);
 			Trace.WriteLine(string.Join(",", x.T.Strides));
 		}
     }
