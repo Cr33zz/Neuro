@@ -8,28 +8,18 @@ namespace Neuro
         {
             public static Array operator -(Array a1, Array a2)
             {
-                (var scalarNo, var result, var resultArr, var a1Arr, var a2Arr) = GetElementWiseOpData(a1, a2);
+				MultiIter mit = new MultiIter(a1, a2);
+				Array result = new Array(mit.dimensions);
+				float[] resultArr = result.Data();
 
-                if (scalarNo == 0)
-                {
-                    for (int idx = 0; idx < resultArr.Length; idx++)
-                        resultArr[idx] = a1Arr[idx] - a2Arr[idx];
-                }
-                else if (scalarNo == 1)
-                {
-                    float scalar = a1Arr[0];
-                    for (int idx = 0; idx < resultArr.Length; idx++)
-                        resultArr[idx] = scalar - a2Arr[idx];
-                }
-                else if (scalarNo == 2)
-                {
-                    float scalar = a2Arr[0];
-                    for (int idx = 0; idx < resultArr.Length; idx++)
-                        resultArr[idx] = a1Arr[idx] - scalar;
-                }
+				while (mit.NotDone())
+				{
+					resultArr[mit.index] = mit.Data(0) - mit.Data(1);
+					mit.Next();
+				}
 
-                return result;
-            }
+				return result;
+			}
         }
     }
 }
