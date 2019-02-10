@@ -39,8 +39,8 @@ namespace Neuro.Layers
             base.OnClone(source);
 
             var sourceConv = source as Convolution;
-            Kernels = sourceConv.Kernels.Clone();
-            Bias = sourceConv.Bias.Clone();
+            Kernels = sourceConv.Kernels?.Clone();
+            Bias = sourceConv.Bias?.Clone();
             UseBias = sourceConv.UseBias;
         }
 
@@ -53,8 +53,10 @@ namespace Neuro.Layers
             Bias.CopyTo(targetConv.Bias, tau);
         }
 
-        protected override void Init()
+        protected override void OnInit()
         {
+			base.OnInit();
+
             Kernels = new Tensor(new Shape(FilterSize, FilterSize, InputShape.Depth, FiltersNum));
             Bias = new Tensor(new Shape(OutputShape.Width, OutputShape.Height, FiltersNum));
             KernelsGradient = new Tensor(Kernels.Shape);

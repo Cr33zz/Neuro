@@ -4,6 +4,7 @@ using Neuro.Tensors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace Neuro.Layers
 {
@@ -66,6 +67,7 @@ namespace Neuro.Layers
 
         public LayerBase Clone()
         {
+			Init(); // make sure parameter matrices are created
             var clone = GetCloneInstance();
             clone.OnClone(this);
             return clone;
@@ -86,12 +88,6 @@ namespace Neuro.Layers
                 throw new Exception("Cannot copy parameters between incompatible layers.");
         }
 
-        public void ForceInit()
-        {
-            Init();
-            Initialized = true;
-        }
-
         public Tensor FeedForward(Tensor input)
         {
             return FeedForward(new []{input});
@@ -100,7 +96,7 @@ namespace Neuro.Layers
         public Tensor FeedForward(Tensor[] inputs)
         {
             if (!Initialized)
-                ForceInit();
+                Init();
 
             //Debug.Assert(input.Width == InputShape.Width && input.Height == InputShape.Height && input.Depth == InputShape.Depth);
 
@@ -161,7 +157,16 @@ namespace Neuro.Layers
             return new List<ParametersAndGradients>();
         }
 
-        protected virtual void Init()
+        public void Init()
+        {
+			if (Initialized)
+				return;
+
+			OnInit();
+			Initialized = true;
+        }
+
+        protected virtual void OnInit()
         {
         }
 

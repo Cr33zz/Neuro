@@ -44,7 +44,7 @@ namespace Neuro
         public void ForceInitLayers()
         {
             foreach (var layer in Model.GetLayers())
-                layer.ForceInit();
+                layer.Init();
         }
 
         public void CopyParametersTo(NeuralNetwork target)

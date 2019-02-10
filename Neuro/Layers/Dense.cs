@@ -49,8 +49,10 @@ namespace Neuro.Layers
             Bias.CopyTo(targetDense.Bias, tau);
         }
 
-        protected override void Init()
+        protected override void OnInit()
         {
+			base.OnInit();
+
             Weights = new Tensor(new Shape(InputShape.Length, OutputShape.Length));
             Bias = new Tensor(OutputShape);
 
