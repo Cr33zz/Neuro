@@ -16,50 +16,50 @@ namespace Neuro.Tensors
             Gpu.LoadModule(Module);
         }
 
-        public override void Add(Tensor t1, Tensor t2, Tensor result)
-        {
-            int threadsRequired = result.Length;
-            float[] devT1 = Gpu.CopyToDevice(t1.Values);
-            float[] devT2 = Gpu.CopyToDevice(t2.Values);
-            float[] devResult = Gpu.Allocate(result.Values);
+        //public override void Add(Tensor t1, Tensor t2, Tensor result)
+        //{
+        //    int threadsRequired = result.Length;
+        //    float[] devT1 = Gpu.CopyToDevice(t1.Values);
+        //    float[] devT2 = Gpu.CopyToDevice(t2.Values);
+        //    float[] devResult = Gpu.Allocate(result.Values);
 
-            Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuAdd(devT1, devT2, devResult);
-            Gpu.Synchronize();
+        //    Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuAdd(devT1, devT2, devResult);
+        //    Gpu.Synchronize();
 
-            Gpu.CopyFromDevice(devResult, result.Values);
-            Gpu.FreeAll();
-        }
+        //    Gpu.CopyFromDevice(devResult, result.Values);
+        //    Gpu.FreeAll();
+        //}
 
-        public override void Sub(Tensor t1, Tensor t2, Tensor result)
-        {
-            int threadsRequired = result.Length;
-            float[] devT1 = Gpu.CopyToDevice(t1.Values);
-            float[] devT2 = Gpu.CopyToDevice(t2.Values);
-            float[] devResult = Gpu.Allocate(result.Values);
+        //public override void Sub(Tensor t1, Tensor t2, Tensor result)
+        //{
+        //    int threadsRequired = result.Length;
+        //    float[] devT1 = Gpu.CopyToDevice(t1.Values);
+        //    float[] devT2 = Gpu.CopyToDevice(t2.Values);
+        //    float[] devResult = Gpu.Allocate(result.Values);
 
-            Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuSub(devT1, devT2, devResult);
-            Gpu.Synchronize();
+        //    Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuSub(devT1, devT2, devResult);
+        //    Gpu.Synchronize();
 
-            Gpu.CopyFromDevice(devResult, result.Values);
-            Gpu.FreeAll();
-        }
+        //    Gpu.CopyFromDevice(devResult, result.Values);
+        //    Gpu.FreeAll();
+        //}
 
-        public override void Mul(Tensor t1, Tensor t2, Tensor result)
-        {
-            int threadsRequired = result.BatchSize * t1.Depth * t1.Height * t2.Width;
-            GpuShape[] shapes = new [] { new GpuShape(t1.Shape), new GpuShape(t2.Shape), new GpuShape(result.Shape) };
+        //public override void Mul(Tensor t1, Tensor t2, Tensor result)
+        //{
+        //    int threadsRequired = result.BatchSize * t1.Depth * t1.Height * t2.Width;
+        //    GpuShape[] shapes = new [] { new GpuShape(t1.Shape), new GpuShape(t2.Shape), new GpuShape(result.Shape) };
 
-            float[] devT1 = Gpu.CopyToDevice(t1.Values);
-            float[] devT2 = Gpu.CopyToDevice(t2.Values);
-            float[] devResult = Gpu.Allocate(result.Values);
-            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
+        //    float[] devT1 = Gpu.CopyToDevice(t1.Values);
+        //    float[] devT2 = Gpu.CopyToDevice(t2.Values);
+        //    float[] devResult = Gpu.Allocate(result.Values);
+        //    GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
 
-            Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuMul(devT1, devT2, devResult, devShapes);
-            Gpu.Synchronize();
+        //    Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuMul(devT1, devT2, devResult, devShapes);
+        //    Gpu.Synchronize();
 
-            Gpu.CopyFromDevice(devResult, result.Values);
-            Gpu.FreeAll();
-        }
+        //    Gpu.CopyFromDevice(devResult, result.Values);
+        //    Gpu.FreeAll();
+        //}
 
         public override void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
         {
