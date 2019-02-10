@@ -431,8 +431,24 @@ namespace Neuro.Tensors
             return output;
         }
 
-        // This operation will concatenate elements of all input tensors separately for each batch
-        public static void Concat(Tensor[] inputs, Tensor result)
+		public static Tensor MergeIntoDepth(List<Tensor> tensors)
+		{
+			if (tensors.Count == 0)
+				throw new Exception("List cannot be empty.");
+
+			Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, tensors.Count));
+
+			for (int n = 0; n < tensors.Count; ++n)
+			{
+				Tensor t = tensors[n];
+				Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
+			}
+
+			return output;
+		}
+
+		// This operation will concatenate elements of all input tensors separately for each batch
+		public static void Concat(Tensor[] inputs, Tensor result)
         {
             for (int b = 0; b < result.BatchSize; ++b)
             {
