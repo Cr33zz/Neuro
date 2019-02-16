@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using Neuro.Layers;
-using Neuro.Tensors;
 
 namespace Neuro.Models
 {
-    public class Sequential : ModelBase
+    /*public class Sequential : Flow
     {
         public override ModelBase Clone()
         {
@@ -17,7 +16,7 @@ namespace Neuro.Models
             return clone;
         }
 
-        public override void FeedForward(Tensor[] inputs)
+        public override void FeedForward(TFTensor[] inputs)
         {
             if (inputs.Length > 1) throw new Exception("Only single input is allowed for sequential model.");
 
@@ -25,16 +24,16 @@ namespace Neuro.Models
                 Layers[l].FeedForward(l == 0 ? inputs : new [] {Layers[l - 1].Output});
         }
 
-        public override void BackProp(Tensor[] deltas)
+        public override void BackProp(TFTensor[] deltas)
         {
             if (deltas.Length > 1) throw new Exception("Only single delta is allowed for sequential model.");
 
-            Tensor delta = deltas[0];
+            TFTensor delta = deltas[0];
             for (int l = Layers.Count - 1; l >= 0; --l)
                 delta = Layers[l].BackProp(delta)[0];
         }
 
-        public override Tensor[] GetOutputs()
+        public override TFTensor[] GetOutputs()
         {
             return new [] { LastLayer.Output };
         }
@@ -58,7 +57,7 @@ namespace Neuro.Models
         {
             int totalParams = 0;
             string output = "_________________________________________________________________\n";
-            output += "Layer                        Output Shape              Param #\n";
+            output += "Layer                        Output TFShape              Param #\n";
             output += "=================================================================\n";
 
             foreach (var layer in Layers)
@@ -123,5 +122,5 @@ namespace Neuro.Models
         }
 
         private List<LayerBase> Layers = new List<LayerBase>();
-    }
+    }*/
 }

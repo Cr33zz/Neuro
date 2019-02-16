@@ -1,11 +1,9 @@
-﻿using System;
-using Neuro.Tensors;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Neuro.Optimizers
 {
     // Implementation based on https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/training/adam.py
-    public class Adam : OptimizerBase
+    /*public class Adam : OptimizerBase
     {
         public Adam(float lr = 0.001f)
         {
@@ -20,8 +18,8 @@ namespace Neuro.Optimizers
                 {
                     var gradients = paramsAndGrads[i].Gradients;
 
-                    MGradients.Add(new Tensor(gradients.Shape));
-                    VGradients.Add(new Tensor(gradients.Shape));
+                    MGradients.Add(new TFTensor(gradients.TFShape));
+                    VGradients.Add(new TFTensor(gradients.TFShape));
                 }
             }
 
@@ -57,7 +55,7 @@ namespace Neuro.Optimizers
         private readonly float Beta2 = 0.999f;
         private readonly float Epsilon = 1e-8f;
 
-        private List<Tensor> MGradients = new List<Tensor>();
-        private List<Tensor> VGradients = new List<Tensor>();
-    }
+        private List<TFTensor> MGradients = new List<TFTensor>();
+        private List<TFTensor> VGradients = new List<TFTensor>();
+    }*/
 }

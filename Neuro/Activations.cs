@@ -1,12 +1,10 @@
 ﻿using System;
-using Neuro.Tensors;
 
 namespace Neuro
 {
     public abstract class ActivationFunc
     {
-        public abstract void Compute(Tensor input, Tensor result);
-        public abstract void Derivative(Tensor output, Tensor outputGradient, Tensor result);
+        public abstract Tensor Build(Tensor input);
     }
 
     public static class Activation
@@ -21,94 +19,49 @@ namespace Neuro
 
     public class Linear : ActivationFunc
     {
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            input.CopyTo(result);
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            outputGradient.CopyTo(result);
+            return input;
         }
     }
 
     public class Sigmoid : ActivationFunc
     {
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            input.Map(x => 1 / (1 + (float)Math.Exp(-x)), result);
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            output.Map((x, x2) => x * (1 - x) * x2, outputGradient, result);
+            return Backend.Sigmoid(input);
         }
     }
 
     public class Tanh : ActivationFunc
     {
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            input.Map(x => 2 / (1 + (float)Math.Exp(-2 * x)) - 1, result);
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            output.Map((x, x2) => (1 - x * x) * x2, outputGradient, result);
+            return Backend.Tanh(input);
         }
     }
 
     public class ReLU : ActivationFunc
     {
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            input.Map(x => Math.Max(0, x), result);
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            output.Map((x, x2) => x > 0 ? x2 : 0, outputGradient, result);
+            return Backend.Relu(input);
         }
     }
 
     public class ELU : ActivationFunc
     {
-        private readonly float ALPHA = 1;
-
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            input.Map(x => x >= 0 ? x : ALPHA * ((float)Math.Exp(x) - 1), result);
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            output.Map((x, x2) => (x > 0 ? 1 : (x + ALPHA)) * x2, outputGradient, result);
+            return Backend.Elu(input);
         }
     }
 
     public class Softmax : ActivationFunc
     {
-        public override void Compute(Tensor input, Tensor result)
+        public override Tensor Build(Tensor input)
         {
-            Tensor shifted = input.Sub(input.Max());
-            Tensor exps = shifted.Map(x => (float)Math.Exp(x));
-
-            for (int n = 0; n < input.BatchSize; ++n)
-            {
-                float sum = exps.Sum(n);
-
-                for (int d = 0; d < input.Depth; ++d)
-                for (int h = 0; h < input.Height; ++h)
-                for (int w = 0; w < input.Width; ++w)
-                    result[w, h, d, n] = exps[w, h, d, n] / sum;
-            }
-        }
-
-        public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
-        {
-            var outputReshaped = output.Reshaped(new Shape(1, Shape.Auto, 1, output.BatchSize));
-            Tensor jacob = outputReshaped.DiagFlat().Sub(outputReshaped.Mul(outputReshaped.Transposed()));
-            jacob.Mul(outputGradient, result);
+            return Backend.Softmax(input);
         }
     }
 }

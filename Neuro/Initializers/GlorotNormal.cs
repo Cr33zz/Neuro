@@ -1,7 +1,6 @@
 ﻿using System;
-using Neuro.Tensors;
 
-namespace Neuro.Initializers
+namespace Neuro
 {
     public class GlorotNormal : InitializerBase
     {
@@ -12,16 +11,12 @@ namespace Neuro.Initializers
             Gain = gain;
         }
 
-        public static float NextSingle(int fanIn, int fanOut, float gain)
+        public override Tensor Init(int[] shape)
         {
+            (float fanIn, float fanOut) = ComputeFans(shape);
             float scale = 1 / (float)Math.Max(1, (fanIn + fanOut) * 0.5);
-            float stdDev = gain * (float)Math.Sqrt(scale) / 0.87962566103423978f;
-            return Normal.NextSingle(0, stdDev, 1);
-        }
-
-        public override void Init(Tensor t, int fanIn, int fanOut)
-        {
-            t.Map(x => NextSingle(fanIn, fanOut, Gain), t);
+            float stdDev = Gain * (float)Math.Sqrt(scale) / 0.87962566103423978f;
+            return Backend.TruncatedNormal(shape);
         }
 
         private readonly float Gain;

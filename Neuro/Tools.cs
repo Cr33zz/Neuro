@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Drawing;
 using System.IO;
-using Neuro.Tensors;
+using TensorFlow;
 
 namespace Neuro
 {
@@ -14,38 +14,38 @@ namespace Neuro
 
         public static Random Rng = new Random();
 
-        public static int AccNone(Tensor target, Tensor output)
-        {
-            return 0;
-        }
+        //public static int AccNone(TFTensor target, TFTensor output)
+        //{
+        //    return 0;
+        //}
 
-        public static int AccBinaryClassificationEquality(Tensor target, Tensor output)
-        {
-            int hits = 0;
-            for (int n = 0; n < output.BatchSize; ++n)
-                hits += target[0, 0, 0, n].Equals(Math.Round(output[0, 0, 0, n])) ? 1 : 0;
-            return hits;
-        }
+        //public static int AccBinaryClassificationEquality(TFTensor target, TFTensor output)
+        //{
+        //    int hits = 0;
+        //    for (int n = 0; n < output.BatchSize; ++n)
+        //        hits += target[0, 0, 0, n].Equals(Math.Round(output[0, 0, 0, n])) ? 1 : 0;
+        //    return hits;
+        //}
 
-        public static int AccCategoricalClassificationEquality(Tensor target, Tensor output)
-        {
-            int hits = 0;
-            for (int n = 0; n < output.BatchSize; ++n)
-                hits += target.ArgMax(n).Equals(output.ArgMax(n)) ? 1 : 0;
-            return hits;
-        }
+        //public static int AccCategoricalClassificationEquality(TFTensor target, TFTensor output)
+        //{
+        //    int hits = 0;
+        //    for (int n = 0; n < output.BatchSize; ++n)
+        //        hits += target.ArgMax(n).Equals(output.ArgMax(n)) ? 1 : 0;
+        //    return hits;
+        //}
 
-        public static void Shuffle<T>(this IList<T> list)
-        {
-            int n = list.Count;
-            while (n-- > 1)
-            {
-                int k = Tools.Rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
-        }
+        //public static void Shuffle<T>(this IList<T> list)
+        //{
+        //    int n = list.Count;
+        //    while (n-- > 1)
+        //    {
+        //        int k = Tools.Rng.Next(n + 1);
+        //        T value = list[k];
+        //        list[k] = list[n];
+        //        list[n] = value;
+        //    }
+        //}
 
         public static float Clip(float value, float min, float max)
         {
@@ -131,8 +131,8 @@ namespace Neuro
 
                 for (int i = 0; i < maxImages; ++i)
                 {
-                    Tensor input = new Tensor(new Shape(imgWidth, imgHeight));
-                    Tensor output = new Tensor(new Shape(1, outputsNum));
+                    float[,] input = new float[imgWidth, imgHeight];
+                    float[] output = new float[outputsNum];
 
                     for (int y = 0; y < imgWidth; ++y)
                     for (int x = 0; x < imgHeight; ++x)
@@ -143,7 +143,7 @@ namespace Neuro
                     }
 
                     byte lbl = brLabels.ReadByte();
-                    output[0, lbl] = 1;
+                    output[lbl] = 1;
 
                     dataSet.Add(new Data(input, output));
                 }
@@ -165,9 +165,9 @@ namespace Neuro
             using (BinaryWriter bwLabels = new BinaryWriter(fsLabels))
             using (BinaryWriter bwImages = new BinaryWriter(fsImages))
             {
-                int imgHeight = data[0].Inputs[0].Height;
-                int imgWidth = data[0].Inputs[0].Width;
-                int outputsNum = data[0].Outputs[0].Length;
+                int imgHeight = data[0].Input.GetLength(1);
+                int imgWidth = data[0].Input.GetLength(0);
+                int outputsNum = data[0].Output.Length;
 
                 bwImages.WriteBigInt32(1337); // discard
                 bwImages.WriteBigInt32(data.Count);
@@ -179,13 +179,16 @@ namespace Neuro
 
                 for (int i = 0; i < data.Count; ++i)
                 {
+                    float[,] input = (float[,])data[i].Input;
+                    float[] output = (float[])data[i].Output;
+
                     for (int h = 0; h < imgHeight; ++h)
                     for (int x = 0; x < imgWidth; ++x)
-                        bwImages.Write((byte)(data[i].Inputs[0][h, x] * 255));
+                        bwImages.Write((byte)(input[h, x] * 255));
 
                     for (int j = 0; j < outputsNum; ++j)
                     {
-                        if (data[i].Outputs[0][j] == 1)
+                        if (output[j] == 1)
                         {
                             bwLabels.Write((byte)j);
                         }
@@ -205,19 +208,19 @@ namespace Neuro
                 {
                     string[] tmp = line.Split(',');
 
-                    Tensor input = new Tensor(new Shape(1, tmp.Length - (outputsOneHotEncoded ? 1 : outputs)));
-                    Tensor output = new Tensor(new Shape(1, outputs));
+                    float[] input = new float[tmp.Length - (outputsOneHotEncoded ? 1 : outputs)];
+                    float[] output = new float[outputs];
 
                     for (int i = 0; i < input.Length; ++i)
-                        input[0, i] = float.Parse(tmp[i]);
+                        input[i] = float.Parse(tmp[i]);
 
                     for (int i = 0; i < (outputsOneHotEncoded ? 1 : outputs); ++i)
                     {
                         float v = float.Parse(tmp[input.Length + i]);
                         if (outputsOneHotEncoded)
-                            output[0, (int)v] = 1;
+                            output[(int)v] = 1;
                         else
-                            output[0, i] = v;
+                            output[i] = v;
                     }
 
                     dataSet.Add(new Data(input, output));
@@ -227,34 +230,34 @@ namespace Neuro
             return dataSet;
         }
 
-        public static List<Data> MergeData(List<Data> dataList, int batchSize = -1)
-        {
-            if (batchSize < 0)
-                batchSize = dataList.Count;
+        //public static List<Data> MergeData(List<Data> dataList, int batchSize = -1)
+        //{
+        //    if (batchSize < 0)
+        //        batchSize = dataList.Count;
 
-            List<Data> mergedData = new List<Data>();
+        //    List<Data> mergedData = new List<Data>();
 
-            int batchesNum = dataList.Count / batchSize;
-            int numberOfInputs = dataList[0].Inputs.Length;
-            int numberOfOutputs = dataList[0].Outputs.Length;
+        //    int batchesNum = dataList.Count / batchSize;
+        //    int numberOfInputs = dataList[0].Inputs.Length;
+        //    int numberOfOutputs = dataList[0].Outputs.Length;
 
-            for (int b = 0; b < batchesNum; ++b)
-            {
-                var inputs = new Tensor[numberOfInputs];
-                for (int i = 0; i < numberOfInputs; ++i)
-                    inputs[i] = Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList());
+        //    for (int b = 0; b < batchesNum; ++b)
+        //    {
+        //        var inputs = new TFTensor[numberOfInputs];
+        //        for (int i = 0; i < numberOfInputs; ++i)
+        //            inputs[i] = TFTensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList());
 
-                var outputs = new Tensor[numberOfOutputs];
-                for (int i = 0; i < numberOfOutputs; ++i)
-                    outputs[i] = Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList());
+        //        var outputs = new TFTensor[numberOfOutputs];
+        //        for (int i = 0; i < numberOfOutputs; ++i)
+        //            outputs[i] = TFTensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList());
 
-                mergedData.Add(new Data(inputs, outputs));
-            }
+        //        mergedData.Add(new Data(inputs, outputs));
+        //    }
 
-            // add support for reminder of training data
-            Debug.Assert(dataList.Count % batchSize == 0);
+        //    // add support for reminder of training data
+        //    Debug.Assert(dataList.Count % batchSize == 0);
 
-            return mergedData;
-        }
+        //    return mergedData;
+        //}
     }
 }

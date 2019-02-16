@@ -1,5 +1,5 @@
-﻿using Neuro.Tensors;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using TensorFlow;
 
 namespace Neuro.Optimizers
 {
@@ -7,24 +7,27 @@ namespace Neuro.Optimizers
     {
         public SGD(float lr = 0.01f)
         {
-            LearningRate = lr;
+            LearningRate = new Tensor(lr);
         }
 
-        protected override void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize)
+        protected override List<Tensor> GenerateUpdates(List<Tensor> parameters, Tensor loss)
         {
-            for (var i = 0; i < paramsAndGrads.Count; i++)
+            using (Backend.WithScope("SGD"))
             {
-                var parametersAndGradient = paramsAndGrads[i];
-                var parameters = parametersAndGradient.Parameters;
-                var gradients = parametersAndGradient.Gradients;
+                var grads = Backend.Gradients(loss, parameters);
 
-                var tempLearningRate = LearningRate / batchSize;
+                Updates.Add(Backend.AssignAdd(Iteration, 1.0f));
 
-                gradients.Mul(tempLearningRate, gradients);
-                parameters.Sub(gradients, parameters);
+                for (var i = 0; i < parameters.Count; i++)
+                {
+                    Tensor p = parameters[i];
+                    Tensor g = grads[i];
 
-                gradients.Zero();
+                    Updates.Add(Backend.Assign(p, p - g * LearningRate));
+                }
             }
+
+            return Updates;
         }
 
         public override string ToString()
@@ -32,6 +35,7 @@ namespace Neuro.Optimizers
             return $"SGD(lr={LearningRate})";
         }
 
-        private readonly float LearningRate;
+        public Tensor LearningRate { get; protected set; }
+        private List<Tensor> Updates = new List<Tensor>();
     }
 }

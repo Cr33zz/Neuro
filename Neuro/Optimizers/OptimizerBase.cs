@@ -1,20 +1,11 @@
-﻿using System;
-using Neuro.Tensors;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Neuro.Optimizers
 {
     public abstract class OptimizerBase
     {
-        public void Step(List<ParametersAndGradients> paramsAndGrads, int batchSize)
-        {
-            ++Iteration;
+        protected abstract List<Tensor> GenerateUpdates(List<Tensor> parameters, Tensor loss);
 
-            OnStep(paramsAndGrads, batchSize);
-        }
-
-        protected abstract void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize);
-
-        public float Iteration { get; protected set; }
+        public Tensor Iteration { get; protected set; }
     }
 }

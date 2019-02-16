@@ -1,9 +1,8 @@
 ﻿using System;
-using Neuro.Tensors;
 
-namespace Neuro.Initializers
+namespace Neuro
 {
-    public class Normal : InitializerBase
+    /*public class Normal : InitializerBase
     {
         public Normal(float mean = 0, float variance = 1, float scale = 1)
         {
@@ -42,7 +41,7 @@ namespace Neuro.Initializers
             return (variance * (f * x2) + mean) * scale;
         }
 
-        public override void Init(Tensor t, int fanIn, int fanOut)
+        public override void Init(TFTensor t, int fanIn, int fanOut)
         {
             t.Map(x => NextSingle(Mean, Variance, Scale), t);
         }
@@ -53,5 +52,5 @@ namespace Neuro.Initializers
 
         private static bool HasValue = false;
         private static float Value;
-    }
+    }*/
 }

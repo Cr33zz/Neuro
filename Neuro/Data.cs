@@ -1,26 +1,27 @@
 ﻿using System;
-using Neuro.Tensors;
+using System.Collections.Generic;
+using TensorFlow;
 
 namespace Neuro
 {
     public class Data
     {
-        public Data(Tensor[] inputs, Tensor[] outputs)
+        public Data(Array[] inputs, Array[] outputs)
         {
             Inputs = inputs;
             Outputs = outputs;
         }
 
-        public Data(Tensor input, Tensor output)
+        public Data(Array input, Array output)
         {
             Inputs = new[] { input };
             Outputs = new[] { output };
         }
 
-        public readonly Tensor[] Inputs;
-        public readonly Tensor[] Outputs;
+        public readonly Array[] Inputs;
+        public readonly Array[] Outputs;
 
-        public Tensor Input { get { return Inputs[0]; }}
-        public Tensor Output { get { return Outputs[0]; } }
+        public Array Input { get { return Inputs[0]; }}
+        public Array Output { get { return Outputs[0]; } }
     }
 }
