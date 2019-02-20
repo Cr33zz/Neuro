@@ -1,12 +1,13 @@
-﻿using System;
-
-namespace Neuro.Initializers
+﻿namespace Neuro
 {
-    /*public class Zeros : InitializerBase
+    public class Zeros : InitializerBase
     {
-        public override void Init(TFTensor t, int fanIn, int fanOut)
+        public override Tensor Init(int[] shape, string name)
         {
-            t.Zero();
+            using (Backend.WithScope(name + "zeros"))
+            {
+                return Backend.Zeros(shape, name);
+            }
         }
-    }*/
+    }
 }

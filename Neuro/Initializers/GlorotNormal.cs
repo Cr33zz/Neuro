@@ -11,12 +11,15 @@ namespace Neuro
             Gain = gain;
         }
 
-        public override Tensor Init(int[] shape)
+        public override Tensor Init(int[] shape, string name)
         {
-            (float fanIn, float fanOut) = ComputeFans(shape);
-            float scale = 1 / (float)Math.Max(1, (fanIn + fanOut) * 0.5);
-            float stdDev = Gain * (float)Math.Sqrt(scale) / 0.87962566103423978f;
-            return Backend.TruncatedNormal(shape);
+            using (Backend.WithScope(name + "glorot_normal"))
+            {
+                (float fanIn, float fanOut) = ComputeFans(shape);
+                float scale = 1 / (float) Math.Max(1, (fanIn + fanOut) * 0.5);
+                float stdDev = Gain * (float) Math.Sqrt(scale) / 0.87962566103423978f;
+                return Backend.RandomNormal(shape, 0, stdDev);
+            }
         }
 
         private readonly float Gain;

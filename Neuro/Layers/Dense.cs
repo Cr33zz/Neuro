@@ -8,10 +8,10 @@ namespace Neuro
         public Dense(LayerBase inputLayer, int outputs, ActivationFunc activation = null, bool useBias = true, InitializerBase weightsInitializer = null, InitializerBase biasInitializer = null)
             : base(inputLayer, activation)
         {
-            Weights = AddTrainableParam(new[] { InputShape.Dims.Get(-1), outputs }, weightsInitializer);
-
-            if (useBias)
-                Bias = AddTrainableParam(new[] { outputs }, biasInitializer);
+            UseBias = useBias;
+            OutputsNum = outputs;
+            WeightsInitializer = weightsInitializer;
+            BiasInitializer = biasInitializer ?? new Zeros();
         }
 
         // This constructor exists only for cloning purposes
@@ -47,10 +47,14 @@ namespace Neuro
         {
 			base.OnBuild();
 
-            var linear = Backend.Dot(InputLayers[0].Output, Weights);
-            OutputShape = new Shape(linear.Shape.ToIntArray());
+            Weights = AddTrainableParam(new[] { InputShape.Dims.Get(-1), OutputsNum }, "weights", WeightsInitializer);
 
-            Output = Bias != null ? Backend.Add(linear, Bias) : linear;
+            if (UseBias)
+                Bias = AddTrainableParam(new[] { OutputsNum }, "bias", BiasInitializer);
+
+            Output = Backend.Dot(InputLayers[0].Output, Weights);
+            Output = Bias != null ? Backend.Add(Output, Bias) : Output;
+            OutputShape = new Shape(Output.Shape.ToIntArray());
         }
 
         public override int GetParamsNum()
@@ -60,6 +64,10 @@ namespace Neuro
 
         public Tensor Weights;
         public Tensor Bias;
+        public bool UseBias;
+        public int OutputsNum;
+        public InitializerBase WeightsInitializer;
+        public InitializerBase BiasInitializer;
 
         internal override void SerializeParameters(XmlElement elem)
         {

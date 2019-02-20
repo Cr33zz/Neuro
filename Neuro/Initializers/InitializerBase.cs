@@ -5,7 +5,7 @@ namespace Neuro
 {
     public abstract class InitializerBase
     {
-        public abstract Tensor Init(int[] shape);
+        public abstract Tensor Init(int[] shape, string name);
 
         protected static (float fanIn, float fanOut) ComputeFans(int[] shape)
         {

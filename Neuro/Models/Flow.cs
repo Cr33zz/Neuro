@@ -27,9 +27,9 @@ namespace Neuro
         {
         }
 
-        public List<Array> FeedForward(List<Array> inputs)
+        public List<Array> Predict(List<Array> inputs)
         {
-            throw new NotImplementedException();
+            return Predicter.Predict(inputs);
         }
 
         public IEnumerable<LayerBase> GetOutputLayers()
@@ -42,9 +42,39 @@ namespace Neuro
             return OutputLayers.Count;
         }
 
-        public void Optimize()
+        public void Optimize(Optimizers.OptimizerBase optimizer, Loss[] losses)
         {
-            throw new NotImplementedException();
+            Tensor totalLoss = null;
+
+            List<Tensor> train_outputs = new List<Tensor>();
+            List<Tensor> targets = new List<Tensor>();
+
+            using (Backend.WithScope("loss"))
+            {
+                for (int i = 0; i < OutputLayers.Count; ++i)
+                {
+                    var layer = OutputLayers[i];
+
+                    using (Backend.WithScope(layer.Name))
+                    {
+                        targets.Add(Backend.Placeholder(layer.OutputShape.Dims, "target"));
+                        var lossTensor = Backend.Mean(losses[i].Build(targets[i], layer.Output)); // mean over all batches
+
+                        if (totalLoss == null)
+                            totalLoss = lossTensor;
+                        else
+                            totalLoss = totalLoss + lossTensor;
+                    }
+                }
+            }
+
+            train_outputs.Add(totalLoss);
+            Metrics["loss"] = (totalLoss, train_outputs.Count - 1);
+
+            // any additional metrics should go in here
+
+            Trainer = new Trainer(InputLayers.Select(x => x.Input).ToList(), train_outputs, targets, optimizer.GenerateUpdates(Parameters, totalLoss));
+            Predicter = new Predicter(InputLayers.Select(x => x.Input).ToList(), OutputLayers.Select(x => x.Output).ToList());
         }
 
         private void ProcessLayer(LayerBase layer, ref List<LayerBase> visited)
@@ -63,6 +93,7 @@ namespace Neuro
             if (!allInputLayersVisited)
                 return;
 
+            layer.Build();
             Order.Add(layer);
             Parameters.AddRange(layer.TrainableParams);
 
@@ -145,20 +176,15 @@ namespace Neuro
             return output;
         }
 
-        //public override TFTensor[] GetOutputs()
-        //{
-        //    TFTensor[] outputs = new TFTensor[OutputLayers.Count];
-        //    for (int i = 0; i < OutputLayers.Count; ++i)
-        //        outputs[i] = OutputLayers[i].Output;
-        //    return outputs;
-        //}
-
         public List<Tensor> Parameters = new List<Tensor>();
 
         private List<LayerBase> InputLayers = new List<LayerBase>();
         private List<LayerBase> OutputLayers = new List<LayerBase>();
+        public Dictionary<string, (Tensor, int)> Metrics = new Dictionary<string, (Tensor, int)>();
 
         private List<LayerBase> Order = new List<LayerBase>();
         private List<LayerBase> ReversedOrder;
+        public Trainer Trainer;
+        public Predicter Predicter;
     }
 }

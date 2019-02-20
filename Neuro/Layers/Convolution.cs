@@ -8,10 +8,13 @@ namespace Neuro
 {
     public class Convolution : LayerBase
     {
-        public Convolution(LayerBase inputLayer, int filterSize, int filtersNum, int stride, ActivationFunc activation = null, InitializerBase kernelsInitializer = null, InitializerBase biasInitializer = null)
+        public Convolution(LayerBase inputLayer, int filterSize, int filtersNum, int stride, ActivationFunc activation = null, InitializerBase kernelInitializer = null, InitializerBase biasInitializer = null)
             : base(inputLayer)
         {
-	        Kernels = AddTrainableParam(new []{ filterSize, filterSize, InputShape.Dims.Get(-1), filtersNum }, kernelsInitializer);
+            KernelInitializer = kernelInitializer;
+            BiasInitializer = biasInitializer ?? new Zeros();
+            FilterSize = filterSize;
+            FiltersNum = filtersNum;
             Stride = stride;
         }
 
@@ -36,6 +39,9 @@ namespace Neuro
         protected override void OnBuild()
         {
 			base.OnBuild();
+
+            Kernels = AddTrainableParam(new[] { FilterSize, FilterSize, InputShape.Dims.Get(-1), FiltersNum }, "kernels", KernelInitializer);
+            Bias = AddTrainableParam(new[] { FiltersNum }, "bias", BiasInitializer);
 
             Output = Backend.Add(Backend.Conv2D(InputLayers[0].Output, Kernels, new[] { Stride, Stride }, Backend.PaddingType.Valid), Bias);
             OutputShape = new Shape(Output.Shape.ToIntArray());
@@ -62,7 +68,11 @@ namespace Neuro
 
         public Tensor Kernels;
         public Tensor Bias;
+        public int FilterSize;
         public int Stride;
+        public int FiltersNum;
+        public InitializerBase KernelInitializer;
+        public InitializerBase BiasInitializer;
     }
 }
 

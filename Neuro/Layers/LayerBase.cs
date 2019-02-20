@@ -83,25 +83,31 @@ namespace Neuro
             return 0;
         }
 
-        protected Tensor AddTrainableParam(int[] shape, InitializerBase initializer = null)
+        protected Tensor AddTrainableParam(int[] shape, string name, InitializerBase initializer = null)
         {
             if (initializer == null)
                 initializer = new GlorotUniform();
 
-            var param = Backend.Variable(initializer.Init(shape));
+            var param = Backend.Variable(initializer.Init(shape, name), name);
             TrainableParams.Add(param);
             return param;
         }
 
         public void Build()
         {
-			if (Built)
-				return;
+            if (Built)
+                return;
 
-			OnBuild();
+            using (Backend.WithScope(Name))
+            {
+                if (InputLayers.Count > 0)
+                    InputShapes = InputLayers.Select(x => x.OutputShape).ToArray();
 
-            if (Activation != null)
-                Output = Activation.Build(Output);
+                OnBuild();
+
+                if (Activation != null)
+                    Output = Activation.Build(Output);
+            }
 
             Built = true;
         }

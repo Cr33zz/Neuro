@@ -94,6 +94,7 @@
     <Compile Include="Optimizers\Adam.cs" />
     <Compile Include="Optimizers\OptimizerBase.cs" />
     <Compile Include="Optimizers\SGD.cs" />
+    <Compile Include="Predicter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Initializers\InitializerBase.cs" />
     <Compile Include="Initializers\Normal.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="Ext.cs" />
     <Compile Include="TestTools.cs" />
     <Compile Include="Tools.cs" />
+    <Compile Include="Trainer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

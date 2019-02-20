@@ -26,9 +26,9 @@ namespace Neuro
             Session = new TFSession(Graph);
         }
 
-        public static Tensor Const<T>(T value)
+        public static Tensor Const<T>(T value, string name = null)
         {
-            return new Tensor(Graph.Const(new TFTensor((dynamic)value), TFDataType.Float));
+            return new Tensor(Graph.Const(new TFTensor((dynamic)value), name));
         }
 
         public static Tensor Placeholder(int[] shape = null, string name = null)
@@ -37,28 +37,33 @@ namespace Neuro
             return new Tensor(Graph.Placeholder(TFDataType.Float, tfShape, name));
         }
 
-        public static Tensor Variable(Tensor tensor)
+        public static Tensor Variable(Tensor tensor, string name)
         {
-            var v = new Tensor(Graph.VariableV2(tensor.Shape, TFDataType.Float));
+            var v = new Tensor(Graph.VariableV2(tensor.Shape, TFDataType.Float, operName: name));
 
-            TFOutput init = (tensor._Tensor != null) ? Graph.Const(tensor._Tensor, TFDataType.Float) :
-                                                       tensor.Output;
+            TFOutput init = (tensor._Tensor != null) ? Graph.Const(tensor._Tensor, TFDataType.Float) : tensor.Output;
 
-            Graph.AddInitVariable(Graph.AssignVariableOp(v.Output, init));
+            init = Graph.Print(init, new[] { init }, $"initializing {v.Name}");
+            Graph.AddInitVariable(Graph.Assign(v.Output, init).Operation);
             return v;
         }
 
-        public static Tensor Variable(Array array)
+        public static Tensor Variable(Array array, string name)
         {
-            var v = new Tensor(Graph.VariableV2(ToShape(array), TFDataType.Float));
-            Graph.AddInitVariable(Graph.AssignVariableOp(v.Output, Graph.Const(new TFTensor(array), TFDataType.Float)));
+            var v = new Tensor(Graph.VariableV2(ToShape(array), TFDataType.Float, operName: name));
+            Graph.AddInitVariable(Graph.Assign(v.Output, Graph.Const(new TFTensor(array), TFDataType.Float)).Operation);
             return v;
         }
 
-        public static Tensor Zeros(int[] shape)
+        public static Tensor Zeros(int[] shape, string name)
         {
             Array zeros = Array.CreateInstance(typeof(float), shape);
-            return Variable(zeros);
+            return Variable(zeros, name);
+        }
+
+        public static Tensor Identity(Tensor x, string name = null)
+        {
+            return new Tensor(Graph.Identity(x.Output, name));
         }
 
         public static Tensor Dot(Tensor x, Tensor y)
@@ -168,18 +173,16 @@ namespace Neuro
         {
             using (WithScope("random_uniform"))
             {
-                TFOutput u = Graph.RandomUniform(ToShape(shape), minVal, maxval: maxVal, seed: seed);
-                return new Tensor(Graph.Add(Graph.Mul(u, Const(maxVal - minVal).Output), Const(minVal).Output));
+                return new Tensor(Graph._RandomUniform(ToShape(shape), minVal, maxval: maxVal, seed: seed));
             }
         }
 
-        public static Tensor TruncatedNormal(int[] shape, int? seed = null)
+        public static Tensor RandomNormal(int[] shape, float mean = 0, float stddev = 1, int? seed = null)
         {
-            throw new NotImplementedException();
-            //using (WithScope("random_normal"))
-            //{
-            //    return new Tensor(Graph.TruncatedNormal(ToShape(shape), TFDataType.Float, seed: seed));
-            //}
+            using (WithScope("random_normal"))
+            {
+                return new Tensor(Graph._RandomNormal(ToShape(shape), mean, stddev, seed: seed));
+            }
         }
 
         public static Tensor ReduceSum(Tensor x, int? axis = null)
@@ -204,11 +207,9 @@ namespace Neuro
             return new Tensor(Graph.Log(x.Output));
         }
 
-        public static Tensor Mean(Tensor x, int? axis = null, bool keepDims = false)
+        public static Tensor Mean(Tensor x, int axis = -1, bool keepDims = false)
         {
-            if (axis.HasValue)
-                return new Tensor(Graph.ReduceMean(x.Output, axis: Const(axis.Value).Output, keep_dims: keepDims));
-            return new Tensor(Graph.ReduceMean(x.Output, keep_dims: keepDims));
+            return new Tensor(Graph.ReduceMean(x.Output, Const(axis).Output, keepDims));
         }
 
         public static Tensor Square(Tensor x)
@@ -243,7 +244,6 @@ namespace Neuro
             List<Tensor> result = new List<Tensor>();
             for (int i = 0; i < grads.Length; i++)
                 result.Add(new Tensor(grads[i]));
-
             return result;
         }
 
@@ -289,10 +289,7 @@ namespace Neuro
 
         public static TFShape ToShape(Array array)
         {
-            long[] shape = new long[array.Rank];
-            for (int i = array.Rank - 1; i <= 0; --i)
-                shape[i] = array.GetLength(i);
-            return new TFShape(shape);
+            return ToShape(array.GetShape());
         }
 
         public static TFShape ToShape(TFOutput output)
@@ -300,7 +297,12 @@ namespace Neuro
             return Graph.GetTensorShape(output);
         }
 
-        private static TFGraph Graph;
-        private static TFSession Session;
+        public static TFShape ToShape(TFTensor tensor)
+        {
+            return new TFShape(tensor.Shape);
+        }
+
+        public static TFGraph Graph;
+        public static TFSession Session;
     }
 }

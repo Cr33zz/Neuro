@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TensorFlow;
 
 namespace Neuro
@@ -12,7 +8,7 @@ namespace Neuro
         public Tensor(float value)
         {
             _Tensor = new TFTensor(value);
-            Shape = new TFShape(1);
+            Shape = new TFShape();
         }
 
         public Tensor(Array values)
@@ -27,20 +23,27 @@ namespace Neuro
             Shape = Backend.ToShape(output);
         }
 
-        public Tensor(TFTensor tensor, TFShape shape)
+        public Tensor(TFTensor tensor)
         {
             _Tensor = tensor;
-            Shape = shape;
+            Shape = Backend.ToShape(tensor);
         }
+
+        public T GetValue<T>()
+        {
+            return (T)_Tensor.GetValue();
+        }
+
+        public string Name => Output.Operation.Name;
 
         public TFTensor _Tensor;
         public TFOutput Output;
         public TFShape Shape;
 
-        //public static implicit operator TFOutput(Tensor t)
-        //{
-        //    return t.Output;
-        //}
+        public override string ToString()
+        {
+            return $"Tensor '{Output.Operation.Name}_{Output.Index}' shape={Shape.Str()}";
+        }
 
         public static Tensor operator *(float a, Tensor b)
         {
