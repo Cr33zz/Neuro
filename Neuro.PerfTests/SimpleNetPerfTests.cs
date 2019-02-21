@@ -11,18 +11,16 @@ namespace Neuro.PerfTests
     {
         static void Main(string[] args)
         {
-
             string[] strArray1 = File.ReadAllText("e:\\pima-indians-diabetes.csv").Split(new string[2] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             var x = new float[strArray1.Length,8];
-            var y = new float[strArray1.Length];
+            var y = new float[strArray1.Length,1];
             for (int index1 = 0; index1 < strArray1.Length; ++index1)
             {
                 string[] strArray2 = strArray1[index1].Split(',');
                 for (int index2 = 0; index2 < x.GetLength(1); ++index2)
                     x[index1,index2] = float.Parse(strArray2[index2]);
-                y[index1] = float.Parse(strArray2[strArray2.Length - 1]);
+                y[index1, 0] = float.Parse(strArray2[strArray2.Length - 1]);
             }
-
 
             var net = new NeuralNetwork("test");
 			var i1 = new Input(new []{ -1, 8 });
@@ -32,15 +30,11 @@ namespace Neuro.PerfTests
             net.Model = new Flow(new[] { i1 }, new[] { d3 });
             net.Optimize(new SGD(0.01f), new MeanSquareError());
 
-            var input = new float[,] {{0, 1}, { 1, 0 } };
-            var output = new float[] { 0, 1 };
-            //var trainingData = new List<Data> {new Data(input, output)};
-
             //var netClone = net.Clone();
 
             net.Fit(x, y, batchSize: 32, epochs: 70, verbose: 2, trackFlags: Track.Nothing);
 
-            float[] pred = (float[])net.Predict(x)[0];
+            float[,] pred = (float[,])net.Predict(x)[0];
 
 
             //var input1 = new Dense(2, 2, Activation.Sigmoid);

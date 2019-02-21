@@ -77,7 +77,7 @@ namespace Neuro
 
         public List<Array> Predict(Array input)
         {
-            return Predict(new[] { input });
+            return Predict(new List<Array>{ input });
         }
 
         public void Optimize(Optimizers.OptimizerBase optimizer, Loss loss)

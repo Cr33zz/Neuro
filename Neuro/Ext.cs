@@ -178,7 +178,7 @@ namespace Neuro
         public static TFOutput _RandomUniform(this TFGraph g, TFShape shape, float minval = 0, float maxval = 1, int? seed = null)
         {
             if (seed == null)
-                seed = 1;//Tools.Rng.Next(1000000);
+                seed = Tools.Rng.Next(1000000);
             TFOutput shape1 = g.Const((TFTensor)(shape.ToArray()), TFDataType.Int64);
             TFOutput min = g.Const((TFTensor)minval, nameof(minval));
             TFOutput max = g.Const((TFTensor)maxval, nameof(maxval));            
