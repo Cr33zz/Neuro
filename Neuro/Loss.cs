@@ -1,5 +1,5 @@
 ﻿using System;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -14,11 +14,11 @@ namespace Neuro
     {
         public override Tensor Build(Tensor targetOutput, Tensor output)
         {
-            using (Backend.WithScope("categorical_cross_entropy"))
+            using (tf.name_scope("categorical_cross_entropy"))
             {
-                var axis = output.Shape.ToIntArray().Get(-1);
-                var clippedOutput = Backend.ClipByValue(output, Tools._EPSILON, 1 - Tools._EPSILON);
-                return Backend.Neg(Backend.ReduceSum(Backend.Mul(targetOutput, Backend.Log(clippedOutput)), axis));
+                var axis = output.shape.Get(-1);
+                var clippedOutput = tf._clip_by_value(output, tf.constant(Tools._EPSILON), tf.constant(1.0f - Tools._EPSILON));
+                return tf.negative(tf.reduce_sum(tf.multiply(targetOutput, tf.log(clippedOutput)), axis));
             }
         }
     }
@@ -28,12 +28,12 @@ namespace Neuro
     {
         public override Tensor Build(Tensor targetOutput, Tensor output)
         {
-            using (Backend.WithScope("cross_entropy"))
+            using (tf.name_scope("cross_entropy"))
             {
-                var axis = output.Shape.ToIntArray().Get(-1);
-                var clippedOutput = Backend.ClipByValue(output, Tools._EPSILON, 1 - Tools._EPSILON);
-                return Backend.Sub(Backend.Neg(Backend.ReduceSum(Backend.Mul(targetOutput, Backend.Log(clippedOutput)), axis)), 
-                                   Backend.Neg(Backend.ReduceSum(Backend.Mul(Backend.Sub(1, targetOutput), Backend.Log(Backend.Sub(1, clippedOutput))), axis)));
+                var axis = output.shape.Get(-1);
+                var clippedOutput = tf._clip_by_value(output, tf.constant(Tools._EPSILON), tf.constant(1.0f - Tools._EPSILON));
+                return tf.sub(tf.negative(tf.reduce_sum(tf.multiply(targetOutput, tf.log(clippedOutput)), axis)), 
+                              tf.negative(tf.reduce_sum(tf.multiply(tf.sub(tf.constant(1.0f), targetOutput), tf.log(tf.sub(tf.constant(1.0f), clippedOutput))), axis)));
             }
         }
     }
@@ -42,8 +42,8 @@ namespace Neuro
     {
         public override Tensor Build(Tensor targetOutput, Tensor output)
         {
-            using (Backend.WithScope("mean_square_error"))
-                return Backend.Mean(Backend.Square(output - targetOutput));
+            using (tf.name_scope("mean_square_error"))
+                return tf.reduce_mean(tf.square(output - targetOutput));
         }
     }
 
@@ -54,12 +54,12 @@ namespace Neuro
             Delta = delta;
         }
 
-        public override void Compute(TFTensor targetOutput, TFTensor output, TFTensor result)
+        public override void Compute(Tensorflow.Tensor targetOutput, Tensorflow.Tensor output, Tensorflow.Tensor result)
         {
             targetOutput.Map((yTrue, y) => { float a = y - yTrue; return Math.Abs(a) <= Delta ? (0.5f * a * a) : (Delta * (float)Math.Abs(a) - 0.5f * Delta * Delta); }, output, result);
         }
 
-        public override void Derivative(TFTensor targetOutput, TFTensor output, TFTensor result)
+        public override void Derivative(Tensorflow.Tensor targetOutput, Tensorflow.Tensor output, Tensorflow.Tensor result)
         {
             targetOutput.Map((yTrue, y) => { float a = y - yTrue; return Math.Abs(a) <= Delta ? a : (Delta * Tools.Sign(a)); }, output, result);
         }

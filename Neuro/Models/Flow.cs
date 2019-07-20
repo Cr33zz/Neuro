@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Neuro.Layers;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -49,16 +49,16 @@ namespace Neuro
             List<Tensor> train_outputs = new List<Tensor>();
             List<Tensor> targets = new List<Tensor>();
 
-            using (Backend.WithScope("loss"))
+            using (tf.name_scope("loss"))
             {
                 for (int i = 0; i < OutputLayers.Count; ++i)
                 {
                     var layer = OutputLayers[i];
 
-                    using (Backend.WithScope(layer.Name))
+                    using (tf.name_scope(layer.Name))
                     {
-                        targets.Add(Backend.Placeholder(layer.OutputShape.Dims, "target"));
-                        var lossTensor = Backend.Mean(losses[i].Build(targets[i], layer.Output)); // mean over all batches
+                        targets.Add(tf.placeholder(TF_DataType.TF_FLOAT, new TensorShape(layer.OutputShape.Dims), "target"));
+                        var lossTensor = tf.reduce_mean(losses[i].Build(targets[i], layer.Output)); // mean over all batches
 
                         if (totalLoss == null)
                             totalLoss = lossTensor;

@@ -1,4 +1,7 @@
-﻿namespace Neuro
+﻿using Tensorflow;
+using System.Linq;
+
+namespace Neuro
 {
     public class Flatten : LayerBase
     {
@@ -15,8 +18,9 @@
         {
             base.OnBuild();
 
-            Output = Backend.BatchFlatten(InputLayers[0].Output);
-            OutputShape = new Shape(Output.Shape.ToIntArray());
+            var num_features = InputLayers[0].Output.shape.Skip(1).Product();
+            OutputShape = new Shape(new[] { -1, num_features });
+            Output = tf.reshape(InputLayers[0].Output, OutputShape.Dims);
         }
 
         protected override LayerBase GetCloneInstance()

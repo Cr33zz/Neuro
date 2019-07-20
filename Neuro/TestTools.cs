@@ -18,16 +18,16 @@ namespace Neuro
 
         //public static bool VerifyInputGradient(LayerBase layer, int batchSize = 1)
         //{
-        //    TFTensor.SetOpMode(TFTensor.OpMode.CPU);
+        //    Tensorflow.Tensor.SetOpMode(Tensorflow.Tensor.OpMode.CPU);
         //    var inputs = GenerateInputsForLayer(layer, batchSize);
 
         //    var output = layer.FeedForward(inputs);
-        //    var outputGradient = new TFTensor(output.TFShape);
+        //    var outputGradient = new Tensorflow.Tensor(output.TFShape);
         //    outputGradient.FillWithValue(1);
 
         //    layer.BackProp(outputGradient);
 
-        //    var result = new TFTensor(output.TFShape);
+        //    var result = new Tensorflow.Tensor(output.TFShape);
 
         //    for (int n = 0; n < inputs.Length; ++n)
         //    {
@@ -68,11 +68,11 @@ namespace Neuro
 
         //public static bool VerifyParametersGradient(LayerBase layer, int batchSize = 1)
         //{
-        //    TFTensor.SetOpMode(TFTensor.OpMode.CPU);
+        //    Tensorflow.Tensor.SetOpMode(Tensorflow.Tensor.OpMode.CPU);
         //    var inputs = GenerateInputsForLayer(layer, batchSize);
 
         //    var output = layer.FeedForward(inputs);
-        //    var outputGradient = new TFTensor(output.TFShape);
+        //    var outputGradient = new Tensorflow.Tensor(output.TFShape);
         //    outputGradient.FillWithValue(1);
 
         //    layer.BackProp(outputGradient);
@@ -82,7 +82,7 @@ namespace Neuro
         //    if (paramsAndGrads.Count == 0)
         //        return true;
 
-        //    var result = new TFTensor(output.TFShape);
+        //    var result = new Tensorflow.Tensor(output.TFShape);
 
         //    var parameters = paramsAndGrads[0].Parameters;
         //    var gradients = paramsAndGrads[0].Gradients;
@@ -116,13 +116,13 @@ namespace Neuro
         //    return true;
         //}
 
-        //private static TFTensor[] GenerateInputsForLayer(LayerBase layer, int batchSize)
+        //private static Tensorflow.Tensor[] GenerateInputsForLayer(LayerBase layer, int batchSize)
         //{
-        //    var inputs = new TFTensor[layer.InputShapes.Length];
+        //    var inputs = new Tensorflow.Tensor[layer.InputShapes.Length];
 
         //    for (int i = 0; i < inputs.Length; ++i)
         //    {
-        //        var input = new TFTensor(new TFShape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batchSize));
+        //        var input = new Tensorflow.Tensor(new TFShape(layer.InputShape.Width, layer.InputShape.Height, layer.InputShape.Depth, batchSize));
         //        input.FillWithRand(7 + i);
         //        inputs[i] = input;
         //    }
@@ -132,27 +132,27 @@ namespace Neuro
 
         //public static bool VerifyActivationFuncDerivative(ActivationFunc func, int batchSize = 1)
         //{
-        //    TFTensor.SetOpMode(TFTensor.OpMode.CPU);
-        //    var input = new TFTensor(new TFShape(3, 3, 3, batchSize));
+        //    Tensorflow.Tensor.SetOpMode(Tensorflow.Tensor.OpMode.CPU);
+        //    var input = new Tensorflow.Tensor(new TFShape(3, 3, 3, batchSize));
         //    input.FillWithRange(-1.0f, 2.0f / input.Length);
 
-        //    var outputGradient = new TFTensor(new TFShape(3, 3, 3, batchSize));
+        //    var outputGradient = new Tensorflow.Tensor(new TFShape(3, 3, 3, batchSize));
         //    outputGradient.FillWithValue(1.0f);
 
         //    // for derivation purposes activation functions expect already processed input
-        //    var output = new TFTensor(input.TFShape);
+        //    var output = new Tensorflow.Tensor(input.TFShape);
         //    func.Compute(input, output);
 
-        //    var derivative = new TFTensor(input.TFShape);
+        //    var derivative = new Tensorflow.Tensor(input.TFShape);
         //    func.Derivative(output, outputGradient, derivative);
 
-        //    var output1 = new TFTensor(input.TFShape);
+        //    var output1 = new Tensorflow.Tensor(input.TFShape);
         //    func.Compute(input.Sub(DERIVATIVE_EPSILON), output1);
 
-        //    var output2 = new TFTensor(input.TFShape);
+        //    var output2 = new Tensorflow.Tensor(input.TFShape);
         //    func.Compute(input.Add(DERIVATIVE_EPSILON), output2);
 
-        //    var result = new TFTensor(input.TFShape);
+        //    var result = new Tensorflow.Tensor(input.TFShape);
         //    output2.Sub(output1, result);
 
         //    var approxDerivative = result.Div(2 * DERIVATIVE_EPSILON);
@@ -160,26 +160,26 @@ namespace Neuro
         //    return approxDerivative.Equals(derivative, 1e-2f);
         //}
 
-        //public static bool VerifyLossFuncDerivative(LossFunc func, TFTensor targetOutput, bool onlyPositiveOutput = false, int batchSize = 1, float tolerance = 0.01f)
+        //public static bool VerifyLossFuncDerivative(LossFunc func, Tensorflow.Tensor targetOutput, bool onlyPositiveOutput = false, int batchSize = 1, float tolerance = 0.01f)
         //{
-        //    TFTensor.SetOpMode(TFTensor.OpMode.CPU);
-        //    var output = new TFTensor(new TFShape(3, 3, 3, batchSize));
+        //    Tensorflow.Tensor.SetOpMode(Tensorflow.Tensor.OpMode.CPU);
+        //    var output = new Tensorflow.Tensor(new TFShape(3, 3, 3, batchSize));
         //    output.FillWithRand(10, onlyPositiveOutput ? 0 : -1);
 
         //    // for derivation purposes activation functions expect already processed input
-        //    var error = new TFTensor(output.TFShape);
+        //    var error = new Tensorflow.Tensor(output.TFShape);
         //    func.Compute(targetOutput, output, error);
 
-        //    var derivative = new TFTensor(output.TFShape);
+        //    var derivative = new Tensorflow.Tensor(output.TFShape);
         //    func.Derivative(targetOutput, output, derivative);
 
-        //    var error1 = new TFTensor(output.TFShape);
+        //    var error1 = new Tensorflow.Tensor(output.TFShape);
         //    func.Compute(targetOutput, output.Sub(LOSS_DERIVATIVE_EPSILON), error1);
 
-        //    var error2 = new TFTensor(output.TFShape);
+        //    var error2 = new Tensorflow.Tensor(output.TFShape);
         //    func.Compute(targetOutput, output.Add(LOSS_DERIVATIVE_EPSILON), error2);
 
-        //    var result = new TFTensor(output.TFShape);
+        //    var result = new Tensorflow.Tensor(output.TFShape);
         //    error2.Sub(error1, result);
 
         //    var approxDerivative = result.Div(2 * LOSS_DERIVATIVE_EPSILON);
@@ -187,13 +187,13 @@ namespace Neuro
         //    return approxDerivative.Equals(derivative, tolerance);
         //}
 
-        //public static bool VerifyLossFunc(LossFunc func, TFTensor targetOutput, Func<float, float, float> testFunc, bool onlyPositiveOutput = false, int batchSize = 1)
+        //public static bool VerifyLossFunc(LossFunc func, Tensorflow.Tensor targetOutput, Func<float, float, float> testFunc, bool onlyPositiveOutput = false, int batchSize = 1)
         //{
-        //    TFTensor.SetOpMode(TFTensor.OpMode.CPU);
-        //    var output = new TFTensor(new TFShape(3, 3, 3, batchSize));
+        //    Tensorflow.Tensor.SetOpMode(Tensorflow.Tensor.OpMode.CPU);
+        //    var output = new Tensorflow.Tensor(new TFShape(3, 3, 3, batchSize));
         //    output.FillWithRand(10, onlyPositiveOutput ? 0 : -1);
 
-        //    var error = new TFTensor(output.TFShape);
+        //    var error = new Tensorflow.Tensor(output.TFShape);
         //    func.Compute(targetOutput, output, error);
 
         //    for (int i = 0; i < output.TFShape.Length; ++i)

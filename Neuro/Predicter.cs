@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -13,24 +14,20 @@ namespace Neuro
             Outputs = outputs;
         }
 
-        public List<Array> Predict(List<Array> inputs)
+        public NumSharp.NDArray Predict(List<Array> inputs)
         {
-            var session = Backend.Session;
+            var session = tf.Session();
 
-            //var init = Backend.Graph.GetGlobalVariablesInitializer();
+            //var init = tf.Graph.GetGlobalVariablesInitializer();
             //foreach (var op in init)
-            //    session.Run(new TFOutput[0], new TFTensor[0], new TFOutput[0], new[] { op });
+            //    session.Run(new Tensorflow.TF_Output[0], new Tensorflow.Tensor[0], new Tensorflow.TF_Output[0], new[] { op });
 
-            var runner = session.GetRunner();
-
-            foreach (var o in Outputs)
-                runner.Fetch(o.Output);
+            var feed_dict = new Hashtable();
 
             for (int i = 0; i < Inputs.Count; ++i)
-                runner.AddInput(Inputs[i].Output, inputs[i]);
+                feed_dict.Add(Inputs[i], inputs[i]);
 
-            var updated = runner.Run();
-            return updated.Select(x => (Array)x.GetValue()).ToList();
+            return session.run(control_flow_ops.group(Outputs.Select(x => x.op).ToArray()), feed_dict);
         }
 
         public List<Tensor> Inputs;

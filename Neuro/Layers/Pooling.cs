@@ -6,7 +6,7 @@ namespace Neuro.Layers
     // https://www.youtube.com/watch?v=8oOgPUO-TBY
     /*public class Pooling : LayerBase
     {
-        public Pooling(LayerBase inputLayer, int filterSize, int stride = 1, TFTensor.PoolType type = TFTensor.PoolType.Max)
+        public Pooling(LayerBase inputLayer, int filterSize, int stride = 1, Tensorflow.Tensor.PoolType type = Tensorflow.Tensor.PoolType.Max)
             : base(inputLayer, Pooling.GetOutShape(inputLayer.OutputShape, filterSize, filterSize, stride))
         {
             Type = type;
@@ -15,7 +15,7 @@ namespace Neuro.Layers
         }
 
         // Use this constructor for input layer only!
-        public Pooling(TFShape inputShape, int filterSize, int stride = 1, TFTensor.PoolType type = TFTensor.PoolType.Max)
+        public Pooling(TFShape inputShape, int filterSize, int stride = 1, Tensorflow.Tensor.PoolType type = Tensorflow.Tensor.PoolType.Max)
             : base(inputShape, Pooling.GetOutShape(inputShape, filterSize, filterSize, stride))
         {
             Type = type;
@@ -44,12 +44,12 @@ namespace Neuro.Layers
 
         protected override void FeedForwardInternal()
         {
-            Inputs[0].Pool(FilterSize, Stride, Type, TFTensor.PaddingType.Valid, Output);
+            Inputs[0].Pool(FilterSize, Stride, Type, Tensorflow.Tensor.PaddingType.Valid, Output);
         }
 
-        protected override void BackPropInternal(TFTensor outputGradient)
+        protected override void BackPropInternal(Tensorflow.Tensor outputGradient)
         {
-            TFTensor.PoolGradient(Output, Inputs[0], outputGradient, FilterSize, Stride, Type, TFTensor.PaddingType.Valid, InputsGradient[0]);
+            Tensorflow.Tensor.PoolGradient(Output, Inputs[0], outputGradient, FilterSize, Stride, Type, Tensorflow.Tensor.PaddingType.Valid, InputsGradient[0]);
         }
 
         private static TFShape GetOutShape(TFShape inputShape, int filterWidth, int filterHeight, int stride)
@@ -59,7 +59,7 @@ namespace Neuro.Layers
                              inputShape.Depth);
         }
 
-        private TFTensor.PoolType Type;
+        private Tensorflow.Tensor.PoolType Type;
         private int FilterSize;
         private int Stride;
     }*/

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Tensorflow;
 
 namespace Neuro.Optimizers
 {
@@ -6,7 +7,7 @@ namespace Neuro.Optimizers
     {
         protected OptimizerBase()
         {
-            Iteration = Backend.Variable(new Tensor(0), "optimizer_iteration");
+            Iteration = tf.Variable(new Tensor(0), name: "optimizer_iteration");
         }
 
         public abstract List<Tensor> GenerateUpdates(List<Tensor> parameters, Tensor loss);

@@ -1,5 +1,6 @@
 ﻿using System.Xml;
 using Neuro.Initializers;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -52,14 +53,14 @@ namespace Neuro
             if (UseBias)
                 Bias = AddTrainableParam(new[] { OutputsNum }, "bias", BiasInitializer);
 
-            Output = Backend.Dot(InputLayers[0].Output, Weights);
-            Output = Bias != null ? Backend.Add(Output, Bias) : Output;
-            OutputShape = new Shape(Output.Shape.ToIntArray());
+            Output = tf.matmul(InputLayers[0].Output, Weights);
+            Output = Bias != null ? tf.add(Output, Bias) : Output;
+            OutputShape = new Shape(Output.shape);
         }
 
         public override int GetParamsNum()
         {
-            return Weights.Shape.ToIntArray().Product() + Bias.Shape.ToIntArray().Product();
+            return Weights.shape.Product() + Bias.shape.Product();
         }
 
         public Tensor Weights;

@@ -1,4 +1,5 @@
 ﻿using System;
+using Tensorflow;
 
 namespace Neuro.Initializers
 {
@@ -11,12 +12,12 @@ namespace Neuro.Initializers
 
         public override Tensor Init(int[] shape, string name)
         {
-            using (Backend.WithScope(name + "glorot_uniform"))
+            using (tf.name_scope(name + "glorot_uniform"))
             {
                 (float fanIn, float fanOut) = ComputeFans(shape);
                 float scale = 1 / (float) Math.Max(1, (fanIn + fanOut) * 0.5);
                 float limit = (float) Math.Sqrt(3 * scale);
-                return Backend.RandomUniform(shape, -limit, limit);
+                return tf.random_uniform(shape, -limit, limit);
             }
         }
 

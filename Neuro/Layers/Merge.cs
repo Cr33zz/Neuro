@@ -45,33 +45,33 @@
     //        switch (MergeMode)
     //        {
     //            case Mode.Avg:
-    //                TFTensor.MergeAvg(Inputs, Output);
+    //                Tensorflow.Tensor.MergeAvg(Inputs, Output);
     //                break;
     //            case Mode.Max:
-    //                TFTensor.MergeMax(Inputs, Output);
+    //                Tensorflow.Tensor.MergeMax(Inputs, Output);
     //                break;
     //            case Mode.Min:
-    //                TFTensor.MergeMin(Inputs, Output);
+    //                Tensorflow.Tensor.MergeMin(Inputs, Output);
     //                break;
     //            case Mode.Sum:
-    //                TFTensor.MergeSum(Inputs, Output);
+    //                Tensorflow.Tensor.MergeSum(Inputs, Output);
     //                break;
     //        }
     //    }
 
-    //    protected override void BackPropInternal(TFTensor outputGradient)
+    //    protected override void BackPropInternal(Tensorflow.Tensor outputGradient)
     //    {
     //        switch (MergeMode)
     //        {
     //            case Mode.Avg:
-    //                TFTensor.MergeAvgGradient(Output, Inputs, outputGradient, InputsGradient);
+    //                Tensorflow.Tensor.MergeAvgGradient(Output, Inputs, outputGradient, InputsGradient);
     //                break;
     //            case Mode.Max:
     //            case Mode.Min:
-    //                TFTensor.MergeMinMaxGradient(Output, Inputs, outputGradient, InputsGradient);
+    //                Tensorflow.Tensor.MergeMinMaxGradient(Output, Inputs, outputGradient, InputsGradient);
     //                break;
     //            case Mode.Sum:
-    //                TFTensor.MergeSumGradient(Output, Inputs, outputGradient, InputsGradient);
+    //                Tensorflow.Tensor.MergeSumGradient(Output, Inputs, outputGradient, InputsGradient);
     //                break;
     //        }
     //    }

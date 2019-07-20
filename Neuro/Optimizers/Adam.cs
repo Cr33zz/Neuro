@@ -1,47 +1,57 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Tensorflow;
 
 namespace Neuro.Optimizers
 {
     // Implementation based on https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/training/adam.py
-    /*public class Adam : OptimizerBase
+    public class Adam : OptimizerBase
     {
-        public Adam(float lr = 0.001f)
+        public Adam(float lr = 0.001f, float beta1 = 0.9f, float beta2 = 0.999f, float epsilon = 1e-8f)
         {
-            LearningRate = lr;
+            LearningRate = tf.constant(lr, name: "learning_rate");
+            Beta1 = tf.constant(lr, name: "beta_1");
+            Beta2 = tf.constant(lr, name: "beta_2");
+            Epsilon = tf.constant(lr, name: "epsilon");
         }
 
-        protected override void OnStep(List<ParametersAndGradients> paramsAndGrads, int batchSize)
+        public override List<Tensor> GenerateUpdates(List<Tensor> parameters, Tensor loss)
         {
-            if (MGradients.Count != paramsAndGrads.Count)
-            {
-                for (var i = 0; i < paramsAndGrads.Count; i++)
-                {
-                    var gradients = paramsAndGrads[i].Gradients;
+            var updates = new List<Tensor>();
 
-                    MGradients.Add(new TFTensor(gradients.TFShape));
-                    VGradients.Add(new TFTensor(gradients.TFShape));
+            using (tf.name_scope("Adam"))
+            {
+                var grads = tf.gradients(loss, parameters.ToArray());
+
+                Tensor t = Iteration + 1;
+                Tensor lr_t = tf.multiply(LearningRate, (tf.sqrt(1 - tf.pow(Beta2, t)) / (1 - tf.pow(Beta1, t))));
+
+                var shapes = parameters.Select(p => p.shape);
+                var ms = shapes.Select(s => tf.zeros(s, name: "ms")).ToArray();
+                var vs = shapes.Select(s => tf.zeros(s, name: "vs")).ToArray();
+
+                for (var i = 0; i < parameters.Count; i++)
+                {
+                    Tensor p = parameters[i];
+                    Tensor g = grads[i];
+
+                    using (tf.name_scope(p.name))
+                    {
+                        var m = ms[i];
+                        var v = vs[i];
+                        var m_t = (Beta1 * m) + (1 - Beta1) * g;
+                        var v_t = (Beta2 * v) + (1 - Beta2) * tf.square(g);
+                        var p_t = tf.sub(p, lr_t * m_t / (tf.sqrt(v_t) + Epsilon));
+
+                        updates.Add(state_ops.assign(m , m_t));
+                        updates.Add(state_ops.assign(v, v_t));
+                        updates.Add(state_ops.assign(p, p_t));
+                    }
                 }
             }
 
-            for (var i = 0; i < paramsAndGrads.Count; i++)
-            {
-                var parametersAndGradient = paramsAndGrads[i];
-                var parameters = parametersAndGradient.Parameters;
-                var gradients = parametersAndGradient.Gradients;
-                var mGrad = MGradients[i];
-                var vGrad = VGradients[i];
-
-                gradients.Div(batchSize, gradients);
-
-                var tempLearningRate = LearningRate * (float)Math.Sqrt(1.0 - Math.Pow(Beta2, Iteration)) / (1.0f - (float)Math.Pow(Beta1, Iteration));
-                
-                mGrad.Map((m, g) => m * Beta1 + (1 - Beta1) * g, gradients, mGrad);
-                vGrad.Map((v, g) => v * Beta2 + (1 - Beta2) * g * g, gradients, vGrad);
-
-                parameters.Sub(mGrad.Div(vGrad.Map(x => (float)Math.Sqrt(x) + Epsilon)).Mul(tempLearningRate), parameters);
-
-                gradients.Zero();
-            }
+            return updates;
         }
 
         public override string ToString()
@@ -50,12 +60,9 @@ namespace Neuro.Optimizers
             //return $"Adam(lr={LearningRate}, beta1={Beta1}, beta2={Beta2}, epsilon={Epsilon})";
         }
 
-        private readonly float LearningRate;
-        private readonly float Beta1 = 0.9f;
-        private readonly float Beta2 = 0.999f;
-        private readonly float Epsilon = 1e-8f;
-
-        private List<TFTensor> MGradients = new List<TFTensor>();
-        private List<TFTensor> VGradients = new List<TFTensor>();
-    }*/
+        public Tensor LearningRate { get; protected set; }
+        public Tensor Beta1 { get; protected set; }
+        public Tensor Beta2 { get; protected set; }
+        public Tensor Epsilon { get; protected set; }
+    }
 }

@@ -16,7 +16,7 @@ namespace Neuro.Models
             return clone;
         }
 
-        public override void FeedForward(TFTensor[] inputs)
+        public override void FeedForward(Tensorflow.Tensor[] inputs)
         {
             if (inputs.Length > 1) throw new Exception("Only single input is allowed for sequential model.");
 
@@ -24,16 +24,16 @@ namespace Neuro.Models
                 Layers[l].FeedForward(l == 0 ? inputs : new [] {Layers[l - 1].Output});
         }
 
-        public override void BackProp(TFTensor[] deltas)
+        public override void BackProp(Tensorflow.Tensor[] deltas)
         {
             if (deltas.Length > 1) throw new Exception("Only single delta is allowed for sequential model.");
 
-            TFTensor delta = deltas[0];
+            Tensorflow.Tensor delta = deltas[0];
             for (int l = Layers.Count - 1; l >= 0; --l)
                 delta = Layers[l].BackProp(delta)[0];
         }
 
-        public override TFTensor[] GetOutputs()
+        public override Tensorflow.Tensor[] GetOutputs()
         {
             return new [] { LastLayer.Output };
         }

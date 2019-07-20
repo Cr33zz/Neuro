@@ -15,7 +15,7 @@ namespace Neuro.Initializers
             return min + (float)Tools.Rng.NextDouble() * (max - min);
         }
 
-        public override void Init(TFTensor t, int fanIn, int fanOut)
+        public override void Init(Tensorflow.Tensor t, int fanIn, int fanOut)
         {
             t.Map(x => NextSingle(Min, Max), t);
         }

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Neuro.Initializers;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -88,7 +88,7 @@ namespace Neuro
             if (initializer == null)
                 initializer = new GlorotUniform();
 
-            var param = Backend.Variable(initializer.Init(shape, name), name);
+            var param = tf.Variable(initializer.Init(shape, name), name);
             TrainableParams.Add(param);
             return param;
         }
@@ -98,7 +98,7 @@ namespace Neuro
             if (Built)
                 return;
 
-            using (Backend.WithScope(Name))
+            using (tf.name_scope(Name))
             {
                 if (InputLayers.Count > 0)
                     InputShapes = InputLayers.Select(x => x.OutputShape).ToArray();

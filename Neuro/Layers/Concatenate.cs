@@ -22,10 +22,10 @@ namespace Neuro.Layers
     //    protected override void FeedForwardInternal()
     //    {
     //        // output is already of proper shape thanks to LayerBase.FeedForward
-    //        TFTensor.Concat(Inputs, Output);
+    //        Tensorflow.Tensor.Concat(Inputs, Output);
     //    }
 
-    //    protected override void BackPropInternal(TFTensor outputGradient)
+    //    protected override void BackPropInternal(Tensorflow.Tensor outputGradient)
     //    {
     //        outputGradient.Split(InputsGradient);
     //    }

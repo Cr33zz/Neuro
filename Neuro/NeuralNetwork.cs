@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.IO;
 using Neuro.Models;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -224,7 +224,7 @@ namespace Neuro
                 //    {
                 //        FeedForward(validationData[n].Inputs);
                 //        var outputs = Model.GetOutputs();
-                //        TFTensor[] losses = new TFTensor[outputs.Length];
+                //        Tensorflow.Tensor[] losses = new Tensorflow.Tensor[outputs.Length];
                 //        for (int i = 0; i < outputLayersCount; ++i)
                 //        {
                 //            LossFuncs[i].Compute(validationData[n].Outputs[i], outputs[i], losses[i]);

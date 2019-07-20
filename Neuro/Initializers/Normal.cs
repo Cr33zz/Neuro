@@ -41,7 +41,7 @@ namespace Neuro
             return (variance * (f * x2) + mean) * scale;
         }
 
-        public override void Init(TFTensor t, int fanIn, int fanOut)
+        public override void Init(Tensorflow.Tensor t, int fanIn, int fanOut)
         {
             t.Map(x => NextSingle(Mean, Variance, Scale), t);
         }

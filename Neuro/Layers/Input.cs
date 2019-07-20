@@ -15,8 +15,8 @@
         {
             base.OnBuild();
 
-            Inputs = new[] { Backend.Placeholder(InputShape.Dims) };
-            Output = Backend.Identity(Input);
+            Inputs = new[] { tf.Placeholder(InputShape.Dims) };
+            Output = tf.Identity(Input);
             OutputShape = new Shape(Output.Shape.ToIntArray());
         }
 

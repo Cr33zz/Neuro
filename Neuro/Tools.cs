@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Drawing;
 using System.IO;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -14,12 +14,12 @@ namespace Neuro
 
         public static Random Rng = new Random();
 
-        //public static int AccNone(TFTensor target, TFTensor output)
+        //public static int AccNone(Tensorflow.Tensor target, Tensorflow.Tensor output)
         //{
         //    return 0;
         //}
 
-        //public static int AccBinaryClassificationEquality(TFTensor target, TFTensor output)
+        //public static int AccBinaryClassificationEquality(Tensorflow.Tensor target, Tensorflow.Tensor output)
         //{
         //    int hits = 0;
         //    for (int n = 0; n < output.BatchSize; ++n)
@@ -27,7 +27,7 @@ namespace Neuro
         //    return hits;
         //}
 
-        //public static int AccCategoricalClassificationEquality(TFTensor target, TFTensor output)
+        //public static int AccCategoricalClassificationEquality(Tensorflow.Tensor target, Tensorflow.Tensor output)
         //{
         //    int hits = 0;
         //    for (int n = 0; n < output.BatchSize; ++n)
@@ -243,13 +243,13 @@ namespace Neuro
 
         //    for (int b = 0; b < batchesNum; ++b)
         //    {
-        //        var inputs = new TFTensor[numberOfInputs];
+        //        var inputs = new Tensorflow.Tensor[numberOfInputs];
         //        for (int i = 0; i < numberOfInputs; ++i)
-        //            inputs[i] = TFTensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList());
+        //            inputs[i] = Tensorflow.Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Inputs[i]).ToList());
 
-        //        var outputs = new TFTensor[numberOfOutputs];
+        //        var outputs = new Tensorflow.Tensor[numberOfOutputs];
         //        for (int i = 0; i < numberOfOutputs; ++i)
-        //            outputs[i] = TFTensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList());
+        //            outputs[i] = Tensorflow.Tensor.MergeIntoBatch(dataList.GetRange(b * batchSize, batchSize).Select(x => x.Outputs[i]).ToList());
 
         //        mergedData.Add(new Data(inputs, outputs));
         //    }

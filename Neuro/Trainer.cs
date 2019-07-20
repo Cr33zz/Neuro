@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -12,38 +13,30 @@ namespace Neuro
             Inputs = inputs;
             Outputs = outputs;
             Targets = targets;
-            UpdatesOps = updates.Select(x => x.Output.Operation).ToList();
+            UpdatesOps = updates.Select(x => x.op).ToArray();
         }
 
-        public List<Tensor> Train(List<Array> inputs, List<Array> outputs)
+        public NumSharp.NDArray Train(List<Array> inputs, List<Array> outputs)
         {
-            var session = Backend.Session;
+            var session = tf.Session();
 
-            var init = Backend.Graph.GetGlobalVariablesInitializer();
-            foreach (var op in init)
-                session.Run(new TFOutput[0], new TFTensor[0], new TFOutput[0], new[] { op });
+            var init = tf.global_variables_initializer();
+            session.run(init);
 
-            var runner = session.GetRunner();
-
-            foreach (var o in Outputs)
-                runner.Fetch(o.Output);
-
-            foreach (var op in UpdatesOps)
-                runner.AddTarget(op);
+            var feed_dict = new Hashtable();
 
             for (int i = 0; i < Inputs.Count; ++i)
-                runner.AddInput(Inputs[i].Output, inputs[i]);
+                feed_dict.Add(Inputs[i], inputs[i]);
 
             for (int i = 0; i < Targets.Count; ++i)
-                runner.AddInput(Targets[i].Output, outputs[i]);
+                feed_dict.Add(Targets[i], outputs[i]);
 
-            var updated = runner.Run();
-            return updated.Select(x => new Tensor(x)).ToList();
+            return session.run(control_flow_ops.group(UpdatesOps), feed_dict);
         }
 
         public List<Tensor> Inputs;
         public List<Tensor> Outputs;
         public List<Tensor> Targets;
-        public List<TFOperation> UpdatesOps;
+        public Operation[] UpdatesOps;
     }
 }

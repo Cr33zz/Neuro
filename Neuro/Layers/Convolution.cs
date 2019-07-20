@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Xml;
 using Neuro.Initializers;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -43,7 +43,7 @@ namespace Neuro
             Kernels = AddTrainableParam(new[] { FilterSize, FilterSize, InputShape.Dims.Get(-1), FiltersNum }, "kernels", KernelInitializer);
             Bias = AddTrainableParam(new[] { FiltersNum }, "bias", BiasInitializer);
 
-            Output = Backend.Add(Backend.Conv2D(InputLayers[0].Output, Kernels, new[] { Stride, Stride }, Backend.PaddingType.Valid), Bias);
+            Output = tf.add(tf.nn.con(InputLayers[0].Output, Kernels, new[] { Stride, Stride }, tf.PaddingType.Valid), Bias);
             OutputShape = new Shape(Output.Shape.ToIntArray());
         }
 

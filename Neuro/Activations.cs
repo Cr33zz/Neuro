@@ -1,4 +1,5 @@
 ﻿using System;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -29,7 +30,7 @@ namespace Neuro
     {
         public override Tensor Build(Tensor input)
         {
-            return Backend.Sigmoid(input);
+            return tf.sigmoid(input);
         }
     }
 
@@ -37,7 +38,7 @@ namespace Neuro
     {
         public override Tensor Build(Tensor input)
         {
-            return Backend.Tanh(input);
+            return tf.tanh(input);
         }
     }
 
@@ -45,7 +46,7 @@ namespace Neuro
     {
         public override Tensor Build(Tensor input)
         {
-            return Backend.Relu(input);
+            return tf.nn.relu(input);
         }
     }
 
@@ -53,7 +54,7 @@ namespace Neuro
     {
         public override Tensor Build(Tensor input)
         {
-            return Backend.Elu(input);
+            return null;// tf.nn.(input);
         }
     }
 
@@ -61,7 +62,7 @@ namespace Neuro
     {
         public override Tensor Build(Tensor input)
         {
-            return Backend.Softmax(input);
+            return tf.nn.softmax(input);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro.Optimizers
 {
@@ -7,28 +7,28 @@ namespace Neuro.Optimizers
     {
         public SGD(float lr = 0.01f)
         {
-            LearningRate = Backend.Const(lr, "learning_rate");
+            LearningRate = tf.constant(lr, name: "learning_rate");
         }
 
         public override List<Tensor> GenerateUpdates(List<Tensor> parameters, Tensor loss)
         {
             var updates = new List<Tensor>();
 
-            using (Backend.WithScope("SGD"))
+            using (tf.name_scope("SGD"))
             {
-                var grads = Backend.Gradients(loss, parameters);
+                var grads = tf.gradients(loss, parameters.ToArray());
 
-                //updates.Add(Backend.AssignAdd(Iteration, 1.0f));
+                //updates.Add(tf.AssignAdd(Iteration, 1.0f));
 
                 for (var i = 0; i < parameters.Count; i++)
                 {
                     Tensor p = parameters[i];
                     Tensor g = grads[i];
 
-                    using (Backend.WithScope(p.Name))
+                    using (tf.name_scope(p.name))
                     {
-                        Backend.Print(g);
-                        updates.Add(Backend.Assign(p, p - LearningRate * g));
+                        //tf.Print(g);
+                        updates.Add(state_ops.assign(p, p - LearningRate * g));
                     }
                 }
             }

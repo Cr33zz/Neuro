@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TensorFlow;
+using Tensorflow;
 
 namespace Neuro
 {
@@ -20,38 +20,37 @@ namespace Neuro
             ChannelsLast,
         }
 
-        static Backend()
+        /*static Backend()
         {
-            Graph = new TFGraph();
-            Session = new TFSession(Graph);
+            Graph = new Tensorflow.Graph();
+            Session = new Tensorflow.Session(Graph);
         }
 
         public static Tensor Const<T>(T value, string name = null)
         {
-            return new Tensor(Graph.Const(new TFTensor((dynamic)value), name));
+            return new Tensor(tf.constant(new Tensorflow.Tensor((dynamic)value), name));
         }
 
         public static Tensor Placeholder(int[] shape = null, string name = null)
         {
             var tfShape = ToShape(shape);
-            return new Tensor(Graph.Placeholder(TFDataType.Float, tfShape, name));
+            return new Tensor(Graph.Placeholder(Tensorflow.DataType.DtFloat, tfShape, name));
         }
 
-        public static Tensor Variable(Tensor tensor, string name)
+        //public static Tensor Variable(Tensor tensor, string name)
+        //{
+        //    var v = new Tensor(Graph.VariableV2(tensor.Shape, Tensorflow.DataType.DtFloat, operName: name));
+
+        //    Tensorflow.TF_Output init = (tensor._Tensor != null) ? Graph.Const(tensor._Tensor, Tensorflow.DataType.DtFloat) : tensor.Output;
+
+        //    init = Graph.Print(init, new[] { init }, $"initializing {v.Name}");
+        //    Graph.AddInitVariable(Graph.Assign(v.Output, init).Operation);
+        //    return v;
+        //}
+
+        public static RefVariable Variable(Array array, string name)
         {
-            var v = new Tensor(Graph.VariableV2(tensor.Shape, TFDataType.Float, operName: name));
-
-            TFOutput init = (tensor._Tensor != null) ? Graph.Const(tensor._Tensor, TFDataType.Float) : tensor.Output;
-
-            init = Graph.Print(init, new[] { init }, $"initializing {v.Name}");
-            Graph.AddInitVariable(Graph.Assign(v.Output, init).Operation);
-            return v;
-        }
-
-        public static Tensor Variable(Array array, string name)
-        {
-            var v = new Tensor(Graph.VariableV2(ToShape(array), TFDataType.Float, operName: name));
-            Graph.AddInitVariable(Graph.Assign(v.Output, Graph.Const(new TFTensor(array), TFDataType.Float)).Operation);
+            var v = new Tensor(tf.Variable(array, Tensorflow.DataType.DtFloat, perName: name));
             return v;
         }
 
@@ -68,7 +67,7 @@ namespace Neuro
 
         public static Tensor Dot(Tensor x, Tensor y)
         {
-            return new Tensor(Graph.MatMul(x.Output, y.Output));
+            return new Tensor(tf.matmul(x.Output, y.Output));
         }
 
         public static Tensor Mul<T>(T a, Tensor b)
@@ -78,7 +77,7 @@ namespace Neuro
 
         public static Tensor Mul(Tensor a, Tensor b)
         {
-            return new Tensor(Graph.Mul(a.Output, b.Output));
+            return new Tensor(tf.multiply(a.Output, b.Output));
         }
 
         public static Tensor Mul<T>(Tensor a, T b)
@@ -108,7 +107,7 @@ namespace Neuro
 
         public static Tensor Add(Tensor a, Tensor b)
         {
-            return new Tensor(Graph.Add(a.Output, b.Output));
+            return new Tensor(tf.add(a.Output, b.Output));
         }
 
         public static Tensor Add<T>(Tensor a, T b)
@@ -133,14 +132,14 @@ namespace Neuro
 
         public static Tensor Transpose(Tensor x, int[] perm)
         {
-            return new Tensor(Graph.Transpose(x.Output, Const(perm).Output));
+            return new Tensor(tf.transpose(x.Output, Const(perm).Output));
         }
 
         public static Tensor BatchFlatten(Tensor x)
         {
-            TFOutput shape = Graph.Shape(x.Output);
-            TFOutput dim = Graph.Prod(Graph.Slice(shape, Graph.Const(1), Graph.Rank(shape)), reduction_indices: Graph.ReduceDims(shape));
-            return new Tensor(Graph.Reshape(x.Output, Graph.Stack(new TFOutput[] { Graph.Const(-1), dim })));
+            Tensorflow.TF_Output shape = tf.sx.;
+            Tensorflow.TF_Output dim = tf.Graph.Prod(Graph.Slice(shape, Graph.Const(1), Graph.Rank(shape)), reduction_indices: Graph.ReduceDims(shape));
+            return new Tensor(Graph.Reshape(x.Output, Graph.Stack(new Tensorflow.TF_Output[] { Graph.Const(-1), dim })));
         }
 
         // Data is expected to be in NHWC format, for example [4, 84, 84, 3] is 4 batches of 84x84 3 depth each
@@ -155,13 +154,13 @@ namespace Neuro
             {
                 TFOperation[] ops = Graph.GetGlobalVariablesInitializer();
                 if (ops.Length > 0)
-                    Session.Run(new TFOutput[] { }, new TFTensor[] { }, new TFOutput[] { }, ops);
+                    Session.Run(new Tensorflow.TF_Output[] { }, new Tensorflow.Tensor[] { }, new Tensorflow.TF_Output[] { }, ops);
             }
             catch
             {
             }
 
-            TFTensor[] result = Session.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { t.Output });
+            Tensorflow.Tensor[] result = Session.Run(new Tensorflow.TF_Output[] { }, new Tensorflow.Tensor[] { }, new[] { t.Output });
 
             if (result.Length == 1)
                 return result[0].GetValue();
@@ -217,6 +216,16 @@ namespace Neuro
             return new Tensor(Graph.Square(x.Output));
         }
 
+        public static Tensor Pow(Tensor x, Tensor p)
+        {
+            return new Tensor(Graph.Pow(x.Output, p.Output));
+        }
+
+        public static Tensor Sqrt(Tensor x)
+        {
+            return new Tensor(Graph.Sqrt(x.Output));
+        }
+
         public static Tensor Assign(Tensor x, Tensor newX)
         {
             return new Tensor(Graph.Assign(x.Output, newX.Output));
@@ -239,7 +248,7 @@ namespace Neuro
 
         public static List<Tensor> Gradients(Tensor loss, List<Tensor> param)
         {
-            TFOutput[] grads = Graph.AddGradients(new []{ loss.Output }, param.Select(x => x.Output).ToArray());
+            Tensorflow.TF_Output[] grads = Graph.AddGradients(new []{ loss.Output }, param.Select(x => x.Output).ToArray());
 
             List<Tensor> result = new List<Tensor>();
             for (int i = 0; i < grads.Length; i++)
@@ -292,17 +301,17 @@ namespace Neuro
             return ToShape(array.GetShape());
         }
 
-        public static TFShape ToShape(TFOutput output)
+        public static TFShape ToShape(Tensorflow.TF_Output output)
         {
             return Graph.GetTensorShape(output);
         }
 
-        public static TFShape ToShape(TFTensor tensor)
+        public static TFShape ToShape(Tensorflow.Tensor tensor)
         {
             return new TFShape(tensor.Shape);
         }
 
-        public static TFGraph Graph;
-        public static TFSession Session;
+        public static Tensorflow.Graph Graph;
+        public static Tensorflow.Session Session;*/
     }
 }

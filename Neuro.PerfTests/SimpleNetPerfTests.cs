@@ -28,11 +28,11 @@ namespace Neuro.PerfTests
             var d2 = new Dense(d1, 8, Activation.ReLU);
             var d3 = new Dense(d2, 1, Activation.Sigmoid);
             net.Model = new Flow(new[] { i1 }, new[] { d3 });
-            net.Optimize(new SGD(0.01f), new MeanSquareError());
+            net.Optimize(new SGD(0.01f), new CrossEntropy());
 
             //var netClone = net.Clone();
 
-            net.Fit(x, y, batchSize: 32, epochs: 70, verbose: 2, trackFlags: Track.Nothing);
+            net.Fit(x, y, batchSize: 32, epochs: 70, verbose: 2, trackFlags: Track.TrainError);
 
             float[,] pred = (float[,])net.Predict(x)[0];
 
