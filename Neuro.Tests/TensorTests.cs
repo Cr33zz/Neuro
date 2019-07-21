@@ -281,7 +281,7 @@ namespace Neuro.Tests
             Tensor gradient = new Tensor(output); gradient.FillWithRand();
 
             Tensor inputGradient = new Tensor(input);
-            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, Tensor.PaddingType.Valid, inputGradient);
 
             Tensor inputGradient2 = new Tensor(input);
             Tensor kernelsGradient = new Tensor(kernels);

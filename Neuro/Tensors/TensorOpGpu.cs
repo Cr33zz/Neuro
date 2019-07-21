@@ -1,19 +1,25 @@
 ﻿using System;
-using Cudafy;
-using Cudafy.Atomics;
-using Cudafy.Host;
-using Cudafy.Translator;
+using ManagedCuda;
+using ManagedCuda.BasicTypes;
+using ManagedCuda.CudaBlas;
+using ManagedCuda.CudaDNN;
 
 namespace Neuro.Tensors
 {
     internal class TensorOpGpu : TensorOpMultiCpu
     {
-        internal TensorOpGpu()
+        static TensorOpGpu()
         {
-            //CudafyTranslator.GenerateDebug = true;
-            Module = CudafyTranslator.Cudafy();
-            Gpu = CudafyHost.GetDevice(CudafyModes.Target, CudafyModes.DeviceId);
-            Gpu.LoadModule(Module);
+            _CudaContext = new CudaContext(0, true);
+            _CudaBlasHandle = new CudaBlas();
+
+            var props = _CudaContext.GetDeviceInfo();
+            //this.DefaultBlockCount = props.MultiProcessorCount * 32;
+            //this.DefaultThreadsPerBlock = props.MaxThreadsPerBlock;
+            //this.WarpSize = props.WarpSize;
+
+            _CudaStream = new CudaStream();
+            _CudnnContext = new CudaDNNContext();            
         }
 
         //public override void Add(Tensor t1, Tensor t2, Tensor result)
@@ -61,362 +67,146 @@ namespace Neuro.Tensors
         //    Gpu.FreeAll();
         //}
 
-        public override void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
+        private static CudaContext _CudaContext;
+        private static CudaStream _CudaStream;
+        private static CudaBlas _CudaBlasHandle;
+        private static CudaDNNContext _CudnnContext;
+
+        public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
-            int threadsRequired = t.BatchSize * kernels.BatchSize * result.Width * result.Height;
-            GpuShape[] shapes = new[] { new GpuShape(t.Shape), new GpuShape(kernels.Shape), new GpuShape(result.Shape) };
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, t.Width, t.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
 
-            float[] devT = Gpu.CopyToDevice(t.Values);
-            float[] devKernels = Gpu.CopyToDevice(kernels.Values);
-            float[] devResult = Gpu.Allocate(result.Values);
-            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
+            t.CopyToDevice();
+            kernels.CopyToDevice();
+            result.CopyToDevice();
 
-            Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuConv2D(devT, devKernels, devResult, devShapes, paddingX, paddingY, stride);
-            Gpu.Synchronize();
+            using (var convolutionDesc = new ConvolutionDescriptor())
+            using (var tDesc = new TensorDescriptor())
+            using (var kernelsDesc = new FilterDescriptor())
+            using (var resultDesc = new TensorDescriptor())
+            {
+                convolutionDesc.SetConvolution2dDescriptor(paddingY, paddingX, stride, stride, 1, 1, cudnnConvolutionMode.CrossCorrelation, cudnnDataType.Float);
+                tDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, t.Shape.Dimensions[3], t.Shape.Dimensions[2], t.Shape.Dimensions[1], t.Shape.Dimensions[0]);
+                kernelsDesc.SetFilter4dDescriptor(cudnnDataType.Float, cudnnTensorFormat.NCHW, kernels.Shape.Dimensions[3], kernels.Shape.Dimensions[2], kernels.Shape.Dimensions[1], kernels.Shape.Dimensions[0]);
+                resultDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, result.Shape.Dimensions[3], result.Shape.Dimensions[2], result.Shape.Dimensions[1], result.Shape.Dimensions[0]);
 
-            Gpu.CopyFromDevice(devResult, result.Values);
-            Gpu.FreeAll();
+                var algo = _CudnnContext.GetConvolutionForwardAlgorithm(tDesc, kernelsDesc, convolutionDesc, resultDesc, cudnnConvolutionFwdPreference.PreferFastest, IntPtr.Zero);
+
+                var workspaceSize = _CudnnContext.GetConvolutionForwardWorkspaceSize(tDesc, kernelsDesc, convolutionDesc, resultDesc, algo);
+                workspaceSize = workspaceSize == 0 ? new SizeT(1) : workspaceSize;
+
+                if (result.GpuData.ConvWorkspace == null || result.GpuData.ConvWorkspace.Size != workspaceSize)
+                    result.GpuData.ConvWorkspace = new CudaDeviceVariable<byte>(workspaceSize);
+
+                _CudnnContext.ConvolutionForward(1.0f, tDesc, t.GpuData.DeviceVar, kernelsDesc, kernels.GpuData.DeviceVar, convolutionDesc, algo, result.GpuData.ConvWorkspace, 0.0f, resultDesc, result.GpuData.DeviceVar);
+            }            
         }
 
-        public override void Conv2DInputGradient(Tensor gradient, Tensor rotKernels, int stride, int paddingX, int paddingY, Tensor inputGradients)
+        public override void Conv2DInputGradient(Tensor gradient, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor inputGradients)
         {
-            GpuShape[] shapes = new[] { new GpuShape(gradient.Shape),
-                                        new GpuShape(rotKernels.Shape),
-                                        new GpuShape(inputGradients.Shape),
-                                        new GpuShape(rotKernels.Width, rotKernels.Height, 1, rotKernels.BatchSize) };
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, gradient.Width, gradient.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
 
-            float[] devGradient = Gpu.CopyToDevice(gradient.Values);
-            float[] devRotKernels = Gpu.CopyToDevice(rotKernels.Values);
-            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
+            gradient.CopyToDevice();
+            kernels.CopyToDevice();
+            inputGradients.CopyToDevice();
 
-            int threadsRequiredPerResultElem = rotKernels.BatchSize * rotKernels.Height * rotKernels.Width;
-            float[,] resultPartials = new float[inputGradients.Length, GetBlocksNum(threadsRequiredPerResultElem)];
-            float[,] devResultPartials = Gpu.Allocate(resultPartials);
+            using (var convolutionDesc = new ConvolutionDescriptor())
+            using (var gradientDesc = new TensorDescriptor())
+            using (var kernelsDesc = new FilterDescriptor())
+            using (var inputGradientsDesc = new TensorDescriptor())
+            {
+                convolutionDesc.SetConvolution2dDescriptor(paddingY, paddingX, stride, stride, 1, 1, cudnnConvolutionMode.CrossCorrelation, cudnnDataType.Float);
+                gradientDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, gradient.Shape.Dimensions[3], gradient.Shape.Dimensions[2], gradient.Shape.Dimensions[1], gradient.Shape.Dimensions[0]);
+                kernelsDesc.SetFilter4dDescriptor(cudnnDataType.Float, cudnnTensorFormat.NCHW, kernels.Shape.Dimensions[3], kernels.Shape.Dimensions[2], kernels.Shape.Dimensions[1], kernels.Shape.Dimensions[0]);
+                inputGradientsDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, inputGradients.Shape.Dimensions[3], inputGradients.Shape.Dimensions[2], inputGradients.Shape.Dimensions[1], inputGradients.Shape.Dimensions[0]);
 
-            // simulate
-            //GpuConv2DInputGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), gradient.Values, rotKernels.Values, resultPartials, shapes, paddingX, paddingY, stride);
+                var algo = _CudnnContext.GetConvolutionBackwardDataAlgorithm(kernelsDesc, gradientDesc, convolutionDesc, inputGradientsDesc, cudnnConvolutionBwdDataPreference.PreferFastest, IntPtr.Zero);
+                var workspaceSize = _CudnnContext.GetConvolutionBackwardDataWorkspaceSize(kernelsDesc, gradientDesc, convolutionDesc, inputGradientsDesc, algo);
+                workspaceSize = workspaceSize == 0 ? new SizeT(1) : workspaceSize;
 
-            Gpu.Launch(new dim3(inputGradients.Length, GetBlocksNum(threadsRequiredPerResultElem)), THREADS_PER_BLOCK).GpuConv2DInputGradient(devGradient, devRotKernels, devResultPartials, devShapes, paddingX, paddingY, stride);
-            Gpu.Synchronize();
+                if (inputGradients.GpuData.ConvBackWorkspace == null || inputGradients.GpuData.ConvBackWorkspace.Size != workspaceSize)
+                    inputGradients.GpuData.ConvBackWorkspace = new CudaDeviceVariable<byte>(workspaceSize);
 
-            Gpu.CopyFromDevice(devResultPartials, resultPartials);
-
-            Gpu.FreeAll();
-
-            for (int k = 0; k < resultPartials.GetLength(0); ++k)
-            for (int partialId = 0; partialId < resultPartials.GetLength(1); ++partialId)
-                inputGradients.Values[k] += resultPartials[k, partialId];
+                _CudnnContext.ConvolutionBackwardData(1.0f, kernelsDesc, kernels.GpuData.DeviceVar, gradientDesc, gradient.GpuData.DeviceVar, convolutionDesc, algo, inputGradients.GpuData.ConvBackWorkspace, 0.0f, inputGradientsDesc, inputGradients.GpuData.DeviceVar);
+            }
         }
 
-        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
+        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, Tensor.PaddingType padding, Tensor kernelsGradient)
         {
-            GpuShape[] shapes = new[] { new GpuShape(input.Shape),
-                                        new GpuShape(kernelsGradient.Shape),
-                                        new GpuShape(gradient.Shape),
-                                        new GpuShape(kernelsGradient.Shape),
-                                        new GpuShape(gradient.Width, gradient.Height, 1, gradient.BatchSize) };
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, input.Width, input.Height, kernelsGradient.Width, kernelsGradient.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
 
-            float[] devGradient = Gpu.CopyToDevice(gradient.Values);
-            GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
+            gradient.CopyToDevice();
+            input.CopyToDevice();
+            kernelsGradient.CopyToDevice();
 
-            int threadsRequiredPerResultElem = gradient.BatchSize * gradient.Height * gradient.Width;
-            float[,] resultPartials = new float[kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)];
+            using (var convolutionDesc = new ConvolutionDescriptor())
+            using (var gradientDesc = new TensorDescriptor())
+            using (var inputDesc = new TensorDescriptor())
+            using (var kernelsGradientsDesc = new FilterDescriptor())
+            {
+                convolutionDesc.SetConvolution2dDescriptor(paddingY, paddingX, stride, stride, 1, 1, cudnnConvolutionMode.CrossCorrelation, cudnnDataType.Float);
+                gradientDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, gradient.Shape.Dimensions[3], gradient.Shape.Dimensions[2], gradient.Shape.Dimensions[1], gradient.Shape.Dimensions[0]);
+                inputDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, input.Shape.Dimensions[3], input.Shape.Dimensions[2], input.Shape.Dimensions[1], input.Shape.Dimensions[0]);
+                kernelsGradientsDesc.SetFilter4dDescriptor(cudnnDataType.Float, cudnnTensorFormat.NCHW, kernelsGradient.Shape.Dimensions[3], kernelsGradient.Shape.Dimensions[2], kernelsGradient.Shape.Dimensions[1], kernelsGradient.Shape.Dimensions[0]);
 
-            float[] devInput = Gpu.CopyToDevice(input.Values);
-            float[,] devResultPartials = Gpu.Allocate(resultPartials);
+                var algo = _CudnnContext.GetConvolutionBackwardFilterAlgorithm(inputDesc, gradientDesc, convolutionDesc, kernelsGradientsDesc, cudnnConvolutionBwdFilterPreference.PreferFastest, IntPtr.Zero);
+                var workspaceSize = _CudnnContext.GetConvolutionBackwardFilterWorkspaceSize(inputDesc, gradientDesc, convolutionDesc, kernelsGradientsDesc, algo);
+                workspaceSize = workspaceSize == 0 ? new SizeT(1) : workspaceSize;
 
-            // simulate
-            //GpuConv2DKernelsGradient(GetSimulatedThread(blockSize, new dim3(bx, by, bz), new dim3(tx, ty, tz)), input.Values, gradient.Values, kernelsGradientPartials, shapes, paddingX, paddingY, stride);
+                if (kernelsGradient.GpuData.ConvBackKernelWorkspace == null || kernelsGradient.GpuData.ConvBackKernelWorkspace.Size != workspaceSize)
+                    kernelsGradient.GpuData.ConvBackKernelWorkspace = new CudaDeviceVariable<byte>(workspaceSize);
 
-            Gpu.Launch(new dim3(kernelsGradient.Length, GetBlocksNum(threadsRequiredPerResultElem)), THREADS_PER_BLOCK).GpuConv2DKernelsGradient(devInput, devGradient, devResultPartials, devShapes, paddingX, paddingY, stride);
-            Gpu.Synchronize();
-
-            Gpu.CopyFromDevice(devResultPartials, resultPartials);
-
-            Gpu.FreeAll();
-
-            for (int k = 0; k < resultPartials.GetLength(0); ++k)
-            for (int partialId = 0; partialId < resultPartials.GetLength(1); ++partialId)
-                kernelsGradient.Values[k] += resultPartials[k, partialId];
+                _CudnnContext.ConvolutionBackwardFilter(1.0f, inputDesc, input.GpuData.DeviceVar, gradientDesc, gradient.GpuData.DeviceVar, convolutionDesc, algo, kernelsGradient.GpuData.ConvBackKernelWorkspace, 0.0f, kernelsGradientsDesc, kernelsGradient.GpuData.DeviceVar);
+            }
         }
 
-        // this is only for testing purposes
-        private GThread GetSimulatedThread(dim3 blockDim, dim3 blockId, dim3 threadId)
+        private cudnnPoolingMode TensorPoolTypeToCuDNNPoolType(Tensor.PoolType type)
         {
-            return new GThread(threadId.x, threadId.y, new GBlock(new GGrid(new dim3(0)), blockDim, blockId.x, blockId.y));
+            if (type == Tensor.PoolType.Max)
+                return cudnnPoolingMode.Max;
+            return cudnnPoolingMode.AverageCountIncludePadding;
         }
 
-        private int GetBlocksNum(int threadsRequired)
+        public override void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            return (int)Math.Ceiling(threadsRequired / (float)THREADS_PER_BLOCK);
+            t.CopyToDevice();
+            result.CopyToDevice();
+
+            using (var poolingDesc = new PoolingDescriptor())
+            using (var tDesc = new TensorDescriptor())
+            using (var resultDesc = new TensorDescriptor())
+            {
+                poolingDesc.SetPooling2dDescriptor(TensorPoolTypeToCuDNNPoolType(type), cudnnNanPropagation.NotPropagateNan, filterSize, filterSize, paddingX, paddingY, stride, stride);
+                tDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, t.Shape.Dimensions[3], t.Shape.Dimensions[2], t.Shape.Dimensions[1], t.Shape.Dimensions[0]);
+                resultDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, result.Shape.Dimensions[3], result.Shape.Dimensions[2], result.Shape.Dimensions[1], result.Shape.Dimensions[0]);
+
+                _CudnnContext.PoolingForward(poolingDesc, 1.0f, tDesc, t.GpuData.DeviceVar, 0.0f, resultDesc, result.GpuData.DeviceVar);
+            }
         }
 
-        private const int THREADS_PER_BLOCK = 256;
-
-        private CudafyModule Module;
-        private GPGPU Gpu;
-
-        [Cudafy]
-        private struct GpuShape
+        public override void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
-            [CudafyIgnore]
-            public GpuShape(Shape shape)
-            : this(shape.Width, shape.Height, shape.Depth, shape.BatchSize)
+            output.CopyToDevice();
+            input.CopyToDevice();
+            outputGradient.CopyToDevice();
+            result.CopyToDevice();
+
+            using (var poolingDesc = new PoolingDescriptor())
+            using (var outputDesc = new TensorDescriptor())
+            using (var inputDesc = new TensorDescriptor())
+            using (var outputGradientDesc = new TensorDescriptor())
+            using (var resultDesc = new TensorDescriptor())
             {
-            }
+                poolingDesc.SetPooling2dDescriptor(TensorPoolTypeToCuDNNPoolType(type), cudnnNanPropagation.NotPropagateNan, filterSize, filterSize, paddingX, paddingY, stride, stride);
+                outputDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, output.Shape.Dimensions[3], output.Shape.Dimensions[2], output.Shape.Dimensions[1], output.Shape.Dimensions[0]);
+                inputDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, input.Shape.Dimensions[3], input.Shape.Dimensions[2], input.Shape.Dimensions[1], input.Shape.Dimensions[0]);
+                outputGradientDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, outputGradient.Shape.Dimensions[3], outputGradient.Shape.Dimensions[2], outputGradient.Shape.Dimensions[1], outputGradient.Shape.Dimensions[0]);
+                resultDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, result.Shape.Dimensions[3], result.Shape.Dimensions[2], result.Shape.Dimensions[1], result.Shape.Dimensions[0]);
 
-            public GpuShape(int width, int height = 1, int depth = 1, int batchSize = 1)
-            {
-                Width = width;
-                Height = height;
-                Depth = depth;
-                BatchSize = batchSize;
-                Dim0 = width;
-                Dim0Dim1 = Dim0 * height;
-                Dim0Dim1Dim2 = Dim0Dim1 * depth;
-            }
-
-            public int GetIndex(int w, int h = 1, int d = 1, int n = 1)
-            {
-                return Dim0Dim1Dim2 * n + Dim0Dim1 * d + Dim0 * h + w;
-            }
-
-            public int TryGetIndex(int w, int h = 1, int d = 1, int n = 1)
-            {
-                if (h < 0 || h >= Height || w < 0 || w >= Width || d < 0 || d >= Depth)
-                    return -1;
-
-                return GetIndex(w, h, d, n);
-            }
-
-            public int GetWidth(int index)
-            {
-                return index % Width;
-            }
-
-            public int GetHeight(int index)
-            {
-                return (index / Dim0) % Height;
-            }
-
-            public int GetDepth(int index)
-            {
-                return (index / Dim0Dim1) % Depth;
-            }
-
-            public int GetBatch(int index)
-            {
-                return index / Dim0Dim1Dim2;
-            }
-
-            public int Width;
-            public int Height;
-            public int Depth;
-            public int BatchSize;
-            public int Dim0;
-            public int Dim0Dim1;
-            public int Dim0Dim1Dim2;
-        }
-
-        [Cudafy]
-        private static void GpuAdd(GThread thread, float[] t1, float[] t2, float[] result)
-        {
-            int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
-
-            if (id >= result.Length)
-                return;
-
-            result[id] = t1[id] + t2[id % t2.Length];
-        }
-
-        [Cudafy]
-        private static void GpuSub(GThread thread, float[] t1, float[] t2, float[] result)
-        {
-            int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
-
-            if (id >= result.Length)
-                return;
-
-            result[id] = t1[id] - t2[id % t2.Length];
-        }
-
-        [Cudafy]
-        private static void GpuMul(GThread thread, float[] t1, float[] t2, float[] result, GpuShape[] shapes)
-        {
-            int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
-
-            if (id >= result.Length)
-                return;
-
-            int n = shapes[2].GetBatch(id);
-            int d = shapes[2].GetDepth(id);
-            int h = shapes[2].GetHeight(id);
-            int w = shapes[2].GetWidth(id);
-
-            for (int i = 0; i < shapes[0].Width; ++i)
-                result[id] += t1[shapes[0].GetIndex(i, h, d, Math.Min(n, shapes[0].BatchSize - 1))] * t2[shapes[1].GetIndex(w, i, d, Math.Min(n, shapes[1].BatchSize - 1))];
-        }
-
-        [Cudafy]
-        private static void GpuConv2D(GThread thread, float[] t, float[] kernels, float[] result, GpuShape[] shapes, int paddingX, int paddingY, int stride)
-        {
-            int id = (thread.blockDim.x * thread.blockIdx.x) + thread.threadIdx.x;
-
-            if (id >= result.Length)
-                return;
-
-            int n = shapes[2].GetBatch(id);
-            int outD = shapes[2].GetDepth(id);
-            int outH = shapes[2].GetHeight(id);
-            int outW = shapes[2].GetWidth(id);
-
-            int h = -paddingY + stride * outH;
-            int w = -paddingX + stride * outW;
-
-            float val = 0;
-
-            for (int kernelD = 0; kernelD < shapes[1].Depth; ++kernelD)
-            for (int kernelH = 0; kernelH < shapes[1].Height; ++kernelH)
-            for (int kernelW = 0; kernelW < shapes[1].Width; ++kernelW)
-            {
-                int tIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelD, n);
-
-                if (tIndex >= 0)
-                    val += t[tIndex] * kernels[shapes[1].GetIndex(kernelW, kernelH, kernelD, outD)];
-            }
-
-            result[shapes[2].GetIndex(outW, outH, outD, n)] = val;
-        }
-
-        [Cudafy]
-        private static void GpuConv2DInputGradient(GThread thread, float[] gradient, float[] rotKernels, float[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
-        {
-            /*
-            for (int n = 0; n < gradients.BatchSize; ++n)
-            for (int outW = 0, w = -paddingX; outW < inputGradients.Width; w += stride, ++outW)
-            for (int outH = 0, h = -paddingY; outH < inputGradients.Height; h += stride, ++outH)            
-            for (int outD = 0; outD < inputGradients.Depth; ++outD)
-            {
-                for (int kernelN = 0; kernelN < rotKernels.BatchSize; ++kernelN)
-                for (int kernelH = 0; kernelH < rotKernels.Height; ++kernelH)
-                for (int kernelW = 0; kernelW < rotKernels.Width; ++kernelW)
-                    inputGradients[outW, outH, outD, n] += gradients.TryGet(0, w + kernelW, h + kernelH, kernelN, n) * rotKernels[kernelW, kernelH, outD, kernelN];
-            }
-            */
-
-            // this shared memory will store partial sums that later on will be reduced
-            float[] sdata = thread.AllocateShared<float>("sdata", THREADS_PER_BLOCK);
-
-            int resultElemId = thread.blockIdx.x;
-            int tid = thread.threadIdx.x;
-            int id = (thread.blockDim.x * thread.blockIdx.y) + thread.threadIdx.x;
-
-            int threadsRequiredPerResultElem = shapes[1].BatchSize * shapes[1].Height * shapes[1].Width;
-
-            int outN = shapes[2].GetBatch(resultElemId);
-            int outD = shapes[2].GetDepth(resultElemId);
-            int outH = shapes[2].GetHeight(resultElemId);
-            int outW = shapes[2].GetWidth(resultElemId);
-
-            int kernelN = shapes[3].GetBatch(id);
-            int kernelH = shapes[3].GetHeight(id);
-            int kernelW = shapes[3].GetWidth(id);
-
-            int h = -paddingY + stride * outH;
-            int w = -paddingX + stride * outW;
-
-            float temp = 0;
-            if (id < threadsRequiredPerResultElem)
-            {
-                int gradientIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelN, outN);
-                if (gradientIndex >= 0)
-                    temp = gradient[gradientIndex] * rotKernels[shapes[1].GetIndex(kernelW, kernelH, outD, kernelN)];
-            }
-            sdata[tid] = temp;
-
-            thread.SyncThreads();
-
-            int i = thread.blockDim.x / 2;
-            while (i != 0)
-            {
-                if (tid < i)
-                    sdata[tid] += sdata[tid + i];
-                thread.SyncThreads();
-                i /= 2;
-            }
-
-            if (tid == 0)
-                resultPartials[thread.blockIdx.x, thread.blockIdx.y] = sdata[0];
-        }
-
-        [Cudafy]
-        private static void GpuConv2DKernelsGradient(GThread thread, float[] input, float[] gradient, float[,] resultPartials, GpuShape[] shapes, int paddingX, int paddingY, int stride)
-        {
-            /*
-            for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
-            for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
-            for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
-            for (int kernelN = 0; kernelN < kernels.BatchSize; ++kernelN)
-            {
-                for (int n = 0; n < gradient.BatchSize; ++n)
-                for (int h = -paddingY, outH = 0; outH < gradient.Height; h += stride, ++outH)
-                for (int w = -paddingX, outW = 0; outW < gradient.Width; w += stride, ++outW)
-                {
-                    float grad = gradient[outW, outH, kernelN, n];
-                    float kernGradVal = input.TryGet(0, w + kernelW, h + kernelH, kernelD, n) * grad;
-                    kernelsGradient[kernelW, kernelH, kernelD, kernelN] += kernGradVal;
-                }
-            }
-            */
-
-            // this shared memory will store partial sums that later on will be reduced
-            float[] sdata = thread.AllocateShared<float>("sdata", THREADS_PER_BLOCK);
-
-            int resultElemId = thread.blockIdx.x;
-            int tid = thread.threadIdx.x;
-            int id = (thread.blockDim.x * thread.blockIdx.y) + thread.threadIdx.x;
-
-            int threadsRequiredPerResultElem = shapes[4].BatchSize * shapes[4].Height * shapes[4].Width;
-
-            int kernelN = shapes[1].GetBatch(resultElemId);
-            int kernelD = shapes[1].GetDepth(resultElemId);
-            int kernelH = shapes[1].GetHeight(resultElemId);
-            int kernelW = shapes[1].GetWidth(resultElemId);
-            int n = shapes[4].GetBatch(id);
-            int outH = shapes[4].GetHeight(id);
-            int outW = shapes[4].GetWidth(id);
-
-            int h = -paddingY + stride * outH;
-            int w = -paddingX + stride * outW;
-
-            float temp = 0;
-            if (id < threadsRequiredPerResultElem)
-            {
-                int inputIndex = shapes[0].TryGetIndex(w + kernelW, h + kernelH, kernelD, n);
-                if (inputIndex >= 0)
-                    temp = input[inputIndex] * gradient[shapes[2].GetIndex(outW, outH, kernelN, n)];
-
-                //if (resultElemId == 0)
-                //    Console.WriteLine("tid=%d - %f", id, temp);
-            }
-            sdata[tid] = temp;
-
-            thread.SyncThreads();
-
-            int i = thread.blockDim.x / 2;
-            while (i != 0)
-            {
-                if (tid < i)
-                    sdata[tid] += sdata[tid + i];
-                thread.SyncThreads();
-                i /= 2;
-            }
-
-            if (tid == 0)
-            {
-                //if (resultElemId == 0)
-                //    Console.WriteLine("gridDim.x=%d gridDim.y=%d blockDim.x=%d blockDim.y=%d", thread.gridDim.x, thread.gridDim.y, thread.blockDim.x, thread.blockDim.y);
-                resultPartials[thread.blockIdx.x, thread.blockIdx.y] = sdata[0];
+                _CudnnContext.PoolingBackward(poolingDesc, 1.0f, outputDesc, output.GpuData.DeviceVar, outputGradientDesc, outputGradient.GpuData.DeviceVar, inputDesc, input.GpuData.DeviceVar, 0.0f, resultDesc, result.GpuData.DeviceVar);
             }
         }
     }

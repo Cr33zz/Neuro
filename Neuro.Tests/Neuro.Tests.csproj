@@ -40,24 +40,17 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cloo, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="CudaBlas, Version=8.0.22.0, Culture=neutral, PublicKeyToken=539d54d12e99fedb, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Neuro\Cloo.dll</HintPath>
+      <HintPath>..\Neuro\CudaBlas.dll</HintPath>
     </Reference>
-    <Reference Include="CUDA.NET">
-      <HintPath>..\Neuro\CUDA.NET.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy, Version=1.29.6865.30601, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="CudaDNN, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Neuro\Cudafy.dll</HintPath>
+      <HintPath>..\Neuro\CudaDNN.dll</HintPath>
     </Reference>
-    <Reference Include="Cudafy.Host, Version=1.29.6865.30601, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="ManagedCuda, Version=8.0.22.0, Culture=neutral, PublicKeyToken=242d898828717aa0, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Neuro\Cudafy.Host.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy.Translator, Version=1.29.6865.30602, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Neuro\Cudafy.Translator.dll</HintPath>
+      <HintPath>..\Neuro\ManagedCuda.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\MSTest.TestFramework.1.3.2\lib\net45\Microsoft.VisualStudio.TestPlatform.TestFramework.dll</HintPath>
@@ -90,6 +83,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

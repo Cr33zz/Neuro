@@ -78,7 +78,7 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, InputsGradient[0]);
+            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, Tensor.PaddingType.Valid, InputsGradient[0]);
             Tensor.Conv2DKernelsGradient(Inputs[0], outputGradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
 
             if (UseBias)

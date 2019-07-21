@@ -106,11 +106,11 @@ namespace Neuro.Tests
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor inputGradient = new Tensor(input);
-            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, Tensor.PaddingType.Valid, inputGradient);
 
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor inputGradient2 = new Tensor(input);
-            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient2);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, Tensor.PaddingType.Valid, inputGradient2);
 
             Assert.IsTrue(inputGradient.Equals(inputGradient2, 1e-4f));
         }
@@ -165,17 +165,19 @@ namespace Neuro.Tests
         [TestMethod]
         public void PoolGradient_Max_Valid_CompareWithCpuResult()
         {
+            const int FILTER_SIZE = 3;
+            const int STRIDE = 2;
             Tensor input = new Tensor(new Shape(27, 27, 20, 3)); input.FillWithRand();
-            Tensor output = input.Pool(3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
+            Tensor output = input.Pool(FILTER_SIZE, STRIDE, Tensor.PoolType.Max, Tensor.PaddingType.Valid);
             Tensor outputGradient = new Tensor(output.Shape); outputGradient.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = new Tensor(input.Shape);
-            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r);
+            Tensor.PoolGradient(output, input, outputGradient, FILTER_SIZE, STRIDE, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r);
 
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor r2 = new Tensor(input.Shape);
-            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r2);
+            Tensor.PoolGradient(output, input, outputGradient, FILTER_SIZE, STRIDE, Tensor.PoolType.Max, Tensor.PaddingType.Valid, r2);
 
             Assert.IsTrue(r.Equals(r2));
         }
@@ -183,17 +185,19 @@ namespace Neuro.Tests
         [TestMethod]
         public void PoolGradient_Avg_Valid_CompareWithCpuResult()
         {
+            const int FILTER_SIZE = 3;
+            const int STRIDE = 2;
             Tensor input = new Tensor(new Shape(27, 27, 20, 3)); input.FillWithRand();
-            Tensor output = input.Pool(3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid);
+            Tensor output = input.Pool(FILTER_SIZE, STRIDE, Tensor.PoolType.Avg, Tensor.PaddingType.Valid);
             Tensor outputGradient = new Tensor(output.Shape); outputGradient.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = new Tensor(input.Shape);
-            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r);
+            Tensor.PoolGradient(output, input, outputGradient, FILTER_SIZE, STRIDE, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r);
 
             Tensor.SetOpMode(Tensor.OpMode.GPU);
             Tensor r2 = new Tensor(input.Shape);
-            Tensor.PoolGradient(output, input, outputGradient, 3, 2, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r2);
+            Tensor.PoolGradient(output, input, outputGradient, FILTER_SIZE, STRIDE, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r2);
 
             Assert.IsTrue(r.Equals(r2));
         }

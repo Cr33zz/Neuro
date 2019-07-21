@@ -106,11 +106,11 @@ namespace Neuro.Tests
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor inputGradient = new Tensor(input);
-            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, Tensor.PaddingType.Valid, inputGradient);
 
             Tensor.SetOpMode(Tensor.OpMode.MultiCPU);
             Tensor inputGradient2 = new Tensor(input);
-            Tensor.Conv2DInputsGradient(gradient, kernels, 1, inputGradient2);
+            Tensor.Conv2DInputsGradient(gradient, kernels, 1, Tensor.PaddingType.Valid, inputGradient2);
 
             Assert.IsTrue(inputGradient.Equals(inputGradient2));
         }

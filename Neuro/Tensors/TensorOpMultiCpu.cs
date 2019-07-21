@@ -8,6 +8,10 @@ namespace Neuro.Tensors
     {
         public override void Add(Tensor t1, Tensor t2, Tensor result)
         {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CopyToHost();
+
             if (t2.BatchSize == t1.BatchSize)
             {
                 var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
@@ -33,6 +37,10 @@ namespace Neuro.Tensors
 
         public override void Sub(Tensor t1, Tensor t2, Tensor result)
         {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CopyToHost();
+
             if (t2.BatchSize == t1.BatchSize)
             {
                 var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
@@ -58,6 +66,10 @@ namespace Neuro.Tensors
 
         public override void Mul(Tensor t1, Tensor t2, Tensor result)
         {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CopyToHost();
+
             Parallel.For(0, result.BatchSize, n =>
             {
                 int t1N = Math.Min(n, t1.BatchSize - 1);
@@ -75,6 +87,10 @@ namespace Neuro.Tensors
 
         public override void MulElem(Tensor t1, Tensor t2, Tensor result)
         {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CopyToHost();
+
             var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
             Parallel.ForEach(rangePartitioner, range =>
             {
@@ -83,8 +99,15 @@ namespace Neuro.Tensors
             });
         }
 
-        public override void Conv2D(Tensor t, Tensor kernels, int stride, int paddingX, int paddingY, Tensor result)
+        public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
+            t.CopyToHost();
+            kernels.CopyToHost();
+            result.CopyToHost();
+
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, t.Width, t.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
+
             Parallel.For(0, t.BatchSize, n =>
             {
                 Parallel.For(0, kernels.BatchSize, outD => {
@@ -104,9 +127,19 @@ namespace Neuro.Tensors
             });
         }
 
-        public override void Conv2DInputGradient(Tensor gradients, Tensor rotKernels, int stride, int paddingX, int paddingY, Tensor inputGradients)
+        public override void Conv2DInputGradient(Tensor gradient, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor inputGradients)
         {
-            Parallel.For(0, gradients.BatchSize, n =>
+            gradient.CopyToHost();
+            kernels.CopyToHost();
+            inputGradients.CopyToHost();
+
+            Tensor rotKernels = kernels.Rotated180();
+            padding = Tensor.PaddingType.Full;
+
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, gradient.Width, gradient.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
+
+            Parallel.For(0, gradient.BatchSize, n =>
             {
                 for (int outH = 0, h = -paddingY; outH < inputGradients.Height; h += stride, ++outH)
                 for (int outW = 0, w = -paddingX; outW < inputGradients.Width; w += stride, ++outW)
@@ -116,14 +149,21 @@ namespace Neuro.Tensors
                     for (int kernelH = 0; kernelH < rotKernels.Height; ++kernelH)
                     for (int kernelW = 0; kernelW < rotKernels.Width; ++kernelW)
                     {
-                        inputGradients[outW, outH, outD, n] += gradients.TryGet(0, w + kernelW, h + kernelH, kernelN, n) * rotKernels[kernelW, kernelH, outD, kernelN];
+                        inputGradients[outW, outH, outD, n] += gradient.TryGet(0, w + kernelW, h + kernelH, kernelN, n) * rotKernels[kernelW, kernelH, outD, kernelN];
                     }
                 });
             });
         }
 
-        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, int paddingX, int paddingY, Tensor kernelsGradient)
+        public override void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, Tensor.PaddingType padding, Tensor kernelsGradient)
         {
+            input.CopyToHost();
+            gradient.CopyToHost();
+            kernelsGradient.CopyToHost();
+
+            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
+            Tensor.GetPaddingParams(padding, input.Width, input.Height, kernelsGradient.Width, kernelsGradient.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
+
             for (int n = 0; n < gradient.BatchSize; ++n)
             {
                 Parallel.For(0, kernelsGradient.BatchSize, outD =>
@@ -147,6 +187,9 @@ namespace Neuro.Tensors
 
         public override void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
+            t.CopyToHost();
+            result.CopyToHost();
+
             Parallel.For(0, t.BatchSize, outN => 
             {
                 Parallel.For(0, t.Depth, outD =>
@@ -182,6 +225,13 @@ namespace Neuro.Tensors
 
         public override void PoolGradient(Tensor output, Tensor input, Tensor outputGradient, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
+            output.CopyToHost();
+            input.CopyToHost();
+            outputGradient.CopyToHost();
+            result.CopyToHost();
+
+            result.Zero();
+
             Parallel.For(0, output.BatchSize, outN =>
             {
                 Parallel.For(0, output.Depth, outD =>
@@ -196,7 +246,8 @@ namespace Neuro.Tensors
                             for (int poolW = 0; poolW < filterSize; ++poolW)
                             {
                                 float value = input.TryGet(Single.MinValue, w + poolW, h + poolH, outD, outN);
-                                result.TrySet(value == output[outW, outH, outD, outN] ? outputGradient.Get(outW, outH, outD, outN) : 0, w + poolW, h + poolH, outD, outN);
+                                if (value == output[outW, outH, outD, outN])
+                                    result.TrySet(result.TryGet(Single.MinValue, w + poolW, h + poolH, outD, outN) + outputGradient[outW, outH, outD, outN], w + poolW, h + poolH, outD, outN);
                             }
                         }
                         else if (type == Tensor.PoolType.Avg)
@@ -206,7 +257,7 @@ namespace Neuro.Tensors
                             for (int poolH = 0; poolH < filterSize; ++poolH)
                             for (int poolW = 0; poolW < filterSize; ++poolW)
                             {
-                                result.TrySet(outputGradient[outW, outH, outD, outN] / filterElementsNum, w + poolW, h + poolH, outD, outN);
+                                result.TrySet(result.TryGet(Single.MinValue, w + poolW, h + poolH, outD, outN) + outputGradient[outW, outH, outD, outN] / filterElementsNum, w + poolW, h + poolH, outD, outN);
                             }
                         }
                     }
