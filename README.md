@@ -42,6 +42,7 @@ var trainingData = new List<Data> { new Data(inputs, new []{output}) };
 
 net.Fit(trainingData, 1, 50, null, 0, Track.Nothing, false);
 ```
+Library can generate basic graphs to track error (train data, test data).
 
 # Prerequisites
 
