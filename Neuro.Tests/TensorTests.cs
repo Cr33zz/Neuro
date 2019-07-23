@@ -553,6 +553,49 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Merge_Into_Depth()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            List<Tensor> tensors = new List<Tensor>();
+
+            for (int i = 0; i < 5; ++i)
+            {
+                var t = new Tensor(new Shape(2, 3));
+                t.FillWithRand();
+                tensors.Add(t);
+            }
+
+            var result = Tensor.MergeIntoDepth(tensors);
+
+            for (int i = 0; i < tensors.Count; ++i)
+                Assert.IsTrue(result.GetDepth(i).Equals(tensors[i]));
+        }
+
+        [TestMethod]
+        public void Merge_Into_Depth_Forced_Depth()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            List<Tensor> tensors = new List<Tensor>();
+
+            for (int i = 0; i < 5; ++i)
+            {
+                var t = new Tensor(new Shape(2, 3));
+                t.FillWithRand();
+                tensors.Add(t);
+            }
+
+            var result = Tensor.MergeIntoDepth(tensors, 10);
+
+            for (int i = 0; i < 5; ++i)
+                Assert.IsTrue(result.GetDepth(i).Equals(tensors[0]));
+
+            for (int i = 5; i < tensors.Count; ++i)
+                Assert.IsTrue(result.GetDepth(i).Equals(tensors[i - 5]));
+        }
+
+        [TestMethod]
         public void Map()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);

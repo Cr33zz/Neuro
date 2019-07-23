@@ -33,26 +33,11 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cloo">
-      <HintPath>.\Cloo.dll</HintPath>
-    </Reference>
-    <Reference Include="CUDA.NET">
-      <HintPath>.\CUDA.NET.dll</HintPath>
-    </Reference>
     <Reference Include="CudaBlas">
       <HintPath>.\CudaBlas.dll</HintPath>
     </Reference>
     <Reference Include="CudaDNN">
       <HintPath>.\CudaDNN.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy">
-      <HintPath>.\Cudafy.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy.Host">
-      <HintPath>.\Cudafy.Host.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy.Translator">
-      <HintPath>.\Cudafy.Translator.dll</HintPath>
     </Reference>
     <Reference Include="ManagedCuda">
       <HintPath>.\ManagedCuda.dll</HintPath>

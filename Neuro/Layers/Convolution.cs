@@ -42,6 +42,9 @@ namespace Neuro.Layers
             Kernels = sourceConv.Kernels?.Clone();
             Bias = sourceConv.Bias?.Clone();
             UseBias = sourceConv.UseBias;
+            FilterSize = sourceConv.FilterSize;
+            FiltersNum = sourceConv.FiltersNum;
+            Stride = sourceConv.Stride;
         }
 
         public override void CopyParametersTo(LayerBase target, float tau)

@@ -50,27 +50,54 @@ namespace Neuro.Tensors
         //    Gpu.FreeAll();
         //}
 
-        //public override void Mul(Tensor t1, Tensor t2, Tensor result)
-        //{
-        //    int threadsRequired = result.BatchSize * t1.Depth * t1.Height * t2.Width;
-        //    GpuShape[] shapes = new [] { new GpuShape(t1.Shape), new GpuShape(t2.Shape), new GpuShape(result.Shape) };
+        public override void Mul(Tensor t1, Tensor t2, Tensor result)
+        {
+            t1.CopyToDevice();
+            t2.CopyToDevice();
+            result.CopyToDevice();
 
-        //    float[] devT1 = Gpu.CopyToDevice(t1.Values);
-        //    float[] devT2 = Gpu.CopyToDevice(t2.Values);
-        //    float[] devResult = Gpu.Allocate(result.Values);
-        //    GpuShape[] devShapes = Gpu.CopyToDevice(shapes);
+            var m = t1.Height;
+            var n = t2.Width;
+            var k = t1.Width;
 
-        //    Gpu.Launch(GetBlocksNum(threadsRequired), THREADS_PER_BLOCK).GpuMul(devT1, devT2, devResult, devShapes);
-        //    Gpu.Synchronize();
+            //treat depth as batch
+            int batches = t1.Depth * t1.BatchSize;            
 
-        //    Gpu.CopyFromDevice(devResult, result.Values);
-        //    Gpu.FreeAll();
-        //}
+            //for (int b = 0; b < batches; ++b)
+            //{
+            //    _CudaBlasHandle.Gemm(Operation.NonTranspose, 
+            //                         Operation.NonTranspose, n, m, k,  // trick to convert row major to column major
+            //                         1.0f,
+            //                         new CudaDeviceVariable<float>(t2.GpuData.DeviceVar.DevicePointer + b * t2.Shape.Dim0Dim1 * sizeof(float)), n, 
+            //                         new CudaDeviceVariable<float>(t1.GpuData.DeviceVar.DevicePointer + b * t1.Shape.Dim0Dim1 * sizeof(float)), k, 
+            //                         0.0f, 
+            //                         new CudaDeviceVariable<float>(result.GpuData.DeviceVar.DevicePointer + b * result.Shape.Dim0Dim1 * sizeof(float)), n);
+            //}
 
-        private static CudaContext _CudaContext;
-        private static CudaStream _CudaStream;
-        private static CudaBlas _CudaBlasHandle;
-        private static CudaDNNContext _CudnnContext;
+            CUdeviceptr[] aArray = new CUdeviceptr[batches];
+            CUdeviceptr[] bArray = new CUdeviceptr[batches];
+            CUdeviceptr[] cArray = new CUdeviceptr[batches];
+
+            for (int b = 0; b < batches; ++b)
+            {
+                aArray[b] = t1.GpuData.DeviceVar.DevicePointer + b * t1.Shape.Dim0Dim1 * sizeof(float);
+                bArray[b] = t2.GpuData.DeviceVar.DevicePointer + b * t2.Shape.Dim0Dim1 * sizeof(float);
+                cArray[b] = result.GpuData.DeviceVar.DevicePointer + b * result.Shape.Dim0Dim1 * sizeof(float);
+            }
+
+            var dev_aArray = new CudaDeviceVariable<CUdeviceptr>(batches * 4);
+            dev_aArray.CopyToDevice(aArray);
+            var dev_bArray = new CudaDeviceVariable<CUdeviceptr>(batches * 4);
+            dev_bArray.CopyToDevice(bArray);
+            var dev_cArray = new CudaDeviceVariable<CUdeviceptr>(batches * 4);
+            dev_cArray.CopyToDevice(cArray);
+
+            _CudaBlasHandle.GemmBatched(Operation.NonTranspose, Operation.NonTranspose, n, m, k, 1.0f, dev_bArray, n, dev_aArray, k, 0.0f, dev_cArray, n, batches);
+
+            dev_aArray.Dispose();
+            dev_bArray.Dispose();
+            dev_cArray.Dispose();
+        }
 
         public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
@@ -209,5 +236,10 @@ namespace Neuro.Tensors
                 _CudnnContext.PoolingBackward(poolingDesc, 1.0f, outputDesc, output.GpuData.DeviceVar, outputGradientDesc, outputGradient.GpuData.DeviceVar, inputDesc, input.GpuData.DeviceVar, 0.0f, resultDesc, result.GpuData.DeviceVar);
             }
         }
+
+        private static CudaContext _CudaContext;
+        private static CudaStream _CudaStream;
+        private static CudaBlas _CudaBlasHandle;
+        private static CudaDNNContext _CudnnContext;
     }
 }

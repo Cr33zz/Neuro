@@ -7,10 +7,10 @@ namespace Neuro.Tests
     public class TensorOpGpuTests
     {
         [TestMethod]
-        public void Mult_CompareWithCpuResult()
+        public void Mul_CompareWithCpuResult()
         {
-            Tensor t1 = new Tensor(new Shape(82, 40, 30, 3)); t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(40, 82, 30)); t2.FillWithRand();
+            Tensor t1 = new Tensor(new Shape(40, 30, 10, 32)); t1.FillWithRand(12);
+            Tensor t2 = new Tensor(new Shape(30, 40, 10, 32)); t2.FillWithRand(1);
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Mul(t2);

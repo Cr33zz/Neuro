@@ -79,7 +79,7 @@ namespace Neuro.Layers
             OutputShape = source.OutputShape;
             Activation = source.Activation;
             Name = source.Name;
-            Initialized = source.Initialized;
+            //Initialized = source.Initialized;
         }
 
         public virtual void CopyParametersTo(LayerBase target, float tau = float.NaN)

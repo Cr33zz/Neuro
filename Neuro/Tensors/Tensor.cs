@@ -463,16 +463,27 @@ namespace Neuro.Tensors
             return output;
         }
 
-		public static Tensor MergeIntoDepth(List<Tensor> tensors)
+        // In case number of tensors is smaller than forcedDepth, first tensor will be repeated to account for missing tensors
+        public static Tensor MergeIntoDepth(List<Tensor> tensors, int forcedDepth = 0)
 		{
 			if (tensors.Count == 0)
 				throw new Exception("List cannot be empty.");
 
-			Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, tensors.Count));
+			Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, Math.Max(tensors.Count, forcedDepth)));
 
-			for (int n = 0; n < tensors.Count; ++n)
+            Tensor t = tensors[0];
+            t.CopyToHost();
+
+            int t0_copies = forcedDepth > 0 ? forcedDepth - tensors.Count : 0;
+
+            for (int n = 0; n < t0_copies; ++n)
+            {
+                Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
+            }
+
+			for (int n = t0_copies; n < output.Depth; ++n)
 			{
-				Tensor t = tensors[n];
+				t = tensors[n - t0_copies];
                 t.CopyToHost();
 				Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
 			}
@@ -998,13 +1009,6 @@ namespace Neuro.Tensors
 
             GpuData.DeviceVar = GpuData.DeviceVar ?? new CudaDeviceVariable<float>(Shape.Length);
             GpuData.DeviceVar.CopyToDevice(Values);
-
-            //var res = DriverAPINativeMethods.AsynchronousMemcpy_v2.cuMemcpyHtoDAsync_v2(GpuData.DeviceVar.DevicePointer, GpuData.DevicePtr, GpuData.DeviceVar.SizeInBytes, TensorOpGpu.DefaultStream.Stream);
-
-            //if (res != CUResult.Success)
-            //    throw new CudaException(res);
-
-            //TensorOpGpu.DefaultStream.Synchronize();
             CurrentLocation = Location.Device;
         }
 
@@ -1014,13 +1018,6 @@ namespace Neuro.Tensors
                 return;
 
             GpuData.DeviceVar.CopyToHost(Values);
-
-            //var res = DriverAPINativeMethods.AsynchronousMemcpy_v2.cuMemcpyDtoHAsync_v2(GpuData.DevicePtr, GpuData.DeviceVar.DevicePointer, GpuData.DeviceVar.SizeInBytes, TensorOpGpu.DefaultStream.Stream);
-
-            //if (res != CUResult.Success)
-            //    throw new CudaException(res);
-
-            //TensorOpGpu.DefaultStream.Synchronize();
             CurrentLocation = Location.Host;
         }
 
