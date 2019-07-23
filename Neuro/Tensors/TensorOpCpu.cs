@@ -102,16 +102,28 @@ namespace Neuro.Tensors
         {
             t1.CopyToHost();
             t2.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             for (int i = 0; i < t1.Values.Length; ++i)
                 result.Values[i] = t1.Values[i] * t2.Values[i];
         }
 
+        public virtual void Transpose(Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            for (int n = 0; n < t.BatchSize; ++n)
+            for (int d = 0; d < t.Depth; ++d)
+            for (int h = 0; h < t.Height; ++h)
+            for (int w = 0; w < t.Width; ++w)
+                result[h, w, d, n] = t[w, h, d, n];
+        }
+
         public virtual void Map(Tensor t, Func<float, float> func, Tensor result)
         {
             t.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             for (int i = 0; i < t.Values.Length; ++i)
                 result.Values[i] = func(t.Values[i]);

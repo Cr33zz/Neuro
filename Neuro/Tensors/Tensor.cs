@@ -333,9 +333,11 @@ namespace Neuro.Tensors
         {
             Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, BatchSize));
 
+            int batchLen = BatchLength;
+
             for (int b = 0; b < BatchSize; ++b)
-            for (int i = 0; i < BatchLength; ++i)
-                result[i, i, 0, b] = Values[b * BatchLength + i];
+            for (int i = 0; i < batchLen; ++i)
+                result[i, i, 0, b] = Values[b * batchLen + i];
 
             return result;
         }
@@ -373,8 +375,10 @@ namespace Neuro.Tensors
             CopyToHost();
             Tensor result = new Tensor(new Shape(Shape.Width, Shape.Height, Shape.Depth, 1));
 
+            int batchLen = BatchLength;
+
             for (int n = 0; n < BatchSize; ++n)
-            for (int i = 0, idx = n * BatchLength; i < BatchLength; ++i, ++idx)
+            for (int i = 0, idx = n * batchLen; i < batchLen; ++i, ++idx)
                     result.Values[i] += Values[idx];
 
             return result;
@@ -386,9 +390,10 @@ namespace Neuro.Tensors
             if (batch < 0)
                 return Values.Sum();
 
+            int batchLen = BatchLength;
             float sum = 0;
 
-            for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
+            for (int i = 0, idx = batch * batchLen; i < batchLen; ++i, ++idx)
                 sum += Values[idx];
 
             return sum;
@@ -411,7 +416,9 @@ namespace Neuro.Tensors
             CopyToHost();
             Tensor result = SumBatches();
 
-            for (int n = 0; n < BatchLength; ++n)
+            int batchLen = BatchLength;
+
+            for (int n = 0; n < batchLen; ++n)
                 result.Values[n] /= BatchSize;
 
             return result;
@@ -426,8 +433,10 @@ namespace Neuro.Tensors
         {
             Tensor result = SumPerBatch();
 
+            int batchLen = BatchLength;
+
             for (int n = 0; n < BatchSize; ++n)
-                result.Values[n] /= BatchLength;
+                result.Values[n] /= batchLen;
 
             return result;
         }
@@ -597,16 +606,17 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual Tensor Transposed()
+        public Tensor Transposed()
         {
             Tensor result = new Tensor(new Shape(Height, Width, Depth, BatchSize));
-            for (int n = 0; n < BatchSize; ++n)
-            for (int d = 0; d < Depth; ++d)
-            for (int h = 0; h < Height; ++h)
-            for (int w = 0; w < Width; ++w)
-                result[h, w, d, n] = this[w, h, d, n];
+            Transpose(result);
 
             return result;
+        }
+
+        public void Transpose(Tensor result)
+        {
+            Op.Transpose(this, result);
         }
 
         // Generates a new tensor with given dimensions and populate it with this tensor's values in index order. 
@@ -965,7 +975,9 @@ namespace Neuro.Tensors
             }
             else
             {
-                for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
+                int batchLen = BatchLength;
+
+                for (int i = 0, idx = batch * batchLen; i < batchLen; ++i, ++idx)
                     if(Values[idx] > maxValue)
                     {
                         maxValue = Values[idx];

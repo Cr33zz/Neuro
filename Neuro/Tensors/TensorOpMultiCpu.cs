@@ -99,6 +99,21 @@ namespace Neuro.Tensors
             });
         }
 
+        public override void Transpose(Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            Parallel.For(0, t.BatchSize, n => {
+                Parallel.For(0, t.Depth, d =>
+                {
+                    for (int h = 0; h < t.Height; ++h)
+                    for (int w = 0; w < t.Width; ++w)
+                        result[h, w, d, n] = t[w, h, d, n];
+                });
+            });
+        }
+
         public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
             t.CopyToHost();
