@@ -26,11 +26,11 @@ net.Fit(tData, 10, 50, null, 2, Track.TrainError);
 Sample flow network (streams)
 
 ```
-var net = new NeuralNetwork("test");
+var net = new NeuralNetwork("flow_test");
 
-LayerBase mainInput = new Dense(2, 2, Activation.Linear) { Name = "main_input" };
-LayerBase auxInput = new Input(new Shape(1, 2)) { Name = "aux_input" };
-LayerBase concat = new Concatenate(new []{ mainInput, auxInput }) { Name = "concat" };
+var mainInput = new Dense(2, 2, Activation.Linear) { Name = "main_input" };
+var auxInput = new Input(new Shape(1, 2)) { Name = "aux_input" };
+var concat = new Concatenate(new []{ mainInput, auxInput }) { Name = "concat" };
 
 net.Model = new Flow(new[] { mainInput, auxInput }, new[] { concat });
 net.Optimize(new SGD(0.05f), Loss.MeanSquareError);
@@ -42,9 +42,11 @@ var trainingData = new List<Data> { new Data(inputs, new []{output}) };
 
 net.Fit(trainingData, 1, 50, null, 0, Track.Nothing, false);
 ```
+Library can generate basic graphs to track error (train data, test data).
 
-#Prerequisites
+# Prerequisites
 
 For GPU computation CUDA 10.1 and CudNN 7.6.1.34 are required. Both can be downloaded from NVidia website:
+
 https://developer.nvidia.com/cuda-downloads
 https://developer.nvidia.com/cudnn
