@@ -99,6 +99,31 @@ namespace Neuro.Tensors
             dev_cArray.Dispose();
         }
 
+        public override void Transpose(Tensor t, Tensor result)
+        {
+            t.CopyToDevice();
+            result.CopyToDevice();
+
+            var m = t.Height;
+            var n = t.Width;
+
+            //treat depth as batch
+            int batches = t.Depth * t.BatchSize;
+
+            for (int b = 0; b < batches; ++b)
+            {
+                var tPtr = new CudaDeviceVariable<float>(t.GpuData.DeviceVar.DevicePointer + b * t.Shape.Dim0Dim1 * sizeof(float));
+
+                _CudaBlasHandle.Geam(Operation.Transpose, 
+                                     Operation.NonTranspose, m, n,  // trick to convert row major to column major
+                                     1.0f,
+                                     tPtr, n,
+                                     tPtr, m, 
+                                     0.0f,
+                                     new CudaDeviceVariable<float>(result.GpuData.DeviceVar.DevicePointer + b * result.Shape.Dim0Dim1 * sizeof(float)), m);
+            }
+        }
+
         public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;

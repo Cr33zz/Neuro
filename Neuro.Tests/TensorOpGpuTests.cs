@@ -10,7 +10,7 @@ namespace Neuro.Tests
         public void Mul_CompareWithCpuResult()
         {
             Tensor t1 = new Tensor(new Shape(40, 30, 10, 32)); t1.FillWithRand(12);
-            Tensor t2 = new Tensor(new Shape(30, 40, 10, 32)); t2.FillWithRand(1);
+            Tensor t2 = new Tensor(new Shape(35, 40, 10, 32)); t2.FillWithRand(1);
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Mul(t2);
@@ -22,10 +22,24 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Transpose_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(30, 30, 10, 32)); t.FillWithRand(12);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t.Transposed();
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = t.Transposed();
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
         public void Add_1Batch_CompareWithCpuResult()
         {
-            Tensor t1 = new Tensor(new Shape(82, 921, 30, 3)); t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(82, 921, 30, 1)); t2.FillWithRand();
+            Tensor t1 = new Tensor(new Shape(82, 92, 30, 3)); t1.FillWithRand();
+            Tensor t2 = new Tensor(new Shape(82, 92, 30, 1)); t2.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Add(t2);
@@ -39,8 +53,8 @@ namespace Neuro.Tests
         [TestMethod]
         public void Add_SameBatches_CompareWithCpuResult()
         {
-            Tensor t1 = new Tensor(new Shape(82, 921, 30, 3)); t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(82, 921, 30, 3)); t2.FillWithRand();
+            Tensor t1 = new Tensor(new Shape(82, 92, 30, 3)); t1.FillWithRand();
+            Tensor t2 = new Tensor(new Shape(82, 92, 30, 3)); t2.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Add(t2);
@@ -54,8 +68,8 @@ namespace Neuro.Tests
         [TestMethod]
         public void Sub_1Batch_CompareWithCpuResult()
         {
-            Tensor t1 = new Tensor(new Shape(82, 921, 30, 3)); t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(82, 921, 30, 1)); t2.FillWithRand();
+            Tensor t1 = new Tensor(new Shape(82, 92, 30, 3)); t1.FillWithRand();
+            Tensor t2 = new Tensor(new Shape(82, 92, 30, 1)); t2.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Sub(t2);
@@ -69,8 +83,8 @@ namespace Neuro.Tests
         [TestMethod]
         public void Sub_SameBatches_CompareWithCpuResult()
         {
-            Tensor t1 = new Tensor(new Shape(82, 921, 30, 3)); t1.FillWithRand();
-            Tensor t2 = new Tensor(new Shape(82, 921, 30, 3)); t2.FillWithRand();
+            Tensor t1 = new Tensor(new Shape(82, 92, 30, 3)); t1.FillWithRand();
+            Tensor t2 = new Tensor(new Shape(82, 92, 30, 3)); t2.FillWithRand();
 
             Tensor.SetOpMode(Tensor.OpMode.CPU);
             Tensor r = t1.Sub(t2);
