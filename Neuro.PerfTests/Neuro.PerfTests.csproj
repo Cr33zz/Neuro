@@ -34,7 +34,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Neuro.PerfTests.SimpleNetPerfTests</StartupObject>
+    <StartupObject>Neuro.PerfTests.ConvNetPeftTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Neuro, Version=1.0.6896.28855, Culture=neutral, processorArchitecture=AMD64">
@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConvNetPeftTests.cs" />
     <Compile Include="SimpleNetPerfTests.cs" />
     <Compile Include="TensorPerfTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
