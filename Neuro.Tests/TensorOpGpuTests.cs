@@ -22,6 +22,21 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void MulTranspose_CompareWithCpuResult()
+        {
+            Tensor t1 = new Tensor(new Shape(3, 2)); t1.FillWithRange(1);
+            Tensor t2 = new Tensor(new Shape(3, 1)); t2.FillWithRange(1);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t1.Mul(true, t2);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = t1.Mul(true, t2);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
         public void Transpose_CompareWithCpuResult()
         {
             Tensor t = new Tensor(new Shape(30, 30, 10, 32)); t.FillWithRand(12);

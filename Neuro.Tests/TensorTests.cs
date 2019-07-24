@@ -452,6 +452,32 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void Transpose()
+        {
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+
+            var t = new Tensor(new Shape(2, 3, 1, 2)); t.FillWithRange(1);
+
+            var result = t.Transposed();
+            var correct = new Tensor(new float[] { 1, 3, 5, 2, 4, 6, 7, 9, 11, 8, 10, 12 }, new Shape(3, 2, 1, 2));
+
+            Assert.IsTrue(result.Equals(correct));
+        }
+
+        [TestMethod]
+        public void MulTranspose()
+        {
+            Tensor t1 = new Tensor(new Shape(40, 30, 10, 3)); t1.FillWithRand(12);
+            Tensor t2 = new Tensor(new Shape(40, 35, 10, 3)); t2.FillWithRand(1);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t1.Mul(t2.Transposed());
+            Tensor r2 = t1.Mul(true, t2);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
         public void Avg_Per_Batch()
         {
             Tensor.SetOpMode(Tensor.OpMode.CPU);

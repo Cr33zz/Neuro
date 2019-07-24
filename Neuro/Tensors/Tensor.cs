@@ -163,20 +163,30 @@ namespace Neuro.Tensors
             Array.Clear(Values, 0, Values.Length);
         }
 
-        public virtual void Mul(Tensor t, Tensor result)
+        public void Mul(bool transposeT, Tensor t, Tensor result)
         {
-            Debug.Assert(Width == t.Height);
+            Debug.Assert((!transposeT && Width == t.Height) || (transposeT && Width == t.Width));
             Debug.Assert(t.Depth == Depth);
 
             result.Zero();
-            Op.Mul(this, t, result);
+            Op.Mul(false, transposeT, this, t, result);
+        }
+
+        public void Mul(Tensor t, Tensor result)
+        {
+            Mul(false, t, result);
+        }
+
+        public Tensor Mul(bool transposeT, Tensor t)
+        {
+            Tensor result = new Tensor(new Shape(transposeT ? t.Shape.Height : t.Shape.Width, Height, Depth, BatchSize));
+            Mul(transposeT, t, result);
+            return result;
         }
 
         public Tensor Mul(Tensor t)
         {
-            Tensor result = new Tensor(new Shape(t.Shape.Width, Height, Depth, BatchSize));
-            Mul(t, result);
-            return result;
+            return Mul(false, t);
         }
 
         // Element-wise multiplication
@@ -198,7 +208,7 @@ namespace Neuro.Tensors
         public virtual void Mul(float v, Tensor result)
         {
             CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] * v;
@@ -214,7 +224,7 @@ namespace Neuro.Tensors
         public virtual void Div(Tensor t, Tensor result)
         {
             CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             Debug.Assert(SameDimensionsExceptBatches(t));
             Debug.Assert(t.BatchSize == result.BatchSize);
@@ -233,7 +243,7 @@ namespace Neuro.Tensors
         public virtual void Div(float v, Tensor result)
         {
             CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] / v;
@@ -246,18 +256,30 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Add(Tensor t, Tensor result)
+        public virtual void Add(float alpha, float beta, Tensor t, Tensor result)
         {
             Debug.Assert(SameDimensionsExceptBatches(t));
             Debug.Assert(t.BatchSize == result.BatchSize || t.BatchSize == 1);
 
-            Op.Add(this, t, result);
+            Op.Add(alpha, this, beta, t, result);
+        }
+
+        public virtual void Add(Tensor t, Tensor result)
+        {
+            Add(1, 1, t, result);
         }
 
         public Tensor Add(Tensor t)
         {
             Tensor result = new Tensor(Shape);
             Add(t, result);
+            return result;
+        }
+
+        public Tensor Add(float alpha, float beta, Tensor t)
+        {
+            Tensor result = new Tensor(Shape);
+            Add(alpha, beta, t, result);
             return result;
         }
 
@@ -907,7 +929,7 @@ namespace Neuro.Tensors
         public void CopyBatchTo(int batchId, int targetBatchId, Tensor result)
         {
             CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
             if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height || Shape.Depth != result.Shape.Depth) throw new Exception("Incompatible tensors.");
 
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2, result.Values, targetBatchId * Shape.Dim0Dim1Dim2, Shape.Dim0Dim1Dim2);
@@ -916,7 +938,7 @@ namespace Neuro.Tensors
         public void CopyDepthTo(int depthId, int batchId, int targetDepthId, int targetBatchId, Tensor result)
         {
             CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
             if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height) throw new Exception("Incompatible tensors.");
 
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2 + depthId * Shape.Dim0Dim1, result.Values, targetBatchId * Shape.Dim0Dim1Dim2 + targetDepthId * Shape.Dim0Dim1, Shape.Dim0Dim1);

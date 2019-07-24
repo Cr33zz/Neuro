@@ -6,11 +6,11 @@ namespace Neuro.Tensors
 {
     internal class TensorOpMultiCpu : TensorOpCpu
     {
-        public override void Add(Tensor t1, Tensor t2, Tensor result)
+        public override void Add(float alpha, Tensor t1, float beta, Tensor t2, Tensor result)
         {
             t1.CopyToHost();
             t2.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             if (t2.BatchSize == t1.BatchSize)
             {
@@ -18,7 +18,7 @@ namespace Neuro.Tensors
                 Parallel.ForEach(rangePartitioner, range =>
                 {
                     for (int i = range.Item1; i < range.Item2; ++i)
-                        result.Values[i] = t1.Values[i] + t2.Values[i];
+                        result.Values[i] = alpha * t1.Values[i] + beta * t2.Values[i];
                 });
                 return;
             }
@@ -30,57 +30,31 @@ namespace Neuro.Tensors
                 Parallel.ForEach(rangePartitioner2, range =>
                 {
                     for (int i = range.Item1, idx = n * t1.BatchLength + range.Item1; i < range.Item2; ++i, ++idx)
-                        result.Values[idx] = t1.Values[idx] + t2.Values[i];
+                        result.Values[idx] = alpha * t1.Values[idx] + beta * t2.Values[i];
                 });
             }
         }
 
-        public override void Sub(Tensor t1, Tensor t2, Tensor result)
+        public override void Mul(bool transposeT1, bool transposeT2, Tensor t1, Tensor t2, Tensor result)
         {
-            t1.CopyToHost();
-            t2.CopyToHost();
-            result.CopyToHost();
+            var t1Temp = transposeT1 ? t1.Transposed() : t1;
+            var t2Temp = transposeT2 ? t2.Transposed() : t2;
 
-            if (t2.BatchSize == t1.BatchSize)
-            {
-                var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
-                Parallel.ForEach(rangePartitioner, range =>
-                {
-                    for (int i = range.Item1; i < range.Item2; ++i)
-                        result.Values[i] = t1.Values[i] - t2.Values[i];
-                });
-                return;
-            }
-
-            var rangePartitioner2 = Partitioner.Create(0, t1.BatchLength);
-
-            for (int n = 0; n < t1.BatchSize; ++n)
-            {
-                Parallel.ForEach(rangePartitioner2, range =>
-                {
-                    for (int i = range.Item1, idx = n * t1.BatchLength + range.Item1; i < range.Item2; ++i, ++idx)
-                        result.Values[idx] = t1.Values[idx] - t2.Values[i];
-                });
-            }
-        }
-
-        public override void Mul(Tensor t1, Tensor t2, Tensor result)
-        {
-            t1.CopyToHost();
-            t2.CopyToHost();
-            result.CopyToHost();
+            t1Temp.CopyToHost();
+            t2Temp.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             Parallel.For(0, result.BatchSize, n =>
             {
-                int t1N = Math.Min(n, t1.BatchSize - 1);
-                int t2N = Math.Min(n, t2.BatchSize - 1);
+                int t1N = Math.Min(n, t1Temp.BatchSize - 1);
+                int t2N = Math.Min(n, t2Temp.BatchSize - 1);
 
-                Parallel.For(0, t1.Depth, d => {
-                for (int h = 0; h < t1.Height; ++h)
-                for (int w = 0; w < t2.Width; ++w)
-                for (int i = 0; i < t1.Width; ++i)
-                    result[w, h, d, n] += t1.Get(i, h, d, t1N) *
-                                          t2.Get(w, i, d, t2N);
+                Parallel.For(0, t1Temp.Depth, d => {
+                for (int h = 0; h < t1Temp.Height; ++h)
+                for (int w = 0; w < t2Temp.Width; ++w)
+                for (int i = 0; i < t1Temp.Width; ++i)
+                    result[w, h, d, n] += t1Temp.Get(i, h, d, t1N) *
+                                          t2Temp.Get(w, i, d, t2N);
                 });
             });
         }
@@ -89,7 +63,7 @@ namespace Neuro.Tensors
         {
             t1.CopyToHost();
             t2.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             var rangePartitioner = Partitioner.Create(0, t1.Values.Length);
             Parallel.ForEach(rangePartitioner, range =>
@@ -118,7 +92,7 @@ namespace Neuro.Tensors
         {
             t.CopyToHost();
             kernels.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             Tensor.GetPaddingParams(padding, t.Width, t.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
@@ -203,7 +177,7 @@ namespace Neuro.Tensors
         public override void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
             t.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             Parallel.For(0, t.BatchSize, outN => 
             {
@@ -243,7 +217,7 @@ namespace Neuro.Tensors
             output.CopyToHost();
             input.CopyToHost();
             outputGradient.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             result.Zero();
 

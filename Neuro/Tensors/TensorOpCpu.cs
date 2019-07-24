@@ -9,94 +9,54 @@ namespace Neuro.Tensors
 {
     internal class TensorOpCpu
     {
-        public virtual void Add(Tensor t1, Tensor t2, Tensor result)
+        public virtual void Add(float alpha, Tensor t1, float beta, Tensor t2, Tensor result)
         {
             t1.CopyToHost();
             t2.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             if (t2.BatchSize == t1.BatchSize)
             {
                 for (int i = 0; i < t1.Values.Length; ++i)
-                    result.Values[i] = t1.Values[i] + t2.Values[i];
+                    result.Values[i] = alpha * t1.Values[i] + beta * t2.Values[i];
                 return;
             }
 
             for (int n = 0; n < t1.BatchSize; ++n)
                 for (int i = 0, idx = n * t1.BatchLength; i < t1.BatchLength; ++i, ++idx)
-                    result.Values[idx] = t1.Values[idx] + t2.Values[i];
+                    result.Values[idx] = alpha * t1.Values[idx] + beta * t2.Values[i];
         }
 
         public virtual void Sub(Tensor t1, Tensor t2, Tensor result)
         {
-            t1.CopyToHost();
-            t2.CopyToHost();
-            result.CopyToHost();
-
-            if (t2.BatchSize == t1.BatchSize)
-            {
-                for (int i = 0; i < t1.Values.Length; ++i)
-                    result.Values[i] = t1.Values[i] - t2.Values[i];
-                return;
-            }
-
-            for (int n = 0; n < t1.BatchSize; ++n)
-            for (int i = 0, idx = n * t1.BatchLength; i < t1.BatchLength; ++i, ++idx)
-                result.Values[idx] = t1.Values[idx] - t2.Values[i];
+            Add(1, t1, -1, t2, result);
         }
 
-        public virtual void Mul(Tensor t1, Tensor t2, Tensor result)
+        public virtual void Mul(bool transposeT1, bool transposeT2, Tensor t1, Tensor t2, Tensor result)
         {
-            t1.CopyToHost();
-            t2.CopyToHost();
-            result.CopyToHost();
+            var t1Temp = transposeT1 ? t1.Transposed() : t1;
+            var t2Temp = transposeT2 ? t2.Transposed() : t2;
 
-            //for (int n = 0; n < result.BatchSize; ++n)
-            //for (int d = 0; d < t1.Depth; ++d)
-            //for (int h = 0; h < t1.Height; ++h)
-            //for (int w = 0; w < t2.Width; ++w)
-            //for (int i = 0; i < t1.Width; ++i)
-            //    result[w, h, d, n] += t1[i, h, d, Math.Min(n, t1.BatchSize - 1)] * t2[w, i, d, Math.Min(n, t2.BatchSize - 1)];
+            t1Temp.CopyToHost();
+            t2Temp.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
-            //const int BLOCK_SIZE = 32 / sizeof(float);
-            int N = t1.Height;
-            int M = t2.Width;
-            int K = t1.Width;
+            int N = t1Temp.Height;
+            int M = t2Temp.Width;
+            int K = t1Temp.Width;
 
             for (int n = 0; n < result.BatchSize; ++n)
             {
-                int t1N = Math.Min(n, t1.BatchSize - 1);
-                int t2N = Math.Min(n, t2.BatchSize - 1);
+                int t1N = Math.Min(n, t1Temp.BatchSize - 1);
+                int t2N = Math.Min(n, t2Temp.BatchSize - 1);
 
-                for (int d = 0; d < t1.Depth; ++d)
+                for (int d = 0; d < t1Temp.Depth; ++d)
                 for (int i = 0; i < N; ++i)
                 for (int j = 0; j < M; ++j)
                 for (int k = 0; k < K; ++k)
-                    result[j, i, d, n] += t1[k, i, d, t1N] * t2[j, k, d, t2N];
+                    result[j, i, d, n] += t1Temp[k, i, d, t1N] * t2Temp[j, k, d, t2N];
             }
-
-            //for (int n = 0; n < result.BatchSize; ++n)
-            //for (int d = 0; d < t1.Depth; ++d)
-            //{
-            //    int t1N = Math.Min(n, t1.BatchSize - 1);
-            //    int t2N = Math.Min(n, t2.BatchSize - 1);
-
-            //    for (int jj = 0; jj < M; jj += BLOCK_SIZE)
-            //    {
-            //        int jMax = Math.Min(jj + BLOCK_SIZE, M);
-
-            //        for (int kk = 0; kk < K; kk += BLOCK_SIZE)
-            //        {
-            //            int kMax = Math.Min(kk + BLOCK_SIZE, K);
-
-            //            for (int i = 0; i < N; ++i)
-            //            for (int j = jj; j < jMax; ++j)
-            //            for (int k = kk; k < kMax; ++k)
-            //                result[j, i, d, n] += t1[k, i, d, t1N] * t2[j, k, d, t2N];
-            //        }
-            //    }
-            //}
-        }
+        }        
 
         public virtual void MulElem(Tensor t1, Tensor t2, Tensor result)
         {
@@ -133,7 +93,7 @@ namespace Neuro.Tensors
         {
             t.CopyToHost();
             kernels.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             Tensor.GetPaddingParams(padding, t.Width, t.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
@@ -282,7 +242,7 @@ namespace Neuro.Tensors
         public virtual void Pool(Tensor t, int filterSize, int stride, Tensor.PoolType type, int paddingX, int paddingY, Tensor result)
         {
             t.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             for (int outN = 0; outN < t.BatchSize; ++outN)
             for (int outD = 0; outD < t.Depth; ++outD)
@@ -318,7 +278,7 @@ namespace Neuro.Tensors
             output.CopyToHost();
             input.CopyToHost();
             outputGradient.CopyToHost();
-            result.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
 
             result.Zero();
 
