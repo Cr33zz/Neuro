@@ -21,20 +21,20 @@ namespace Neuro.Tests
             Assert.IsTrue(r.Equals(r2, 1e-4f));
         }
 
-        [TestMethod]
-        public void MulTranspose_CompareWithCpuResult()
-        {
-            Tensor t1 = new Tensor(new Shape(3, 2)); t1.FillWithRange(1);
-            Tensor t2 = new Tensor(new Shape(3, 1)); t2.FillWithRange(1);
+        //[TestMethod]
+        //public void MulTranspose_CompareWithCpuResult()
+        //{
+        //    Tensor t1 = new Tensor(new Shape(3, 2)); t1.FillWithRange(1);
+        //    Tensor t2 = new Tensor(new Shape(3, 1)); t2.FillWithRange(1);
 
-            Tensor.SetOpMode(Tensor.OpMode.CPU);
-            Tensor r = t1.Mul(true, t2);
+        //    Tensor.SetOpMode(Tensor.OpMode.CPU);
+        //    Tensor r = t1.Mul(true, t2);
 
-            Tensor.SetOpMode(Tensor.OpMode.GPU);
-            Tensor r2 = t1.Mul(true, t2);
+        //    Tensor.SetOpMode(Tensor.OpMode.GPU);
+        //    Tensor r2 = t1.Mul(true, t2);
 
-            Assert.IsTrue(r.Equals(r2, 1e-4f));
-        }
+        //    Assert.IsTrue(r.Equals(r2, 1e-4f));
+        //}
 
         [TestMethod]
         public void Transpose_CompareWithCpuResult()
@@ -229,6 +229,39 @@ namespace Neuro.Tests
             Tensor.PoolGradient(output, input, outputGradient, FILTER_SIZE, STRIDE, Tensor.PoolType.Avg, Tensor.PaddingType.Valid, r2);
 
             Assert.IsTrue(r.Equals(r2));
+        }
+
+        [TestMethod]
+        public void Elu_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(30, 30, 10, 32)); t.FillWithRand(12);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(t.Shape);
+            t.Elu(0.8f, r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(t.Shape);
+            t.Elu(0.8f, r2);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
+        public void EluGradient_CompareWithCpuResult()
+        {
+            Tensor output = new Tensor(new Shape(30, 30, 10, 32)); output.FillWithRand(12);
+            Tensor outputGradient = new Tensor(output.Shape); outputGradient.FillWithRand(14);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(output.Shape);
+            Tensor.EluGradient(output, outputGradient, 0.8f, r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(output.Shape);
+            Tensor.EluGradient(output, outputGradient, 0.8f, r2);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Neuro.Tensors
 
             t1Temp.CopyToHost();
             t2Temp.CopyToHost();
-            result.CurrentLocation = Tensor.Location.Host;
+            result.Zero();
 
             int N = t1Temp.Height;
             int M = t2Temp.Width;
@@ -308,6 +308,35 @@ namespace Neuro.Tensors
                     }
                 }
             }
+        }
+
+        public virtual void Map(Func<float, float> func, Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            for (int i = 0; i < t.Values.Length; ++i)
+                result.Values[i] = func(t.Values[i]);
+        }
+
+        public virtual void Map(Func<float, float, float> func, Tensor t1, Tensor t2, Tensor result)
+        {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            for (int i = 0; i < t1.Values.Length; ++i)
+                result.Values[i] = func(t1.Values[i], t2.Values[i]);
+        }
+
+        public virtual void Elu(Tensor input, float alpha, Tensor result)
+        {
+            input.Map(x => x >= 0 ? x : alpha * ((float)Math.Exp(x) - 1), result);
+        }
+
+        public virtual void EluGradient(Tensor output, Tensor outputGradient, float alpha, Tensor result)
+        {
+            output.Map((x, x2) => (x > 0 ? 1 : (x + alpha)) * x2, outputGradient, result);
         }
     }
 }

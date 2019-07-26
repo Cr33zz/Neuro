@@ -77,12 +77,12 @@ namespace Neuro
 
         public override void Compute(Tensor input, Tensor result)
         {
-            input.Map(x => x >= 0 ? x : ALPHA * ((float)Math.Exp(x) - 1), result);
+            input.Elu(ALPHA, result);
         }
 
         public override void Derivative(Tensor output, Tensor outputGradient, Tensor result)
         {
-            output.Map((x, x2) => (x > 0 ? 1 : (x + ALPHA)) * x2, outputGradient, result);
+            Tensor.EluGradient(output, outputGradient, ALPHA, result);
         }
     }
 

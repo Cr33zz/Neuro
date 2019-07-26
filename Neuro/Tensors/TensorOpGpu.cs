@@ -6,20 +6,16 @@ using ManagedCuda.CudaDNN;
 
 namespace Neuro.Tensors
 {
-    internal class TensorOpGpu : TensorOpMultiCpu
+    internal partial class TensorOpGpu : TensorOpMultiCpu
     {
         static TensorOpGpu()
         {
             _CudaContext = new CudaContext(0, true);
             _CudaBlasHandle = new CudaBlas();
-
-            var props = _CudaContext.GetDeviceInfo();
-            //this.DefaultBlockCount = props.MultiProcessorCount * 32;
-            //this.DefaultThreadsPerBlock = props.MaxThreadsPerBlock;
-            //this.WarpSize = props.WarpSize;
-
             _CudaStream = new CudaStream();
-            _CudnnContext = new CudaDNNContext();            
+            _CudnnContext = new CudaDNNContext();
+
+            _KernelLoader = new KernelLoader();
         }
 
         public override void Add(float alpha, Tensor t1, float beta, Tensor t2, Tensor result)
@@ -273,9 +269,20 @@ namespace Neuro.Tensors
             }
         }
 
+        public override void Elu(Tensor input, float alpha, Tensor result)
+        {
+            _KernelLoader.RunKernel("elu", input, result, new object[] { alpha });
+        }
+
+        public override void EluGradient(Tensor output, Tensor outputGradient, float alpha, Tensor result)
+        {
+            _KernelLoader.RunKernel("elu_grad", output, outputGradient, result, new object[] { alpha });
+        }
+
         private static CudaContext _CudaContext;
         private static CudaStream _CudaStream;
         private static CudaBlas _CudaBlasHandle;
         private static CudaDNNContext _CudnnContext;
+        private static KernelLoader _KernelLoader;
     }
 }

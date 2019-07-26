@@ -136,7 +136,7 @@ namespace Neuro.Tensors
 
         public void FillWithRand(int seed = -1, float min = -1, float max = 1)
         {
-            CopyToHost();
+            CurrentLocation = Location.Host;
             Random rng = seed > 0 ? new Random(seed) : Rng;
             
             for (int i = 0; i < Values.Length; ++i)
@@ -145,43 +145,42 @@ namespace Neuro.Tensors
 
         public void FillWithRange(float start = 0, float increment = 1)
         {
-            CopyToHost();
+            CurrentLocation = Location.Host;
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = start + i * increment;
         }
 
         public void FillWithValue(float value)
         {
-            CopyToHost();
+            CurrentLocation = Location.Host;
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = value;
         }
 
         public void Zero()
         {
-            CopyToHost();
+            CurrentLocation = Location.Host;
             Array.Clear(Values, 0, Values.Length);
         }
 
-        public void Mul(bool transposeT, Tensor t, Tensor result)
+        private void Mul(bool transposeT, Tensor t, Tensor result)
         {
             Debug.Assert((!transposeT && Width == t.Height) || (transposeT && Width == t.Width));
             Debug.Assert(t.Depth == Depth);
 
-            result.Zero();
             Op.Mul(false, transposeT, this, t, result);
+        }
+
+        private Tensor Mul(bool transposeT, Tensor t)
+        {
+            Tensor result = new Tensor(new Shape(transposeT ? t.Shape.Height : t.Shape.Width, Height, Depth, BatchSize));
+            Mul(transposeT, t, result);
+            return result;
         }
 
         public void Mul(Tensor t, Tensor result)
         {
             Mul(false, t, result);
-        }
-
-        public Tensor Mul(bool transposeT, Tensor t)
-        {
-            Tensor result = new Tensor(new Shape(transposeT ? t.Shape.Height : t.Shape.Width, Height, Depth, BatchSize));
-            Mul(transposeT, t, result);
-            return result;
         }
 
         public Tensor Mul(Tensor t)
@@ -366,9 +365,7 @@ namespace Neuro.Tensors
 
         public void Map(Func<float, float> func, Tensor result)
         {
-            CopyToHost();
-            for (int i = 0; i < Values.Length; ++i)
-                result.Values[i] = func(Values[i]);
+            Op.Map(func, this, result);
         }
 
         public Tensor Map(Func<float, float> func)
@@ -380,9 +377,7 @@ namespace Neuro.Tensors
 
         public void Map(Func<float, float, float> func, Tensor other, Tensor result)
         {
-            CopyToHost();
-            for (int i = 0; i < Values.Length; ++i)
-                result.Values[i] = func(Values[i], other.Values[i]);
+            Op.Map(func, this, other, result);
         }
 
         public Tensor Map(Func<float, float, float> func, Tensor other)
@@ -1008,6 +1003,16 @@ namespace Neuro.Tensors
             }
 
             return maxValue;
+        }
+
+        public void Elu(float alpha, Tensor result)
+        {
+            Op.Elu(this, alpha, result);
+        }
+
+        public static void EluGradient(Tensor output, Tensor outputGradient, float alpha, Tensor result)
+        {
+            Op.EluGradient(output, outputGradient, alpha, result);
         }
 
         public Shape Shape { get; private set; }

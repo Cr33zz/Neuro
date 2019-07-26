@@ -42,7 +42,7 @@ namespace Neuro.Tensors
 
             t1Temp.CopyToHost();
             t2Temp.CopyToHost();
-            result.CurrentLocation = Tensor.Location.Host;
+            result.Zero();
 
             Parallel.For(0, result.BatchSize, n =>
             {
@@ -251,6 +251,33 @@ namespace Neuro.Tensors
                         }
                     }
                 });
+            });
+        }
+
+        public override void Map(Func<float, float> func, Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            var rangePartitioner = Partitioner.Create(0, result.Values.Length);
+            Parallel.ForEach(rangePartitioner, range =>
+            {
+                for (int i = range.Item1; i < range.Item2; ++i)
+                    result.Values[i] = func(t.Values[i]);
+            });
+        }
+
+        public override void Map(Func<float, float, float> func, Tensor t1, Tensor t2, Tensor result)
+        {
+            t1.CopyToHost();
+            t2.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            var rangePartitioner = Partitioner.Create(0, result.Values.Length);
+            Parallel.ForEach(rangePartitioner, range =>
+            {
+                for (int i = range.Item1; i < range.Item2; ++i)
+                    result.Values[i] = func(t1.Values[i], t2.Values[i]);
             });
         }
     }
