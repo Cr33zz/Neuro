@@ -389,15 +389,8 @@ namespace Neuro.Tensors
 
         public Tensor SumBatches()
         {
-            CopyToHost();
             Tensor result = new Tensor(new Shape(Shape.Width, Shape.Height, Shape.Depth, 1));
-
-            int batchLen = BatchLength;
-
-            for (int n = 0; n < BatchSize; ++n)
-            for (int i = 0, idx = n * batchLen; i < batchLen; ++i, ++idx)
-                    result.Values[i] += Values[idx];
-
+            Op.SumBatches(this, result);
             return result;
         }
 

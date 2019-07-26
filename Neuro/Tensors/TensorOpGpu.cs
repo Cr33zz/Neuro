@@ -269,6 +269,25 @@ namespace Neuro.Tensors
             }
         }
 
+        public override void SumBatches(Tensor t, Tensor result)
+        {
+            t.CopyToDevice();
+            result.CopyToDevice();
+
+            int batchLen = t.BatchLength;
+
+            for (int n = 0; n < t.BatchSize; ++n)
+            {
+                _CudaBlasHandle.Geam(Operation.NonTranspose, Operation.NonTranspose,
+                                     batchLen, 1,
+                                     1.0f,
+                                     new CudaDeviceVariable<float>(t.GpuData.DeviceVar.DevicePointer + n * batchLen * sizeof(float)), batchLen,
+                                     result.GpuData.DeviceVar, batchLen,
+                                     1.0f,
+                                     result.GpuData.DeviceVar, batchLen);
+            }
+        }
+
         public override void Elu(Tensor input, float alpha, Tensor result)
         {
             _KernelLoader.RunKernel("elu", input, result, new object[] { alpha });

@@ -329,6 +329,18 @@ namespace Neuro.Tensors
                 result.Values[i] = func(t1.Values[i], t2.Values[i]);
         }
 
+        public virtual void SumBatches(Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            int batchLen = t.BatchLength;
+
+            for (int n = 0; n < t.BatchSize; ++n)
+                for (int i = 0, idx = n * batchLen; i < batchLen; ++i, ++idx)
+                    result.Values[i] += t.Values[idx];
+        }
+
         public virtual void Elu(Tensor input, float alpha, Tensor result)
         {
             input.Map(x => x >= 0 ? x : alpha * ((float)Math.Exp(x) - 1), result);

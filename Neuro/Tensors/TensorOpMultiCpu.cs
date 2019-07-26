@@ -280,5 +280,19 @@ namespace Neuro.Tensors
                     result.Values[i] = func(t1.Values[i], t2.Values[i]);
             });
         }
+
+        public override void SumBatches(Tensor t, Tensor result)
+        {
+            t.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            int batchLen = t.BatchLength;
+
+            Parallel.For(0, result.BatchSize, n =>
+            {
+                for (int i = 0, idx = n * batchLen; i < batchLen; ++i, ++idx)
+                    result.Values[i] += t.Values[idx];
+            });
+        }
     }
 }

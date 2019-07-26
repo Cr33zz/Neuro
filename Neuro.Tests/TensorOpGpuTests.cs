@@ -51,6 +51,20 @@ namespace Neuro.Tests
         }
 
         [TestMethod]
+        public void SumBatches_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(30, 30, 10, 32)); t.FillWithRand(12);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = t.SumBatches();
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = t.SumBatches();
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
         public void Add_1Batch_CompareWithCpuResult()
         {
             Tensor t1 = new Tensor(new Shape(82, 92, 30, 3)); t1.FillWithRand();
