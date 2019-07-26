@@ -1008,6 +1008,16 @@ namespace Neuro.Tensors
             Op.EluGradient(output, outputGradient, alpha, result);
         }
 
+        public void Softmax(Tensor result)
+        {
+            Op.Softmax(this, result);
+        }
+
+        public static void SoftmaxGradient(Tensor output, Tensor outputGradient, Tensor result)
+        {
+            Op.SoftmaxGradient(output, outputGradient, result);
+        }
+
         public Shape Shape { get; private set; }
 
         private static TensorOpCpu Op;

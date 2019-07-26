@@ -298,6 +298,43 @@ namespace Neuro.Tensors
             _KernelLoader.RunKernel("elu_grad", output, outputGradient, result, new object[] { alpha });
         }
 
+        public override void Softmax(Tensor input, Tensor result)
+        {
+            input.CopyToDevice();
+            result.CopyToDevice();
+
+            using (var inputDesc = new TensorDescriptor())
+            using (var resultDesc = new TensorDescriptor())
+            {
+                int n = input.BatchSize, c = input.Height, h = input.Depth, w = input.Width; // cuDNN expects values to be in Channel so we need to fake 'reshape' our tensor
+
+                inputDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, n, c, h, w);
+                resultDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, n, c, h, w);
+
+                _CudnnContext.SoftmaxForward(cudnnSoftmaxAlgorithm.Accurate, cudnnSoftmaxMode.Channel, 1.0f, inputDesc, input.GpuData.DeviceVar, 0.0f, resultDesc, result.GpuData.DeviceVar);
+            }
+        }
+
+        public override void SoftmaxGradient(Tensor output, Tensor outputGradient, Tensor result)
+        {
+            output.CopyToDevice();
+            outputGradient.CopyToDevice();
+            result.CopyToDevice();
+
+            using (var outputDesc = new TensorDescriptor())
+            using (var outputGradientDesc = new TensorDescriptor())
+            using (var resultDesc = new TensorDescriptor())
+            {
+                int n = output.BatchSize, c = output.Height, h = output.Depth, w = output.Width; // cuDNN expects values to be in Channel so we need to fake 'reshape' our tensor
+
+                outputDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, n, c, h, w);
+                outputGradientDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, n, c, h, w);
+                resultDesc.SetTensor4dDescriptor(cudnnTensorFormat.NCHW, cudnnDataType.Float, n, c, h, w);
+
+                _CudnnContext.SoftmaxBackward(cudnnSoftmaxAlgorithm.Accurate, cudnnSoftmaxMode.Channel, 1.0f, outputDesc, output.GpuData.DeviceVar, outputGradientDesc, outputGradient.GpuData.DeviceVar, 0.0f, resultDesc, result.GpuData.DeviceVar);
+            }
+        }
+
         private static CudaContext _CudaContext;
         private static CudaStream _CudaStream;
         private static CudaBlas _CudaBlasHandle;

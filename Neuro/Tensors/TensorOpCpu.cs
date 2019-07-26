@@ -350,5 +350,35 @@ namespace Neuro.Tensors
         {
             output.Map((x, x2) => (x > 0 ? 1 : (x + alpha)) * x2, outputGradient, result);
         }
+
+        public virtual void Softmax(Tensor input, Tensor result)
+        {
+            input.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            Tensor shifted = input.Sub(input.Max());
+            Tensor exps = shifted.Map(x => (float)Math.Exp(x));
+
+            for (int n = 0; n < input.BatchSize; ++n)
+            {
+                float sum = exps.Sum(n);
+
+                for (int d = 0; d < input.Depth; ++d)
+                for (int h = 0; h < input.Height; ++h)
+                for (int w = 0; w < input.Width; ++w)
+                    result[w, h, d, n] = exps[w, h, d, n] / sum;
+            }
+        }
+
+        public virtual void SoftmaxGradient(Tensor output, Tensor outputGradient, Tensor result)
+        {
+            output.CopyToHost();
+            outputGradient.CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
+            var outputReshaped = output.Reshaped(new Shape(1, Shape.Auto, 1, output.BatchSize));
+            Tensor jacob = outputReshaped.DiagFlat().Sub(outputReshaped.Mul(outputReshaped.Transposed()));
+            jacob.Mul(outputGradient, result);
+        }
     }
 }

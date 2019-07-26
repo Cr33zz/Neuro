@@ -22,6 +22,10 @@ namespace Neuro.Layers
         public string Name { get; set; }
         internal List<LayerBase> InputLayers = new List<LayerBase>();
         internal List<LayerBase> OutputLayers = new List<LayerBase>();
+        public Stopwatch FeedForwardTimer = new Stopwatch();
+        public Stopwatch ActivationTimer = new Stopwatch();
+        public Stopwatch BackPropTimer = new Stopwatch();
+        public Stopwatch ActivationBackPropTimer = new Stopwatch();
 
         // The concept of layer is that it is a 'block box' that supports feed forward and backward propagation.
         // Feed forward: input Tensor -> |logic| -> output Tensor
@@ -79,7 +83,6 @@ namespace Neuro.Layers
             OutputShape = source.OutputShape;
             Activation = source.Activation;
             Name = source.Name;
-            //Initialized = source.Initialized;
         }
 
         public virtual void CopyParametersTo(LayerBase target, float tau = float.NaN)
@@ -107,11 +110,15 @@ namespace Neuro.Layers
             if (Output == null || !Output.Shape.Equals(outShape))
                 Output = new Tensor(outShape);
 
+            FeedForwardTimer.Start();
             FeedForwardInternal();
+            FeedForwardTimer.Stop();
 
             if (Activation != null)
             {
+                ActivationTimer.Start();
                 Activation.Compute(Output, Output);
+                ActivationTimer.Stop();
 
                 if (NeuralNetwork.DebugMode)
                     Trace.WriteLine($"Activation({Activation.GetType().Name}) output:\n{Output}\n");
@@ -136,13 +143,17 @@ namespace Neuro.Layers
             // apply derivative of our activation function to the errors computed by previous layer
             if (Activation != null)
             {
+                ActivationBackPropTimer.Start();
                 Activation.Derivative(Output, outputGradient, outputGradient);
+                ActivationBackPropTimer.Stop();
 
                 if (NeuralNetwork.DebugMode)
                     Trace.WriteLine($"Activation({Activation.GetType().Name}) errors gradient:\n{outputGradient}\n");
             }
 
+            BackPropTimer.Start();
             BackPropInternal(outputGradient);
+            BackPropTimer.Stop();
 
             return InputsGradient;
         }
@@ -172,12 +183,10 @@ namespace Neuro.Layers
 
         private bool Initialized = false;
 
-        //public delegate void ActivationFunc(Tensor input, bool deriv, Tensor result);
-
         protected abstract void FeedForwardInternal();
 
         // Overall implementation of back propagation should look like this:
-        // - if there is activation function apply derivative of our that function to the errors computed by previous layer Errors.MultElementWise(Output.Map(x => ActivationF(x, true)));
+        // - if there is activation function apply derivative of that function to the errors computed by previous layer Errors.MultElementWise(Output.Map(x => ActivationF(x, true)));
         // - update errors in next layer (how much each input contributes to our output errors in relation to our parameters) stored InputDelta
         // - update parameters using error and input
         protected abstract void BackPropInternal(Tensor outputGradient);

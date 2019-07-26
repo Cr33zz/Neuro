@@ -277,5 +277,46 @@ namespace Neuro.Tests
 
             Assert.IsTrue(r.Equals(r2, 1e-4f));
         }
+
+        [TestMethod]
+        public void Softmax_CompareWithCpuResult()
+        {
+            Tensor t = new Tensor(new Shape(1, 30, 1, 32)); t.FillWithRand(12);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(t.Shape);
+            t.Softmax(r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(t.Shape);
+            t.Softmax(r2);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        [TestMethod]
+        public void SoftmaxGradient_CompareWithCpuResult()
+        {
+            var input = new Tensor(new Shape(1, 39, 1, 3));
+            input.FillWithRand(3);
+
+            var output = new Tensor(input.Shape);
+            Activation.Softmax.Compute(input, output);
+
+            var outputGradient = new Tensor(input.Shape);
+            outputGradient.FillWithValue(1.0f);
+
+            Tensor.SetOpMode(Tensor.OpMode.CPU);
+            Tensor r = new Tensor(output.Shape);
+            Tensor.SoftmaxGradient(output, outputGradient, r);
+
+            Tensor.SetOpMode(Tensor.OpMode.GPU);
+            Tensor r2 = new Tensor(output.Shape);
+            Tensor.SoftmaxGradient(output, outputGradient, r);
+
+            Assert.IsTrue(r.Equals(r2, 1e-4f));
+        }
+
+        
     }
 }
