@@ -1,9 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neuro.Tests", "Neuro.Tests\Neuro.Tests.csproj", "{A9DDA189-A5D8-43AC-98D9-9301EACF5F4C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9895C169-C511-4686-8E53-742F6BE8AA63} = {9895C169-C511-4686-8E53-742F6BE8AA63}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neuro", "Neuro\Neuro.csproj", "{9895C169-C511-4686-8E53-742F6BE8AA63}"
 EndProject

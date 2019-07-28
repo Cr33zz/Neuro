@@ -33,20 +33,19 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cloo">
-      <HintPath>.\Cloo.dll</HintPath>
+    <Reference Include="CudaBlas">
+      <HintPath>.\CudaBlas.dll</HintPath>
     </Reference>
-    <Reference Include="CUDA.NET">
-      <HintPath>.\CUDA.NET.dll</HintPath>
+    <Reference Include="CudaDNN">
+      <HintPath>.\CudaDNN.dll</HintPath>
     </Reference>
-    <Reference Include="Cudafy">
-      <HintPath>.\Cudafy.dll</HintPath>
+    <Reference Include="ManagedCuda, Version=10.0.31.0, Culture=neutral, PublicKeyToken=242d898828717aa0, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\ManagedCuda.dll</HintPath>
     </Reference>
-    <Reference Include="Cudafy.Host">
-      <HintPath>.\Cudafy.Host.dll</HintPath>
-    </Reference>
-    <Reference Include="Cudafy.Translator">
-      <HintPath>.\Cudafy.Translator.dll</HintPath>
+    <Reference Include="NVRTC, Version=10.0.31.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\NVRTC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -116,6 +115,7 @@
     <Compile Include="Initializers\InitializerBase.cs" />
     <Compile Include="Initializers\Normal.cs" />
     <Compile Include="Initializers\Uniform.cs" />
+    <Compile Include="Tensors\TensorOpGpu.KernelLoader.cs" />
     <Compile Include="Tensors\Tensor.cs" />
     <Compile Include="Tensors\Shape.cs" />
     <Compile Include="Tensors\TensorOpCpu.cs" />
@@ -126,9 +126,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Np\Array\Array.Addition.cs" />
+    <None Include="app.config" />
+    <None Include="Tensors\CudaKernels\elu.cu">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Tensors\CudaKernels\elu_grad.cu">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

@@ -34,7 +34,7 @@ namespace Neuro.Tests
         private LayerBase CreateLayer()
         {
             var layer = new Convolution(new Shape(5,5,3), 3, 10, 1, null);
-            layer.ForceInit();
+            layer.Init();
             layer.Kernels.FillWithRand();
             return layer;
         }

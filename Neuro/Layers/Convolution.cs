@@ -39,9 +39,12 @@ namespace Neuro.Layers
             base.OnClone(source);
 
             var sourceConv = source as Convolution;
-            Kernels = sourceConv.Kernels.Clone();
-            Bias = sourceConv.Bias.Clone();
+            Kernels = sourceConv.Kernels?.Clone();
+            Bias = sourceConv.Bias?.Clone();
             UseBias = sourceConv.UseBias;
+            FilterSize = sourceConv.FilterSize;
+            FiltersNum = sourceConv.FiltersNum;
+            Stride = sourceConv.Stride;
         }
 
         public override void CopyParametersTo(LayerBase target, float tau)
@@ -53,8 +56,10 @@ namespace Neuro.Layers
             Bias.CopyTo(targetConv.Bias, tau);
         }
 
-        protected override void Init()
+        protected override void OnInit()
         {
+			base.OnInit();
+
             Kernels = new Tensor(new Shape(FilterSize, FilterSize, InputShape.Depth, FiltersNum));
             Bias = new Tensor(new Shape(OutputShape.Width, OutputShape.Height, FiltersNum));
             KernelsGradient = new Tensor(Kernels.Shape);
@@ -76,7 +81,7 @@ namespace Neuro.Layers
 
         protected override void BackPropInternal(Tensor outputGradient)
         {
-            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, InputsGradient[0]);
+            Tensor.Conv2DInputsGradient(outputGradient, Kernels, Stride, Tensor.PaddingType.Valid, InputsGradient[0]);
             Tensor.Conv2DKernelsGradient(Inputs[0], outputGradient, Stride, Tensor.PaddingType.Valid, KernelsGradient);
 
             if (UseBias)

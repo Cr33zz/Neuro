@@ -59,7 +59,7 @@ namespace Neuro.Tests
         {
             var inputShape = new Shape(1, 3);
             var layer = new Merge(new []{inputShape, inputShape}, mode);
-            layer.ForceInit();
+            layer.Init();
             return layer;
         }
     }

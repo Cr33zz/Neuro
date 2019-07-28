@@ -5,6 +5,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using ManagedCuda;
+using ManagedCuda.BasicTypes;
 
 namespace Neuro.Tensors
 {
@@ -15,6 +17,12 @@ namespace Neuro.Tensors
             CPU,
             MultiCPU,
             GPU
+        }
+
+        public enum Location
+        {
+            Host,
+            Device
         }
 
         static Tensor()
@@ -43,6 +51,7 @@ namespace Neuro.Tensors
 
         public Tensor(Tensor t)
         {
+            t.CopyToHost();
             Shape = Shape.From(t.Shape.Dimensions);
             Values = (float[])t.Values.Clone();
         }
@@ -111,6 +120,7 @@ namespace Neuro.Tensors
 
         public float[] GetValues()
         {
+            CopyToHost();
             return (float[])Values.Clone();
         }
 
@@ -132,7 +142,9 @@ namespace Neuro.Tensors
 
         public Tensor FillWithRand(int seed = -1, float min = -1, float max = 1)
         {
-            Random rng = seed > 0 ? new Random(seed) : Rng;            
+            CurrentLocation = Location.Host;
+            Random rng = seed > 0 ? new Random(seed) : Rng;
+
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = min + (max - min) * (float)rng.NextDouble();
             return this;
@@ -140,6 +152,7 @@ namespace Neuro.Tensors
 
         public Tensor FillWithRange(float start = 0, float increment = 1)
         {
+            CurrentLocation = Location.Host;
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = start + i * increment;
             return this;
@@ -147,6 +160,7 @@ namespace Neuro.Tensors
 
         public Tensor FillWithValue(float value)
         {
+            CurrentLocation = Location.Host;
             for (int i = 0; i < Values.Length; ++i)
                 Values[i] = value;
             return this;
@@ -154,23 +168,33 @@ namespace Neuro.Tensors
 
         public void Zero()
         {
+            CurrentLocation = Location.Host;
             Array.Clear(Values, 0, Values.Length);
         }
 
-        public virtual void Mul(Tensor t, Tensor result)
+        private void Mul(bool transposeT, Tensor t, Tensor result)
         {
-            Debug.Assert(Width == t.Height);
+            Debug.Assert((!transposeT && Width == t.Height) || (transposeT && Width == t.Width));
             Debug.Assert(t.Depth == Depth);
 
-            result.Zero();
-            Op.Mul(this, t, result);
+            Op.Mul(false, transposeT, this, t, result);
+        }
+
+        private Tensor Mul(bool transposeT, Tensor t)
+        {
+            Tensor result = new Tensor(new Shape(transposeT ? t.Shape.Height : t.Shape.Width, Height, Depth, BatchSize));
+            Mul(transposeT, t, result);
+            return result;
+        }
+
+        public void Mul(Tensor t, Tensor result)
+        {
+            Mul(false, t, result);
         }
 
         public Tensor Mul(Tensor t)
         {
-            Tensor result = new Tensor(new Shape(t.Shape.Width, Height, Depth, BatchSize));
-            Mul(t, result);
-            return result;
+            return Mul(false, t);
         }
 
         // Element-wise multiplication
@@ -191,6 +215,9 @@ namespace Neuro.Tensors
 
         public virtual void Mul(float v, Tensor result)
         {
+            CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] * v;
         }
@@ -204,6 +231,9 @@ namespace Neuro.Tensors
 
         public virtual void Div(Tensor t, Tensor result)
         {
+            CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
             Debug.Assert(SameDimensionsExceptBatches(t));
             Debug.Assert(t.BatchSize == result.BatchSize);
 
@@ -220,6 +250,9 @@ namespace Neuro.Tensors
 
         public virtual void Div(float v, Tensor result)
         {
+            CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
+
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] / v;
         }
@@ -231,12 +264,17 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual void Add(Tensor t, Tensor result)
+        public virtual void Add(float alpha, float beta, Tensor t, Tensor result)
         {
             Debug.Assert(SameDimensionsExceptBatches(t));
             Debug.Assert(t.BatchSize == result.BatchSize || t.BatchSize == 1);
 
-            Op.Add(this, t, result);
+            Op.Add(alpha, this, beta, t, result);
+        }
+
+        public virtual void Add(Tensor t, Tensor result)
+        {
+            Add(1, 1, t, result);
         }
 
         public Tensor Add(Tensor t)
@@ -246,8 +284,16 @@ namespace Neuro.Tensors
             return result;
         }
 
+        public Tensor Add(float alpha, float beta, Tensor t)
+        {
+            Tensor result = new Tensor(Shape);
+            Add(alpha, beta, t, result);
+            return result;
+        }
+
         public virtual void Add(float v, Tensor result)
         {
+            CopyToHost();
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] + v;
         }
@@ -276,6 +322,7 @@ namespace Neuro.Tensors
 
         public virtual void Sub(float v, Tensor result)
         {
+            CopyToHost();
             for (int i = 0; i < Values.Length; ++i)
                 result.Values[i] = Values[i] - v;
         }
@@ -316,17 +363,18 @@ namespace Neuro.Tensors
         {
             Tensor result = new Tensor(new Shape(BatchLength, BatchLength, 1, BatchSize));
 
+            int batchLen = BatchLength;
+
             for (int b = 0; b < BatchSize; ++b)
-            for (int i = 0; i < BatchLength; ++i)
-                result[i, i, 0, b] = Values[b * BatchLength + i];
+            for (int i = 0; i < batchLen; ++i)
+                result[i, i, 0, b] = Values[b * batchLen + i];
 
             return result;
         }
 
         public void Map(Func<float, float> func, Tensor result)
         {
-            for (int i = 0; i < Values.Length; ++i)
-                result.Values[i] = func(Values[i]);
+            Op.Map(func, this, result);
         }
 
         public Tensor Map(Func<float, float> func)
@@ -338,8 +386,7 @@ namespace Neuro.Tensors
 
         public void Map(Func<float, float, float> func, Tensor other, Tensor result)
         {
-            for (int i = 0; i < Values.Length; ++i)
-                result.Values[i] = func(Values[i], other.Values[i]);
+            Op.Map(func, this, other, result);
         }
 
         public Tensor Map(Func<float, float, float> func, Tensor other)
@@ -352,22 +399,20 @@ namespace Neuro.Tensors
         public Tensor SumBatches()
         {
             Tensor result = new Tensor(new Shape(Shape.Width, Shape.Height, Shape.Depth, 1));
-
-            for (int n = 0; n < BatchSize; ++n)
-            for (int i = 0, idx = n * BatchLength; i < BatchLength; ++i, ++idx)
-                    result.Values[i] += Values[idx];
-
+            Op.SumBatches(this, result);
             return result;
         }
 
         public float Sum(int batch = -1)
         {
+            CopyToHost();
             if (batch < 0)
                 return Values.Sum();
 
+            int batchLen = BatchLength;
             float sum = 0;
 
-            for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
+            for (int i = 0, idx = batch * batchLen; i < batchLen; ++i, ++idx)
                 sum += Values[idx];
 
             return sum;
@@ -375,6 +420,7 @@ namespace Neuro.Tensors
 
         public Tensor SumPerBatch()
         {
+            CopyToHost();
             Tensor result = new Tensor(new Shape(1, 1, 1, Shape.BatchSize));
 
             for (int n = 0; n < BatchSize; ++n)
@@ -386,9 +432,12 @@ namespace Neuro.Tensors
 
         public Tensor AvgBatches()
         {
+            CopyToHost();
             Tensor result = SumBatches();
 
-            for (int n = 0; n < BatchLength; ++n)
+            int batchLen = BatchLength;
+
+            for (int n = 0; n < batchLen; ++n)
                 result.Values[n] /= BatchSize;
 
             return result;
@@ -403,8 +452,10 @@ namespace Neuro.Tensors
         {
             Tensor result = SumPerBatch();
 
+            int batchLen = BatchLength;
+
             for (int n = 0; n < BatchSize; ++n)
-                result.Values[n] /= BatchLength;
+                result.Values[n] /= batchLen;
 
             return result;
         }
@@ -427,26 +478,56 @@ namespace Neuro.Tensors
         {
             if (tensors.Count == 0)
                 throw new Exception("List cannot be empty.");
-            
+
             Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, tensors[0].Depth, tensors.Count));
-            
+
             for (int n = 0; n < tensors.Count; ++n)
             {
                 Tensor t = tensors[n];
+                t.CopyToHost();
                 Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
             }
 
             return output;
         }
 
-        // This operation will concatenate elements of all input tensors separately for each batch
-        public static void Concat(Tensor[] inputs, Tensor result)
+        // In case number of tensors is smaller than forcedDepth, first tensor will be repeated to account for missing tensors
+        public static Tensor MergeIntoDepth(List<Tensor> tensors, int forcedDepth = 0)
+		{
+			if (tensors.Count == 0)
+				throw new Exception("List cannot be empty.");
+
+			Tensor output = new Tensor(new Shape(tensors[0].Width, tensors[0].Height, Math.Max(tensors.Count, forcedDepth)));
+
+            Tensor t = tensors[0];
+            t.CopyToHost();
+
+            int t0_copies = forcedDepth > 0 ? forcedDepth - tensors.Count : 0;
+
+            for (int n = 0; n < t0_copies; ++n)
+            {
+                Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
+            }
+
+			for (int n = t0_copies; n < output.Depth; ++n)
+			{
+				t = tensors[n - t0_copies];
+                t.CopyToHost();
+				Array.Copy(t.Values, 0, output.Values, t.Length * n, t.Values.Length);
+			}
+
+			return output;
+		}
+
+		// This operation will concatenate elements of all input tensors separately for each batch
+		public static void Concat(Tensor[] inputs, Tensor result)
         {
             for (int b = 0; b < result.BatchSize; ++b)
             {
                 int elementsCopied = 0;
                 for (int i = 0; i < inputs.Length; ++i)
                 {
+                    inputs[i].CopyToHost();
                     Array.Copy(inputs[i].Values, b * inputs[i].BatchLength, result.Values, b * result.BatchLength + elementsCopied, inputs[i].BatchLength);
                     elementsCopied += inputs[i].BatchLength;
                 }
@@ -456,11 +537,13 @@ namespace Neuro.Tensors
         // This is reverse Concat operation
         public void Split(Tensor[] outputs)
         {
+            CopyToHost();
             for (int b = 0; b < BatchSize; ++b)
             {
                 int elementsCopied = 0;
                 for (int i = 0; i < outputs.Length; ++i)
                 {
+                    outputs[i].CopyToHost();
                     Array.Copy(Values, b * BatchLength + elementsCopied, outputs[i].Values, b * outputs[i].BatchLength, outputs[i].BatchLength);
                     elementsCopied += outputs[i].BatchLength;
                 }
@@ -542,19 +625,20 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public virtual Tensor Transposed()
+        public Tensor Transposed()
         {
             Tensor result = new Tensor(new Shape(Height, Width, Depth, BatchSize));
-            for (int n = 0; n < BatchSize; ++n)
-            for (int d = 0; d < Depth; ++d)
-            for (int h = 0; h < Height; ++h)
-            for (int w = 0; w < Width; ++w)
-                result[h, w, d, n] = this[w, h, d, n];
+            Transpose(result);
 
             return result;
         }
 
-        // Generates a new tensor with given dimensions and populate it with this tensor's values in index order. 
+        public void Transpose(Tensor result)
+        {
+            Op.Transpose(this, result);
+        }
+
+        // Generates a new tensor with given dimensions and populate it with this tensor's values in index order.
         // One of dimensions can be -1, in that case it will be calculated based on remaining dimensions.
         public Tensor Reshaped(Shape shape)
         {
@@ -617,10 +701,7 @@ namespace Neuro.Tensors
         {
             Debug.Assert(Depth == kernels.Depth);
 
-            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
-            GetPaddingParams(padding, Width, Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
-
-            Op.Conv2D(this, kernels, stride, paddingX, paddingY, result);
+            Op.Conv2D(this, kernels, stride, padding, result);
         }
 
         public Tensor Conv2D(Tensor kernels, int stride, PaddingType padding)
@@ -633,22 +714,16 @@ namespace Neuro.Tensors
             return result;
         }
 
-        public static void Conv2DInputsGradient(Tensor gradient, Tensor kernels, int stride, Tensor inputsGradient)
+        public static void Conv2DInputsGradient(Tensor gradient, Tensor kernels, int stride, PaddingType padding, Tensor inputsGradient)
         {
             inputsGradient.Zero();
-            Tensor rotKernels = kernels.Rotated180();
-
-            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
-            GetPaddingParams(PaddingType.Full, gradient.Width, gradient.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
-            Op.Conv2DInputGradient(gradient, rotKernels, stride, paddingX, paddingY, inputsGradient);
+            Op.Conv2DInputGradient(gradient, kernels, stride, padding, inputsGradient);
         }
 
         public static void Conv2DKernelsGradient(Tensor input, Tensor gradient, int stride, PaddingType padding, Tensor kernelsGradient)
         {
             kernelsGradient.Zero();
-            int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
-            GetPaddingParams(padding, input.Width, input.Height, kernelsGradient.Width, kernelsGradient.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
-            Op.Conv2DKernelsGradient(input, gradient, stride, paddingX, paddingY, kernelsGradient);
+            Op.Conv2DKernelsGradient(input, gradient, stride, padding, kernelsGradient);
         }
 
         public static void Conv2DGradient_old(Tensor input, Tensor kernels, Tensor gradient, int stride, PaddingType padding, Tensor inputGradient, Tensor kernelsGradient)
@@ -801,11 +876,13 @@ namespace Neuro.Tensors
 
         public float GetFlat(int i)
         {
+            CopyToHost();
             return Values[i];
         }
 
         public float Get(int w, int h = 0, int d = 0, int n = 0)
         {
+            CopyToHost();
             return Values[Shape.GetIndex(w, h, d, n)];
         }
 
@@ -825,11 +902,13 @@ namespace Neuro.Tensors
 
         public void SetFlat(float value, int i)
         {
+            CopyToHost();
             Values[i] = value;
         }
 
         public void Set(float value, int w, int h = 0, int d = 0, int n = 0)
         {
+            CopyToHost();
             Values[Shape.GetIndex(w, h, d, n)] = value;
         }
 
@@ -843,6 +922,7 @@ namespace Neuro.Tensors
 
         public void CopyTo(Tensor result, float tau = float.NaN)
         {
+            CopyToHost();
             if (Shape.Length != result.Shape.Length) throw new Exception("Incompatible tensors.");
 
             if (float.IsNaN(tau))
@@ -853,6 +933,8 @@ namespace Neuro.Tensors
 
         public void CopyBatchTo(int batchId, int targetBatchId, Tensor result)
         {
+            CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
             if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height || Shape.Depth != result.Shape.Depth) throw new Exception("Incompatible tensors.");
 
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2, result.Values, targetBatchId * Shape.Dim0Dim1Dim2, Shape.Dim0Dim1Dim2);
@@ -860,6 +942,8 @@ namespace Neuro.Tensors
 
         public void CopyDepthTo(int depthId, int batchId, int targetDepthId, int targetBatchId, Tensor result)
         {
+            CopyToHost();
+            result.CurrentLocation = Tensor.Location.Host;
             if (Shape.Width != result.Shape.Width || Shape.Height != result.Shape.Height) throw new Exception("Incompatible tensors.");
 
             Array.Copy(Values, batchId * Shape.Dim0Dim1Dim2 + depthId * Shape.Dim0Dim1, result.Values, targetBatchId * Shape.Dim0Dim1Dim2 + targetDepthId * Shape.Dim0Dim1, Shape.Dim0Dim1);
@@ -881,6 +965,9 @@ namespace Neuro.Tensors
 
         public bool Equals(Tensor other, float epsilon = 0.00001f)
         {
+            CopyToHost();
+            other.CopyToHost();
+
             if (other == null)
                 return false;
 
@@ -900,6 +987,7 @@ namespace Neuro.Tensors
 
         private float GetMaxData(int batch, out int maxIndex)
         {
+            CopyToHost();
             maxIndex = -1;
             float maxValue = float.MinValue;
 
@@ -914,7 +1002,9 @@ namespace Neuro.Tensors
             }
             else
             {
-                for (int i = 0, idx = batch * BatchLength; i < BatchLength; ++i, ++idx)
+                int batchLen = BatchLength;
+
+                for (int i = 0, idx = batch * batchLen; i < batchLen; ++i, ++idx)
                     if(Values[idx] > maxValue)
                     {
                         maxValue = Values[idx];
@@ -925,11 +1015,73 @@ namespace Neuro.Tensors
             return maxValue;
         }
 
+        public void Elu(float alpha, Tensor result)
+        {
+            Op.Elu(this, alpha, result);
+        }
+
+        public static void EluGradient(Tensor output, Tensor outputGradient, float alpha, Tensor result)
+        {
+            Op.EluGradient(output, outputGradient, alpha, result);
+        }
+
+        public void Softmax(Tensor result)
+        {
+            Op.Softmax(this, result);
+        }
+
+        public static void SoftmaxGradient(Tensor output, Tensor outputGradient, Tensor result)
+        {
+            Op.SoftmaxGradient(output, outputGradient, result);
+        }
+
         public Shape Shape { get; private set; }
 
         private static TensorOpCpu Op;
         private static Random Rng = new Random();
 
+        internal class GPUData : IDisposable
+        {
+            public CudaDeviceVariable<float> DeviceVar;
+            public CudaDeviceVariable<byte> ConvWorkspace;
+            public CudaDeviceVariable<byte> ConvBackWorkspace;
+            public CudaDeviceVariable<byte> ConvBackKernelWorkspace;
+
+            ~GPUData()
+            {
+                Dispose();
+            }
+
+            public void Dispose()
+            {
+                DeviceVar?.Dispose(); DeviceVar = null;
+                ConvWorkspace?.Dispose(); ConvWorkspace = null;
+                ConvBackWorkspace?.Dispose(); ConvBackWorkspace = null;
+                ConvBackKernelWorkspace?.Dispose(); ConvBackKernelWorkspace = null;
+            }
+        }
+
+        public void CopyToDevice()
+        {
+            if (CurrentLocation == Location.Device)
+                return;
+
+            GpuData.DeviceVar = GpuData.DeviceVar ?? new CudaDeviceVariable<float>(Shape.Length);
+            GpuData.DeviceVar.CopyToDevice(Values);
+            CurrentLocation = Location.Device;
+        }
+
+        public void CopyToHost()
+        {
+            if (CurrentLocation == Location.Host)
+                return;
+
+            GpuData.DeviceVar.CopyToHost(Values);
+            CurrentLocation = Location.Host;
+        }
+
+        internal GPUData GpuData = new GPUData();
+        internal Location CurrentLocation = Location.Host;
         internal float[] Values;
     }
 }

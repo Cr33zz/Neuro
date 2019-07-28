@@ -103,7 +103,7 @@ namespace Neuro.PerfTests
             var timer = new Stopwatch();
             timer.Start();
 
-            //net.Fit(trainingData, -1, 500, null, 0, Track.Nothing);
+            net.Fit(trainingData, -1, 500, null, 0, Track.Nothing);
 
             timer.Stop();
             Trace.WriteLine($"{Math.Round(timer.ElapsedMilliseconds / 1000.0, 2)} seconds");
