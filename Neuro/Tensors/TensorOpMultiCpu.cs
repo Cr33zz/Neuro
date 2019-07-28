@@ -2,10 +2,51 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
+using System.Runtime.InteropServices;
+
 namespace Neuro.Tensors
 {
     internal class TensorOpMultiCpu : TensorOpCpu
     {
+        [StructLayout(LayoutKind.Explicit, Size = 696)]
+        public class MkldnnMemoryDesc
+        {
+            [FieldOffset(0)]
+            public int ndims;
+
+            [FieldOffset(8)]
+            public long[] dims = new long[12];
+
+            [FieldOffset(104)]
+            public global::MKL_DNN.MkldnnDataTypeT data_type;
+
+            [FieldOffset(112)]
+            public long[] padded_dims = new long[12];
+
+            [FieldOffset(208)]
+            public long[] padded_offsets = new long[12];
+
+            [FieldOffset(304)]
+            public long offset0;
+
+            [FieldOffset(312)]
+            public global::MKL_DNN.MkldnnFormatKindT format_kind;
+
+            [FieldOffset(320)]
+            public global::MKL_DNN.MkldnnMemoryDescT.FormatDesc.__Internal format_desc;
+
+            [FieldOffset(616)]
+            public global::MKL_DNN.MkldnnMemoryExtraDescT.__Internal extra;
+        }
+
+
+        static TensorOpMultiCpu()
+        {
+            var result = MKL_DNN.mkldnn.MkldnnEngineCreate(_MklDnnEngine, MKL_DNN.MkldnnEngineKindT.MkldnnCpu, 0);
+            Console.WriteLine(result);
+            MKL_DNN.mkldnn.MkldnnStreamCreate(_MklDnnStream, _MklDnnEngine, (uint)MKL_DNN.MkldnnStreamFlagsT.MkldnnStreamDefaultFlags);
+        }
+
         public override void Add(float alpha, Tensor t1, float beta, Tensor t2, Tensor result)
         {
             t1.CopyToHost();
@@ -44,19 +85,27 @@ namespace Neuro.Tensors
             t2Temp.CopyToHost();
             result.Zero();
 
-            Parallel.For(0, result.BatchSize, n =>
-            {
-                int t1N = Math.Min(n, t1Temp.BatchSize - 1);
-                int t2N = Math.Min(n, t2Temp.BatchSize - 1);
+            var m = t1Temp.Height;
+            var n = t2Temp.Width;
+            var k = t1Temp.Width;
+            float alpha = 1.0f;
+            float beta = 0.0f;
 
-                Parallel.For(0, t1Temp.Depth, d => {
-                for (int h = 0; h < t1Temp.Height; ++h)
-                for (int w = 0; w < t2Temp.Width; ++w)
-                for (int i = 0; i < t1Temp.Width; ++i)
-                    result[w, h, d, n] += t1Temp.Get(i, h, d, t1N) *
-                                          t2Temp.Get(w, i, d, t2N);
-                });
-            });
+            //treat depth as batch
+            int batches = t1.Depth * t1.BatchSize;
+
+            for (int b = 0; b < batches; ++b)
+            {
+                MKL.mkl_blas.Sgemm("n",
+                                   "n",
+                                   ref n, ref m, ref k,  // trick to convert row major to column major
+                                   ref alpha,
+                                   ref t2Temp.Values[b * t2Temp.Shape.Dim0Dim1], ref n,
+                                   ref t1Temp.Values[b * t1Temp.Shape.Dim0Dim1], ref k,
+                                   ref beta,
+                                   ref result.Values[b * result.Shape.Dim0Dim1], ref n);
+
+            }
         }
 
         public override void MulElem(Tensor t1, Tensor t2, Tensor result)
@@ -88,7 +137,7 @@ namespace Neuro.Tensors
             });
         }
 
-        public override void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
+        public override unsafe void Conv2D(Tensor t, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor result)
         {
             t.CopyToHost();
             kernels.CopyToHost();
@@ -97,23 +146,41 @@ namespace Neuro.Tensors
             int outputWidth = 0, outputHeight = 0, paddingX = 0, paddingY = 0;
             Tensor.GetPaddingParams(padding, t.Width, t.Height, kernels.Width, kernels.Height, stride, out outputHeight, out outputWidth, out paddingX, out paddingY);
 
-            Parallel.For(0, t.BatchSize, n =>
+            //https://intel.github.io/mkl-dnn/cpu_cnn_training_f32_8c-example.html
+
+            MKL_DNN.MkldnnConvolutionDescT convDesc = null;
+            MKL_DNN.mkldnn.MkldnnConvolutionForwardDescInit(convDesc, 
+                                                            MKL_DNN.MkldnnPropKindT.MkldnnForwardInference, 
+                                                            MKL_DNN.MkldnnAlgKindT.MkldnnConvolutionDirect, 
+                                                            t.MklData.MemoryDesc, 
+                                                            kernels.MklData.MemoryDesc, 
+                                                            null, 
+                                                            result.MklData.MemoryDesc, 
+                                                            new long[] { stride, stride}, 
+                                                            new long[] { paddingX }, 
+                                                            new long[] { paddingX });
+
+            MKL_DNN.MkldnnPrimitiveAttr convPrimitiveAttr = null;
+            MKL_DNN.mkldnn.MkldnnPrimitiveAttrCreate(convPrimitiveAttr);
+
+            MKL_DNN.MkldnnPrimitiveDesc convPrimitiveDesc = null;
+            MKL_DNN.mkldnn.MkldnnPrimitiveDescCreate(convPrimitiveDesc, convDesc.__Instance, convPrimitiveAttr, _MklDnnEngine, null);
+
+            MKL_DNN.MkldnnPrimitive convPrimitive = null;
+            MKL_DNN.mkldnn.MkldnnPrimitiveCreate(convPrimitive, convPrimitiveDesc);
+
+            MKL_DNN.MkldnnExecArgT[] args = new MKL_DNN.MkldnnExecArgT[] {
+                new MKL_DNN.MkldnnExecArgT{ Arg = (int)MKL_DNN.MkldnnArg.MKLDNN_ARG_SRC, Memory = t.MklData.Memory },
+                new MKL_DNN.MkldnnExecArgT{ Arg = (int)MKL_DNN.MkldnnArg.MKLDNN_ARG_WEIGHTS, Memory = kernels.MklData.Memory },
+                //new MKL_DNN.MkldnnExecArgT{ Arg = (int)MKL_DNN.MkldnnArg.MKLDNN_ARG_BIAS, Memory = .MklData.Memory },
+                new MKL_DNN.MkldnnExecArgT{ Arg = (int)MKL_DNN.MkldnnArg.MKLDNN_ARG_DST, Memory = result.MklData.Memory },
+            };
+
+            fixed (void* argsPtr = args)
             {
-                Parallel.For(0, kernels.BatchSize, outD => {
-                for (int h = -paddingY, outH = 0; outH < result.Height; h += stride, ++outH)
-                for (int w = -paddingX, outW = 0; outW < result.Width; w += stride, ++outW)
-                {
-                    float val = 0;
-
-                    for (int kernelD = 0; kernelD < kernels.Depth; ++kernelD)
-                    for (int kernelH = 0; kernelH < kernels.Height; ++kernelH)
-                    for (int kernelW = 0; kernelW < kernels.Width; ++kernelW)
-                        val += t.TryGet(0, w + kernelW, h + kernelH, kernelD, n) *
-                               kernels[kernelW, kernelH, kernelD, outD];
-
-                    result[outW, outH, outD, n] = val;
-                }});
-            });
+                IntPtr ptr = new IntPtr(argsPtr);
+                MKL_DNN.mkldnn.MkldnnPrimitiveExecute(convPrimitive, _MklDnnStream, args.Length, ptr);
+            }
         }
 
         public override void Conv2DInputGradient(Tensor gradient, Tensor kernels, int stride, Tensor.PaddingType padding, Tensor inputGradients)
@@ -294,5 +361,8 @@ namespace Neuro.Tensors
                     result.Values[i] += t.Values[idx];
             });
         }
+
+        internal static MKL_DNN.MkldnnEngine _MklDnnEngine;
+        internal static MKL_DNN.MkldnnStream _MklDnnStream;
     }
 }

@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neuro.Tensors
 {
@@ -41,21 +36,27 @@ namespace Neuro.Tensors
             t2Temp.CopyToHost();
             result.Zero();
 
-            int N = t1Temp.Height;
-            int M = t2Temp.Width;
-            int K = t1Temp.Width;
+            var m = t1Temp.Height;
+            var n = t2Temp.Width;
+            var k = t1Temp.Width;
+            float alpha = 1.0f;
+            float beta = 0.0f;
 
-            for (int n = 0; n < result.BatchSize; ++n)
+            //treat depth as batch
+            int batches = t1.Depth * t1.BatchSize;
+
+            for (int b = 0; b < batches; ++b)
             {
-                int t1N = Math.Min(n, t1Temp.BatchSize - 1);
-                int t2N = Math.Min(n, t2Temp.BatchSize - 1);
+                MKL.mkl_blas.Sgemm("n",
+                                   "n",
+                                   ref n, ref m, ref k,  // trick to convert row major to column major
+                                   ref alpha,
+                                   ref t2Temp.Values[b * t2Temp.Shape.Dim0Dim1], ref n,
+                                   ref t1Temp.Values[b * t1Temp.Shape.Dim0Dim1], ref k,
+                                   ref beta,
+                                   ref result.Values[b * result.Shape.Dim0Dim1], ref n);
 
-                for (int d = 0; d < t1Temp.Depth; ++d)
-                for (int i = 0; i < N; ++i)
-                for (int j = 0; j < M; ++j)
-                for (int k = 0; k < K; ++k)
-                    result[j, i, d, n] += t1Temp[k, i, d, t1N] * t2Temp[j, k, d, t2N];
-            }
+            }            
         }        
 
         public virtual void MulElem(Tensor t1, Tensor t2, Tensor result)

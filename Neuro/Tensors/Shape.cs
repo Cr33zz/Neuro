@@ -96,6 +96,7 @@ namespace Neuro.Tensors
         public int BatchSize => Dimensions[3];
 
         public int[] Dimensions { get; }
+        public long[] DimensionsAsLong => new long[] { Dimensions[0], Dimensions[1], Dimensions[2], Dimensions[3] };
 
         public int Length { get; }
 

@@ -32,22 +32,39 @@ namespace Neuro.Tensors
 
         public Tensor(Shape shape)
         {
-            Shape = shape;
-            Values = new float[shape.Length];
+            InitShape(shape);
+            InitValues(new float[shape.Length]);
         }
 
         public Tensor(float[] values, Shape shape)
         {
             Debug.Assert(values.Length == shape.Length, $"Invalid array size {values.Length}. Expected {shape.Length}.");
-            Shape = shape;
-            Values = (float[])values.Clone();
+            InitShape(shape);
+            InitValues((float[])values.Clone());
         }
 
         public Tensor(Tensor t)
         {
             t.CopyToHost();
-            Shape = Shape.From(t.Shape.Dimensions);
-            Values = (float[])t.Values.Clone();
+            InitShape(Shape.From(t.Shape.Dimensions));
+            InitValues((float[])t.Values.Clone());
+        }
+
+        private void InitShape(Shape shape)
+        {
+            Shape = shape;
+            MKL_DNN.mkldnn.MkldnnMemoryDescInitByTag(MklData.MemoryDesc, shape.Dimensions.Length, shape.DimensionsAsLong, MKL_DNN.MkldnnDataTypeT.MkldnnF32, MKL_DNN.MkldnnFormatTagT.MkldnnFormatTagAny);
+        }
+
+        private unsafe void InitValues(float[] values)
+        {
+            Values = values;
+
+            fixed (void* arrPtr = Values)
+            {
+                IntPtr ptr = new IntPtr(arrPtr);
+                MKL_DNN.mkldnn.MkldnnMemoryCreate(MklData.Memory, MklData.MemoryDesc, TensorOpMultiCpu._MklDnnEngine, ptr);
+            }
         }
 
         public Tensor(string bmpFile, bool grayScale)
@@ -167,6 +184,7 @@ namespace Neuro.Tensors
         {
             Debug.Assert((!transposeT && Width == t.Height) || (transposeT && Width == t.Width));
             Debug.Assert(t.Depth == Depth);
+            Debug.Assert(t.BatchSize == BatchSize);
 
             Op.Mul(false, transposeT, this, t, result);
         }
@@ -792,6 +810,11 @@ namespace Neuro.Tensors
             return s;
         }
 
+        public bool SameDimensions(Tensor t)
+        {
+            return Shape == t.Shape;
+        }
+
         public bool SameDimensionsExceptBatches(Tensor t)
         {
             return Width == t.Width && Height == t.Height && Depth == t.Depth;
@@ -1044,6 +1067,22 @@ namespace Neuro.Tensors
             }
         }
 
+        internal class MKLData : IDisposable
+        {
+            public MKL_DNN.MkldnnMemoryDescT MemoryDesc;
+            public MKL_DNN.MkldnnMemory Memory;
+            
+            ~MKLData()
+            {
+                Dispose();
+            }
+
+            public void Dispose()
+            {
+                
+            }
+        }
+
         public void CopyToDevice()
         {
             if (CurrentLocation == Location.Device)
@@ -1064,6 +1103,7 @@ namespace Neuro.Tensors
         }
 
         internal GPUData GpuData = new GPUData();
+        internal MKLData MklData = new MKLData();
         internal Location CurrentLocation = Location.Host;
         internal float[] Values;
     }
