@@ -48,5 +48,5 @@ Library can generate basic graphs to track error (train data, test data).
 
 For GPU computation CUDA 10.1 and CudNN 7.6.1.34 are required. Both can be downloaded from NVidia website:
 
-https://developer.nvidia.com/cuda-downloads
+https://developer.nvidia.com/cuda-downloads  
 https://developer.nvidia.com/cudnn
